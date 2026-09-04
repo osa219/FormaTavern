@@ -1,0 +1,31 @@
+{
+  "name": "@formatavern/backend",
+  "private": true,
+  "type": "module",
+  "types": "./src/app.ts",
+  "exports": {
+    ".": {
+      "types": "./src/app.ts",
+      "default": "./src/app.ts"
+    }
+  },
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "typecheck": "tsc --noEmit -p .",
+    "test": "bun test",
+    "db:migrate": "bun scripts/migrate.ts",
+    "db:seed": "bun scripts/seed.ts",
+    "db:check": "bun scripts/check.ts",
+    "db:reset": "bun scripts/reset.ts"
+  },
+  "dependencies": {
+    "@formatavern/shared": "workspace:*",
+    "elysia": "^1.2.0",
+    "@elysiajs/static": "^1.2.0",
+    "ulid": "^2.3.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}
