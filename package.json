@@ -1,0 +1,22 @@
+{
+  "name": "formatavern",
+  "private": true,
+  "workspaces": ["backend", "frontend", "packages/*"],
+  "scripts": {
+    "dev": "bun run --parallel --filter @formatavern/backend --filter @formatavern/frontend dev",
+    "dev:backend": "bun run --cwd backend dev",
+    "dev:frontend": "bun run --cwd frontend dev",
+    "build": "bun run --cwd frontend build",
+    "start": "NODE_ENV=production bun run --cwd backend start",
+    "typecheck": "bun run --cwd packages/shared typecheck && bun run --cwd backend typecheck && bun run --cwd frontend check",
+    "test": "bun run --cwd packages/shared test && bun run --cwd backend test",
+    "db:migrate": "bun run --cwd backend db:migrate",
+    "db:seed": "bun run --cwd backend db:seed",
+    "db:check": "bun run --cwd backend db:check",
+    "db:reset": "bun run --cwd backend db:reset",
+    "clean": "rm -rf node_modules frontend/.svelte-kit frontend/build"
+  },
+  "devDependencies": {
+    "typescript": "^5.5"
+  }
+}
