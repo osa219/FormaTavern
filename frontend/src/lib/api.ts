@@ -9,8 +9,12 @@ export interface StreamCallbacks {
   onChunk?(bytes: number, deltaMs: number): void; // raw arrival telemetry (buffering detector)
 }
 
-export async function readTestStream(cb: StreamCallbacks, signal?: AbortSignal) {
-  const res = await fetch('/api/chat/test-stream', { method: 'POST', signal }); // no body, no headers
+export async function readTestStream(
+  cb: StreamCallbacks,
+  opts?: { script?: string; signal?: AbortSignal }
+) {
+  const url = '/api/chat/test-stream' + (opts?.script ? `?script=${encodeURIComponent(opts.script)}` : '');
+  const res = await fetch(url, { method: 'POST', signal: opts?.signal });
   if (!res.ok || !res.body) throw new Error(`stream failed: ${res.status}`);
 
   const reader = res.body.getReader();

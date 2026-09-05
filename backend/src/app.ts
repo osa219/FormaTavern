@@ -1,16 +1,13 @@
 import { Elysia } from 'elysia';
 import {
   SHARED_VERSION,
-  TEST_STREAM_WORDS,
-  TEST_STREAM_INTERVAL_MS,
+  ENVELOPE_SCRIPT_IDS,
   type HealthResponse,
   type StreamEvent
 } from '@formatavern/shared';
 import type { AppDeps } from './db/contracts';
 
-const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms)); // no Bun.sleep here (purity rule)
-
-export function createApp({ repos }: AppDeps) {
+export function createApp({ repos, providers }: AppDeps) {
   return new Elysia({ prefix: '/api' })
     .get('/health', (): HealthResponse => ({
       ok: true,
@@ -23,39 +20,36 @@ export function createApp({ repos }: AppDeps) {
         personas: repos.personas.count()
       }
     }))
-    .post('/chat/test-stream', ({ request }) => {
-      const encoder = new TextEncoder();
-      let cancelled = false;
-      const frame = (e: StreamEvent) => encoder.encode(`data: ${JSON.stringify(e)}\n\n`);
+    .post('/chat/test-stream', ({ query, request, set }) => {
+      const script = (query?.script as string | undefined) ?? 'envelope-directive';
+      if (!ENVELOPE_SCRIPT_IDS.includes(script as any)) {
+        set.status = 400;
+        return {
+          error: `Invalid script "${script}". Valid scripts: ${ENVELOPE_SCRIPT_IDS.join(', ')}`
+        };
+      }
 
-      const onAbort = () => {
-        if (!cancelled) {
-          cancelled = true;
-          console.log('[test-stream] client disconnected');
-        }
-      };
-      request.signal.addEventListener('abort', onAbort);
+      const encoder = new TextEncoder();
+      const frame = (e: StreamEvent) => encoder.encode(`data: ${JSON.stringify(e)}\n\n`);
 
       const body = new ReadableStream<Uint8Array>({
         async start(controller) {
           try {
-            for (let i = 0; i < TEST_STREAM_WORDS.length; i++) {
-              if (cancelled || request.signal.aborted) return;
-              controller.enqueue(frame({ type: 'token', text: (i === 0 ? '' : ' ') + TEST_STREAM_WORDS[i] }));
-              if (i < TEST_STREAM_WORDS.length - 1) await sleep(TEST_STREAM_INTERVAL_MS);
+            const stream = providers.mock.generate(
+              {
+                model: `mock:${script}`,
+                history: [{ role: 'user', content: 'begin' }]
+              },
+              request.signal
+            );
+
+            for await (const ev of stream) {
+              controller.enqueue(frame(ev));
             }
-            if (!cancelled && !request.signal.aborted) {
-              controller.enqueue(frame({ type: 'done', finishReason: 'stop' }));
-              controller.close();
-            }
+          } catch {
+            // iterator never throws out per P3
           } finally {
-            request.signal.removeEventListener('abort', onAbort);
-          }
-        },
-        cancel() {
-          if (!cancelled) {
-            cancelled = true;
-            console.log('[test-stream] client disconnected');
+            controller.close();
           }
         }
       });

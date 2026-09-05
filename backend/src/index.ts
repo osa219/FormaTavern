@@ -7,6 +7,7 @@ import { openDatabase } from './db/connection';
 import { runMigrations } from './db/migrate';
 import { createRepositories } from './db/repositories';
 import { seed } from './db/seeds/seed';
+import { createProviders } from './providers';
 
 const HOST = process.env.FORMATAVERN_HOST ?? '127.0.0.1';
 const PORT = Number(process.env.FORMATAVERN_PORT ?? 3000);
@@ -49,16 +50,24 @@ if (seedResult.seeded) {
 }
 console.log(dbLog);
 
-// 6. Assemble Elysia app
-const app = createApp({ repos });
-const server = new Elysia().use(app);
+// 6. Initialize providers
+const providers = createProviders({ openRouterApiKey: process.env.OPENROUTER_API_KEY });
+console.log(`[providers] mock ready, openrouter ${providers.openrouter ? 'ready' : 'disabled (no key)'}`);
 
-if (PROD) {
-  if (!existsSync(BUILD_DIR)) {
-    throw new Error(`Production build missing: ${BUILD_DIR}. Run 'bun run build'.`);
-  }
+// 7. Assemble Elysia app
+const app = createApp({ repos, providers });
+if (PROD && !existsSync(BUILD_DIR)) {
+  throw new Error(`Production build missing: ${BUILD_DIR}. Run 'bun run build'.`);
+}
 
-  server.get('*', ({ request, set }) => {
+const server = new Elysia()
+  .use(app)
+  .all('*', ({ request, set }) => {
+    if (!PROD) {
+      set.status = 404;
+      return { error: 'Not Found' };
+    }
+
     const url = new URL(request.url);
     if (url.pathname.startsWith('/api/')) {
       set.status = 404;
@@ -83,7 +92,6 @@ if (PROD) {
       headers: { 'Content-Type': 'text/html; charset=utf-8' }
     });
   });
-}
 
 server.listen({ hostname: HOST, port: PORT });
 console.log(`[formatavern] ${PROD ? 'prod' : 'dev'} backend → http://${HOST}:${PORT}`);
