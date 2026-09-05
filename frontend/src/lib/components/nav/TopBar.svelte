@@ -23,15 +23,7 @@
     onOverrideState?: (patch: StateVector) => void;
   } = $props();
 
-  function handleKeydown(e: KeyboardEvent) {
-    if (e.altKey && e.key.toLowerCase() === 'n') {
-      e.preventDefault();
-      onToggleNav();
-    }
-  }
 </script>
-
-<svelte:window onkeydown={handleKeydown} />
 
 <header class="relative z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/80 bg-neutral-900/80 px-3 backdrop-blur-md">
   <!-- Left: Navigation Menu & Home -->

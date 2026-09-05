@@ -19,7 +19,7 @@
 
   let popoverOpen = $state(false);
   let changedKeys = $state<Set<string>>(new Set());
-  let prevState = $state<StateVector>({});
+  let prevState: StateVector = {};
 
   // Detect changed state keys to apply a subtle pulse effect
   $effect(() => {
@@ -30,6 +30,8 @@
         newlyChanged.add(k);
       }
     }
+    prevState = { ...next };
+
     if (newlyChanged.size > 0) {
       changedKeys = newlyChanged;
       const t = setTimeout(() => {
@@ -37,7 +39,6 @@
       }, 700);
       return () => clearTimeout(t);
     }
-    prevState = { ...next };
   });
 
   const sourceMeta: Record<string, { glyph: string; label: string }> = {

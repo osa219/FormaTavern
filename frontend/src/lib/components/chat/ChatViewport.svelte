@@ -9,6 +9,7 @@
   import { prefs } from '$lib/state/prefs.svelte';
   import { toasts } from '$lib/state/toasts.svelte';
 
+  import { handleGlobalKeydown } from '$lib/actions/shortcuts';
   import Backdrop from './Backdrop.svelte';
   import TopBar from '../nav/TopBar.svelte';
   import MessageLog from './MessageLog.svelte';
@@ -29,6 +30,7 @@
   let ready = $state(false);
   let navOpen = $state(false);
   let settingsOpen = $state(false);
+  let directorOpen = $state(false);
   let editingTurn = $state<MessageWithTree | null>(null);
   let deletingTurn = $state<MessageWithTree | null>(null);
 
@@ -140,7 +142,98 @@
       metadata: { standingDirection: dir }
     });
   }
+
+  function closeActiveOverlay(): boolean {
+    if (editingTurn) {
+      editingTurn = null;
+      return true;
+    }
+    if (deletingTurn) {
+      deletingTurn = null;
+      return true;
+    }
+    if (settingsOpen) {
+      settingsOpen = false;
+      return true;
+    }
+    if (navOpen) {
+      navOpen = false;
+      return true;
+    }
+    if (directorOpen) {
+      directorOpen = false;
+      return true;
+    }
+    return false;
+  }
+
+  async function handlePrevSwipe() {
+    const lastMsg = [...session.messages].reverse().find((m) => m.role === 'assistant');
+    if (!lastMsg || lastMsg.siblingIndex <= 0) return;
+    try {
+      const { data } = await api.api.messages({ id: lastMsg.id }).siblings.get();
+      if (Array.isArray(data) && data[lastMsg.siblingIndex - 1]) {
+        await session.select(data[lastMsg.siblingIndex - 1].id);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  async function handleNextSwipe() {
+    const lastMsg = [...session.messages].reverse().find((m) => m.role === 'assistant');
+    if (!lastMsg) return;
+    if (lastMsg.siblingIndex === lastMsg.siblingCount - 1) {
+      await session.regenerate(lastMsg.id);
+      return;
+    }
+    try {
+      const { data } = await api.api.messages({ id: lastMsg.id }).siblings.get();
+      if (Array.isArray(data) && data[lastMsg.siblingIndex + 1]) {
+        await session.select(data[lastMsg.siblingIndex + 1].id);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  function onWindowKeydown(e: KeyboardEvent) {
+    handleGlobalKeydown(
+      e,
+      {
+        onStop: () => {
+          if (session.busy) {
+            session.stop();
+          }
+        },
+        onCloseOverlay: () => {
+          closeActiveOverlay();
+        },
+        onToggleDirector: () => {
+          directorOpen = !directorOpen;
+        },
+        onToggleNav: () => {
+          settingsOpen = false;
+          loadNavData();
+          navOpen = !navOpen;
+        },
+        onPrevSwipe: () => {
+          handlePrevSwipe();
+        },
+        onNextSwipe: () => {
+          handleNextSwipe();
+        },
+        onFocusComposer: () => {
+          const el = document.querySelector<HTMLTextAreaElement>('textarea[data-composer-input]');
+          el?.focus();
+        }
+      },
+      session.busy
+    );
+  }
 </script>
+
+<svelte:window onkeydown={onWindowKeydown} />
 
 <div
   style={themeEngine.styleAttr}
@@ -157,12 +250,13 @@
     chat={session.chat}
     currentState={session.currentState}
     stateSource={session.messages[session.messages.length - 1]?.metadata?.stateSource ?? 'initial'}
-    stateWarnings={session.messages[session.messages.length - 1]?.metadata?.stateWarnings ?? []}
     onToggleNav={() => {
+      settingsOpen = false;
       loadNavData();
-      navOpen = true;
+      navOpen = !navOpen;
     }}
     onToggleSettings={() => {
+      navOpen = false;
       settingsOpen = true;
     }}
     onOverrideState={(patch) => {
@@ -191,6 +285,7 @@
       primaryCharName={session.character?.name || 'Character'}
       npcs={session.chat?.metadata?.npcs || {}}
       standingDirection={session.chat?.metadata?.standingDirection || ''}
+      bind:directorOpen
       onSend={(payload) => session.send(payload)}
       onStop={() => session.stop()}
       onStandingChange={handleStandingDirectionChange}

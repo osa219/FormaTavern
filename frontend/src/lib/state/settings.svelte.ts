@@ -8,6 +8,7 @@ class SettingsStore {
   settings = $state<SettingsView | null>(null);
   loading = $state<boolean>(false);
   saving = $state<boolean>(false);
+  error = $state<string | null>(null);
   private seq = 0;
   private channel: BroadcastChannel | null = null;
 
@@ -24,15 +25,23 @@ class SettingsStore {
 
   async load(): Promise<void> {
     this.loading = true;
+    this.error = null;
     try {
       const { data, error } = await api.api.settings.get();
       if (!error && data && 'provider' in data) {
         this.settings = data as SettingsView;
+        this.error = null;
       } else if (error) {
-        toasts.error(toUiError(error).message);
+        const uiErr = toUiError(error);
+        this.error = uiErr.message;
+        toasts.error(uiErr.message);
+      } else {
+        this.error = 'Failed to load settings';
       }
     } catch (err: any) {
-      toasts.error(toUiError(err).message);
+      const uiErr = toUiError(err);
+      this.error = uiErr.message;
+      toasts.error(uiErr.message);
     } finally {
       this.loading = false;
     }

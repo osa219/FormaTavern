@@ -13,6 +13,7 @@
     primaryCharName = 'Character',
     npcs = {},
     standingDirection = '',
+    directorOpen = $bindable(false),
     onSend,
     onStop,
     onStandingChange
@@ -22,6 +23,7 @@
     primaryCharName?: string;
     npcs?: Record<string, unknown>;
     standingDirection?: string;
+    directorOpen?: boolean;
     onSend: (payload: {
       message?: string;
       directorNote?: string;
@@ -36,7 +38,6 @@
   let directorNote = $state<string>('');
   let narrativeRole = $state<NarrativeRole>('persona');
   let npcName = $state<string>('');
-  let directorOpen = $state<boolean>(false);
   let shakeInput = $state<boolean>(false);
 
   const placeholder = $derived(
@@ -134,6 +135,7 @@
         onkeydown={handleKeydown}
         {placeholder}
         rows="1"
+        data-composer-input="true"
         class="max-h-48 min-h-[2.5rem] w-full resize-none bg-transparent px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none"
         aria-label="Message prompt"
       ></textarea>

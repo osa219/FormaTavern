@@ -83,7 +83,7 @@
   bind:this={dialogEl}
   oncancel={handleCancel}
   onclick={handleBackdropClick}
-  class="fixed inset-0 m-auto flex max-h-[85vh] w-full max-w-2xl flex-col rounded-2xl border border-neutral-800 bg-neutral-900/98 p-6 text-neutral-100 shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-sm max-sm:bottom-0 max-sm:top-auto max-sm:max-h-[90vh] max-sm:max-w-none max-sm:rounded-b-none max-sm:border-x-0 max-sm:border-b-0"
+  class="fixed inset-0 m-auto hidden open:flex max-h-[85vh] w-full max-w-2xl flex-col rounded-2xl border border-neutral-800 bg-neutral-900/98 p-6 text-neutral-100 shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-sm max-sm:bottom-0 max-sm:top-auto max-sm:max-h-[90vh] max-sm:max-w-none max-sm:rounded-b-none max-sm:border-x-0 max-sm:border-b-0"
   aria-labelledby="settings-title"
 >
   <!-- Header -->
@@ -166,10 +166,165 @@
 
   <!-- Body -->
   <div class="flex-1 overflow-y-auto pr-1 text-xs text-neutral-300">
-    {#if !s}
-      <div class="flex h-48 items-center justify-center">
-        <Spinner size={24} class="text-neutral-500" />
+    {#if activeTab === 'a11y'}
+      <div class="flex flex-col gap-4">
+        <p class="text-[11px] text-neutral-400">
+          Accessibility and display preferences are stored locally on this device.
+        </p>
+
+        <!-- Disable Character Themes -->
+        <label class="flex items-center justify-between rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-3 cursor-pointer hover:bg-neutral-850">
+          <div>
+            <div class="font-medium text-neutral-200">Disable Character Themes</div>
+            <div class="text-[11px] text-neutral-400">Forces neutral high-contrast A11Y theme across all chats</div>
+          </div>
+          <input
+            type="checkbox"
+            checked={prefs.disableCharacterThemes}
+            onchange={(e) => {
+              prefs.disableCharacterThemes = e.currentTarget.checked;
+              prefs.save();
+            }}
+            class="h-4 w-4 rounded border-neutral-700 bg-neutral-900 text-accent focus:ring-accent"
+          />
+        </label>
+
+        <!-- Disable Reactive Theming -->
+        <label class="flex items-center justify-between rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-3 cursor-pointer hover:bg-neutral-850">
+          <div>
+            <div class="font-medium text-neutral-200">Disable Reactive Theming</div>
+            <div class="text-[11px] text-neutral-400">Keeps base character theme static without live scene state bindings</div>
+          </div>
+          <input
+            type="checkbox"
+            checked={prefs.disableReactiveTheming}
+            onchange={(e) => {
+              prefs.disableReactiveTheming = e.currentTarget.checked;
+              prefs.save();
+            }}
+            class="h-4 w-4 rounded border-neutral-700 bg-neutral-900 text-accent focus:ring-accent"
+          />
+        </label>
+
+        <!-- Enter to Send -->
+        <label class="flex items-center justify-between rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-3 cursor-pointer hover:bg-neutral-850">
+          <div>
+            <div class="font-medium text-neutral-200">Enter Key Sends Message</div>
+            <div class="text-[11px] text-neutral-400">Press Enter to send, Shift+Enter for new lines</div>
+          </div>
+          <input
+            type="checkbox"
+            checked={prefs.enterToSend}
+            onchange={(e) => {
+              prefs.enterToSend = e.currentTarget.checked;
+              prefs.save();
+            }}
+            class="h-4 w-4 rounded border-neutral-700 bg-neutral-900 text-accent focus:ring-accent"
+          />
+        </label>
+
+        <!-- Reduce Motion -->
+        <div class="flex items-center justify-between rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-3">
+          <div>
+            <div class="font-medium text-neutral-200">Reduced Motion</div>
+            <div class="text-[11px] text-neutral-400">Controls transitions and stream animations</div>
+          </div>
+          <select
+            value={prefs.reducedMotion}
+            onchange={(e) => {
+              prefs.reducedMotion = e.currentTarget.value as any;
+              prefs.save();
+            }}
+            class="rounded-lg border border-neutral-800 bg-neutral-900 px-2.5 py-1 text-xs text-neutral-200"
+          >
+            <option value="system">Follow OS</option>
+            <option value="on">Always reduce</option>
+            <option value="off">Allow motion</option>
+          </select>
+        </div>
+
+        <!-- Dev Mode -->
+        <label class="flex items-center justify-between rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-3 cursor-pointer hover:bg-neutral-850">
+          <div>
+            <div class="font-medium text-neutral-200">Developer Diagnostics Overlay</div>
+            <div class="text-[11px] text-neutral-400">Shows frame cost, commit counts, and raw envelope inspector</div>
+          </div>
+          <input
+            type="checkbox"
+            checked={prefs.devMode}
+            onchange={(e) => {
+              prefs.devMode = e.currentTarget.checked;
+              prefs.save();
+            }}
+            class="h-4 w-4 rounded border-neutral-700 bg-neutral-900 text-accent focus:ring-accent"
+          />
+        </label>
       </div>
+    {:else if activeTab === 'shortcuts'}
+      <div class="flex flex-col gap-3">
+        <p class="text-[11px] text-neutral-400">
+          FormaTavern keyboard shortcuts designed for fluid, keyboard-first storytelling.
+        </p>
+
+        <div class="grid grid-cols-[1fr_auto] items-center gap-y-2.5 border-t border-neutral-800 pt-3">
+          <span class="text-neutral-300">Send message</span>
+          <div class="flex items-center gap-1">
+            <Kbd>Enter</Kbd> <span class="text-neutral-500">or</span> <Kbd>Ctrl</Kbd>+<Kbd>Enter</Kbd>
+          </div>
+
+          <span class="text-neutral-300">Insert newline</span>
+          <div>
+            <Kbd>Shift</Kbd>+<Kbd>Enter</Kbd>
+          </div>
+
+          <span class="text-neutral-300">Stop generation / Close modal</span>
+          <div>
+            <Kbd>Esc</Kbd>
+          </div>
+
+          <span class="text-neutral-300">Previous / Next swipe on latest turn</span>
+          <div class="flex items-center gap-1">
+            <Kbd>Alt</Kbd>+<Kbd>←</Kbd> <span class="text-neutral-500">/</span> <Kbd>Alt</Kbd>+<Kbd>→</Kbd>
+          </div>
+
+          <span class="text-neutral-300">Toggle Director drawer</span>
+          <div>
+            <Kbd>Alt</Kbd>+<Kbd>D</Kbd>
+          </div>
+
+          <span class="text-neutral-300">Toggle State HUD popover</span>
+          <div>
+            <Kbd>Alt</Kbd>+<Kbd>S</Kbd>
+          </div>
+
+          <span class="text-neutral-300">Toggle Navigation drawer</span>
+          <div>
+            <Kbd>Alt</Kbd>+<Kbd>N</Kbd>
+          </div>
+
+          <span class="text-neutral-300">Focus composer</span>
+          <div>
+            <Kbd>/</Kbd>
+          </div>
+        </div>
+      </div>
+    {:else if !s}
+      {#if settingsStore.error}
+        <div class="flex h-48 flex-col items-center justify-center gap-3 text-center">
+          <p class="text-xs text-red-400">{settingsStore.error}</p>
+          <button
+            type="button"
+            onclick={() => settingsStore.load()}
+            class="rounded-xl border border-neutral-800 bg-neutral-850 px-3.5 py-1.5 text-xs font-semibold text-neutral-200 transition-colors hover:bg-neutral-800 hover:text-white"
+          >
+            Retry
+          </button>
+        </div>
+      {:else}
+        <div class="flex h-48 items-center justify-center">
+          <Spinner size={24} class="text-neutral-500" />
+        </div>
+      {/if}
     {:else if activeTab === 'provider'}
       <div class="flex flex-col gap-4">
         <!-- Provider Selector -->
@@ -391,148 +546,6 @@
             oninput={(e) => queuePatch({ preamble: e.currentTarget.value }, 600)}
             class="w-full rounded-xl border border-neutral-800 bg-neutral-950 p-3 font-mono text-xs text-neutral-200 focus:border-neutral-700 focus:outline-none"
           ></textarea>
-        </div>
-      </div>
-    {:else if activeTab === 'a11y'}
-      <div class="flex flex-col gap-4">
-        <p class="text-[11px] text-neutral-400">
-          Accessibility and display preferences are stored locally on this device.
-        </p>
-
-        <!-- Disable Character Themes -->
-        <label class="flex items-center justify-between rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-3 cursor-pointer hover:bg-neutral-850">
-          <div>
-            <div class="font-medium text-neutral-200">Disable Character Themes</div>
-            <div class="text-[11px] text-neutral-400">Forces neutral high-contrast A11Y theme across all chats</div>
-          </div>
-          <input
-            type="checkbox"
-            checked={prefs.disableCharacterThemes}
-            onchange={(e) => {
-              prefs.disableCharacterThemes = e.currentTarget.checked;
-              prefs.save();
-            }}
-            class="h-4 w-4 rounded border-neutral-700 bg-neutral-900 text-accent focus:ring-accent"
-          />
-        </label>
-
-        <!-- Disable Reactive Theming -->
-        <label class="flex items-center justify-between rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-3 cursor-pointer hover:bg-neutral-850">
-          <div>
-            <div class="font-medium text-neutral-200">Disable Reactive Theming</div>
-            <div class="text-[11px] text-neutral-400">Keeps base character theme static without live scene state bindings</div>
-          </div>
-          <input
-            type="checkbox"
-            checked={prefs.disableReactiveTheming}
-            onchange={(e) => {
-              prefs.disableReactiveTheming = e.currentTarget.checked;
-              prefs.save();
-            }}
-            class="h-4 w-4 rounded border-neutral-700 bg-neutral-900 text-accent focus:ring-accent"
-          />
-        </label>
-
-        <!-- Enter to Send -->
-        <label class="flex items-center justify-between rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-3 cursor-pointer hover:bg-neutral-850">
-          <div>
-            <div class="font-medium text-neutral-200">Enter Key Sends Message</div>
-            <div class="text-[11px] text-neutral-400">Press Enter to send, Shift+Enter for new lines</div>
-          </div>
-          <input
-            type="checkbox"
-            checked={prefs.enterToSend}
-            onchange={(e) => {
-              prefs.enterToSend = e.currentTarget.checked;
-              prefs.save();
-            }}
-            class="h-4 w-4 rounded border-neutral-700 bg-neutral-900 text-accent focus:ring-accent"
-          />
-        </label>
-
-        <!-- Reduce Motion -->
-        <div class="flex items-center justify-between rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-3">
-          <div>
-            <div class="font-medium text-neutral-200">Reduced Motion</div>
-            <div class="text-[11px] text-neutral-400">Controls transitions and stream animations</div>
-          </div>
-          <select
-            value={prefs.reducedMotion}
-            onchange={(e) => {
-              prefs.reducedMotion = e.currentTarget.value as any;
-              prefs.save();
-            }}
-            class="rounded-lg border border-neutral-800 bg-neutral-900 px-2.5 py-1 text-xs text-neutral-200"
-          >
-            <option value="system">Follow OS</option>
-            <option value="on">Always reduce</option>
-            <option value="off">Allow motion</option>
-          </select>
-        </div>
-
-        <!-- Dev Mode -->
-        <label class="flex items-center justify-between rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-3 cursor-pointer hover:bg-neutral-850">
-          <div>
-            <div class="font-medium text-neutral-200">Developer Diagnostics Overlay</div>
-            <div class="text-[11px] text-neutral-400">Shows frame cost, commit counts, and raw envelope inspector</div>
-          </div>
-          <input
-            type="checkbox"
-            checked={prefs.devMode}
-            onchange={(e) => {
-              prefs.devMode = e.currentTarget.checked;
-              prefs.save();
-            }}
-            class="h-4 w-4 rounded border-neutral-700 bg-neutral-900 text-accent focus:ring-accent"
-          />
-        </label>
-      </div>
-    {:else if activeTab === 'shortcuts'}
-      <div class="flex flex-col gap-3">
-        <p class="text-[11px] text-neutral-400">
-          FormaTavern keyboard shortcuts designed for fluid, keyboard-first storytelling.
-        </p>
-
-        <div class="grid grid-cols-[1fr_auto] items-center gap-y-2.5 border-t border-neutral-800 pt-3">
-          <span class="text-neutral-300">Send message</span>
-          <div class="flex items-center gap-1">
-            <Kbd>Enter</Kbd> <span class="text-neutral-500">or</span> <Kbd>Ctrl</Kbd>+<Kbd>Enter</Kbd>
-          </div>
-
-          <span class="text-neutral-300">Insert newline</span>
-          <div>
-            <Kbd>Shift</Kbd>+<Kbd>Enter</Kbd>
-          </div>
-
-          <span class="text-neutral-300">Stop generation / Close modal</span>
-          <div>
-            <Kbd>Esc</Kbd>
-          </div>
-
-          <span class="text-neutral-300">Previous / Next swipe on latest turn</span>
-          <div class="flex items-center gap-1">
-            <Kbd>Alt</Kbd>+<Kbd>←</Kbd> <span class="text-neutral-500">/</span> <Kbd>Alt</Kbd>+<Kbd>→</Kbd>
-          </div>
-
-          <span class="text-neutral-300">Toggle Director drawer</span>
-          <div>
-            <Kbd>Alt</Kbd>+<Kbd>D</Kbd>
-          </div>
-
-          <span class="text-neutral-300">Toggle State HUD popover</span>
-          <div>
-            <Kbd>Alt</Kbd>+<Kbd>S</Kbd>
-          </div>
-
-          <span class="text-neutral-300">Toggle Navigation drawer</span>
-          <div>
-            <Kbd>Alt</Kbd>+<Kbd>N</Kbd>
-          </div>
-
-          <span class="text-neutral-300">Focus composer</span>
-          <div>
-            <Kbd>/</Kbd>
-          </div>
         </div>
       </div>
     {/if}

@@ -199,3 +199,8 @@
 .bubble-tail[data-tail="none"]::after {
   display: none;
 }
+
+/* Ensure native dialog elements are hidden when closed, even with Tailwind display utilities like .flex */
+dialog:not([open]) {
+  display: none !important;
+}

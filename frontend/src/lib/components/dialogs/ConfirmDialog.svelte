@@ -52,7 +52,7 @@
   bind:this={dialogEl}
   oncancel={handleCancel}
   onclick={handleBackdropClick}
-  class="fixed inset-0 m-auto w-full max-w-md rounded-2xl border border-neutral-800 bg-neutral-900/98 p-6 text-neutral-100 shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-sm max-sm:bottom-0 max-sm:top-auto max-sm:max-w-none max-sm:rounded-b-none max-sm:border-x-0 max-sm:border-b-0"
+  class="fixed inset-0 m-auto hidden open:block w-full max-w-md rounded-2xl border border-neutral-800 bg-neutral-900/98 p-6 text-neutral-100 shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-sm max-sm:bottom-0 max-sm:top-auto max-sm:max-w-none max-sm:rounded-b-none max-sm:border-x-0 max-sm:border-b-0"
   aria-labelledby="confirm-dialog-title"
   aria-describedby="confirm-dialog-desc"
 >

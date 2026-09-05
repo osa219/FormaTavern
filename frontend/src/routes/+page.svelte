@@ -96,7 +96,20 @@
   }
 
   const charMap = $derived(new Map(characters.map((c) => [c.id, c])));
+
+  function handleKeydown(e: KeyboardEvent) {
+    if (e.key === 'Escape') {
+      if (confirmDeleteOpen) {
+        confirmDeleteOpen = false;
+        deleteChatId = null;
+      } else if (settingsOpen) {
+        settingsOpen = false;
+      }
+    }
+  }
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 <div class="min-h-screen bg-neutral-950 text-neutral-100 font-sans">
   <!-- Header -->
