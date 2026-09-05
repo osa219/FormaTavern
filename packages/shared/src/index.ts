@@ -1,4 +1,4 @@
-export const SHARED_VERSION = '0.3.0-phase3';
+export const SHARED_VERSION = '0.4.0-phase4';
 
 export interface HealthResponse {
   ok: true;
@@ -32,3 +32,4 @@ export * from './text/macros';
 export * from './text/stop';
 export * from './fixtures/stream';
 export * from './fixtures/envelope';
+export * from './theme';
