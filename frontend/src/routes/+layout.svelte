@@ -1,11 +1,15 @@
 <script lang="ts">
-	import favicon from '$lib/assets/favicon.svg';
+  import '../app.css';
+  import favicon from '$lib/assets/favicon.svg';
+  import Toaster from '$lib/components/ui/Toaster.svelte';
 
-	let { children } = $props();
+  let { children } = $props();
 </script>
 
 <svelte:head>
-	<link rel="icon" href={favicon} />
+  <link rel="icon" href={favicon} />
 </svelte:head>
 
 {@render children()}
+
+<Toaster />
