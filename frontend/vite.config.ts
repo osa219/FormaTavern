@@ -1,8 +1,9 @@
 import { sveltekit } from '@sveltejs/kit/vite';
+import tailwindcss from '@tailwindcss/vite';
 import { defineConfig, searchForWorkspaceRoot } from 'vite';
 
 export default defineConfig({
-  plugins: [sveltekit()],
+  plugins: [sveltekit(), tailwindcss()],
   server: {
     host: '127.0.0.1',
     port: 5173,
@@ -29,6 +30,10 @@ export default defineConfig({
             }
           });
         }
+      },
+      '/assets': {
+        target: 'http://127.0.0.1:3000',
+        changeOrigin: true
       }
     }
   }

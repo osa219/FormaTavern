@@ -9,7 +9,7 @@
     "build": "bun run --cwd frontend build",
     "start": "NODE_ENV=production bun run --cwd backend start",
     "typecheck": "bun run --cwd packages/shared typecheck && bun run --cwd backend typecheck && bun run --cwd frontend check",
-    "test": "bun run --cwd packages/shared test && bun run --cwd backend test",
+    "test": "bun run --cwd packages/shared test && bun run --cwd backend test && bun run --cwd frontend test",
     "db:migrate": "bun run --cwd backend db:migrate",
     "db:seed": "bun run --cwd backend db:seed",
     "db:check": "bun run --cwd backend db:check",

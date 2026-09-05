@@ -1,0 +1,201 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/cinzel";
+@import "@fontsource-variable/playfair-display";
+@import "@fontsource-variable/jetbrains-mono";
+
+:root {
+  /* Neutral defaults for every --theme-* so Foyer and drawers render without a theme root */
+  --theme-font-family: 'Inter Variable', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --theme-font-size: 1rem;
+  --theme-line-height: 1.7;
+  --theme-char-bg: rgb(30, 41, 59);
+  --theme-char-text: rgb(241, 245, 249);
+  --theme-char-border: transparent;
+  --theme-user-bg: rgba(15, 23, 42, 0.8);
+  --theme-user-text: #f8fafc;
+  --theme-user-border: transparent;
+  --theme-accent: #38bdf8;
+  --theme-quote-color: #fde047;
+  --theme-action-color: rgb(148, 163, 184);
+  --theme-narrator-color: rgb(203, 213, 225);
+  --theme-bubble-radius: 1rem;
+  --theme-bubble-padding: 1rem 1.25rem;
+  --theme-bg-img: none;
+  --theme-bg-blur: 0px;
+  --theme-bg-overlay: rgba(0, 0, 0, 0.5);
+  --theme-char-tail: left;
+  --theme-user-tail: right;
+  --theme-scheme: dark;
+
+  /* Neutral palette */
+  --n-950: #0a0a0c;
+  --n-900: #121216;
+  --n-800: #1e1e24;
+  --n-700: #2d2d37;
+  --n-600: #454554;
+  --n-500: #717182;
+  --n-400: #9e9eb0;
+  --n-300: #c4c4d2;
+  --n-200: #e2e2ec;
+  --n-100: #f1f1f7;
+  --n-50:  #fbfbfe;
+
+  /* Chrome palette borrowing a whisper (<= 8%) of character accent */
+  --chrome-bg: color-mix(in oklab, var(--n-950), var(--theme-accent) 6%);
+  --chrome-surface: color-mix(in oklab, var(--n-900), var(--theme-accent) 8%);
+  --chrome-line: color-mix(in oklab, var(--n-800), var(--theme-accent) 10%);
+  --chrome-focus: var(--n-200);
+
+  /* Motion tokens */
+  --motion-theme: 600ms;
+  --motion-ui: 180ms;
+  --motion-enter: 240ms;
+  --motion-ease: cubic-bezier(.22, 1, .36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-theme: 0ms;
+    --motion-ui: 0ms;
+    --motion-enter: 0ms;
+  }
+}
+
+/* Anti-strobe custom properties interpolation */
+@property --theme-accent { syntax: '<color>'; inherits: true; initial-value: #94a3b8; }
+@property --theme-char-bg { syntax: '<color>'; inherits: true; initial-value: #1e293b; }
+@property --theme-char-text { syntax: '<color>'; inherits: true; initial-value: #f1f5f9; }
+@property --theme-char-border { syntax: '<color>'; inherits: true; initial-value: transparent; }
+@property --theme-user-bg { syntax: '<color>'; inherits: true; initial-value: #0f172a; }
+@property --theme-user-text { syntax: '<color>'; inherits: true; initial-value: #f8fafc; }
+@property --theme-user-border { syntax: '<color>'; inherits: true; initial-value: transparent; }
+@property --theme-quote-color { syntax: '<color>'; inherits: true; initial-value: #fde047; }
+@property --theme-action-color { syntax: '<color>'; inherits: true; initial-value: #94a3b8; }
+@property --theme-narrator-color { syntax: '<color>'; inherits: true; initial-value: #cbd5e1; }
+@property --theme-bg-overlay { syntax: '<color>'; inherits: true; initial-value: rgba(0, 0, 0, 0.5); }
+@property --theme-bubble-radius { syntax: '<length>'; inherits: true; initial-value: 1rem; }
+@property --theme-bg-blur { syntax: '<length>'; inherits: true; initial-value: 0px; }
+
+@theme inline {
+  --color-char-bg: var(--theme-char-bg);
+  --color-char-text: var(--theme-char-text);
+  --color-char-border: var(--theme-char-border);
+  --color-user-bg: var(--theme-user-bg);
+  --color-user-text: var(--theme-user-text);
+  --color-user-border: var(--theme-user-border);
+  --color-accent: var(--theme-accent);
+  --color-quote: var(--theme-quote-color);
+  --color-action: var(--theme-action-color);
+  --color-narrator: var(--theme-narrator-color);
+  --color-chrome-bg: var(--chrome-bg);
+  --color-chrome-surface: var(--chrome-surface);
+  --color-chrome-line: var(--chrome-line);
+  --font-narrative: var(--theme-font-family);
+  --font-chrome: 'Inter Variable', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', monospace;
+  --radius-bubble: var(--theme-bubble-radius);
+}
+
+.theme-root {
+  transition:
+    --theme-accent var(--motion-theme) var(--motion-ease),
+    --theme-char-bg var(--motion-theme) var(--motion-ease),
+    --theme-char-text var(--motion-theme) var(--motion-ease),
+    --theme-char-border var(--motion-theme) var(--motion-ease),
+    --theme-user-bg var(--motion-theme) var(--motion-ease),
+    --theme-user-text var(--motion-theme) var(--motion-ease),
+    --theme-user-border var(--motion-theme) var(--motion-ease),
+    --theme-quote-color var(--motion-theme) var(--motion-ease),
+    --theme-action-color var(--motion-theme) var(--motion-ease),
+    --theme-narrator-color var(--motion-theme) var(--motion-ease),
+    --theme-bg-overlay var(--motion-theme) var(--motion-ease),
+    --theme-bubble-radius var(--motion-theme) var(--motion-ease),
+    --theme-bg-blur var(--motion-theme) var(--motion-ease);
+}
+
+.theme-root[data-transitions="off"] {
+  transition: none !important;
+}
+
+/* Roleplay prose styling */
+.prose-roleplay {
+  text-wrap: pretty;
+}
+
+.prose-roleplay p {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose-roleplay p:first-child {
+  margin-top: 0;
+}
+
+.prose-roleplay p:last-child {
+  margin-bottom: 0;
+}
+
+.prose-roleplay q.speech {
+  color: var(--theme-quote-color);
+  font-weight: 500;
+  quotes: none;
+}
+
+.prose-roleplay em {
+  color: var(--theme-action-color);
+  font-style: italic;
+}
+
+.prose-roleplay strong {
+  font-weight: 600;
+}
+
+.prose-roleplay code {
+  font-family: var(--font-mono);
+  background: rgba(0, 0, 0, 0.25);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+}
+
+.prose-roleplay pre {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+}
+
+/* Speech bubble tails */
+.bubble-tail {
+  position: relative;
+}
+
+.bubble-tail[data-tail="left"]::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -8px;
+  width: 0;
+  height: 0;
+  border-top: 8px solid transparent;
+  border-right: 8px solid var(--bubble-tail-color, var(--theme-char-bg));
+  border-bottom: 0;
+}
+
+.bubble-tail[data-tail="right"]::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: -8px;
+  width: 0;
+  height: 0;
+  border-top: 8px solid transparent;
+  border-left: 8px solid var(--bubble-tail-color, var(--theme-user-bg));
+  border-bottom: 0;
+}
+
+.bubble-tail[data-tail="none"]::after {
+  display: none;
+}
