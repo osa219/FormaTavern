@@ -6,6 +6,7 @@ export interface ShortcutHandlers {
   onToggleDirector?: () => void;
   onToggleStateHud?: () => void;
   onToggleNav?: () => void;
+  onToggleLore?: () => void;
   onFocusComposer?: () => void;
 }
 
@@ -72,6 +73,13 @@ export function handleGlobalKeydown(e: KeyboardEvent, handlers: ShortcutHandlers
   if (e.altKey && (e.key === 'n' || e.key === 'N')) {
     e.preventDefault();
     handlers.onToggleNav?.();
+    return;
+  }
+
+  // Alt + L: Toggle Lore Drawer
+  if (e.altKey && (e.key === 'l' || e.key === 'L')) {
+    e.preventDefault();
+    handlers.onToggleLore?.();
     return;
   }
 

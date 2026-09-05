@@ -47,26 +47,30 @@ describe('Architecture & Boundary Police (Invariant U2, U3, U6)', () => {
     }
   });
 
-  it('ensures parseEnvelope is imported ONLY in stream.svelte.ts (Invariant U3)', () => {
+  it('ensures parseEnvelope is imported ONLY in stream.svelte.ts and greetingPreview.ts (Invariant U3, Amendment A-U3)', () => {
     for (const file of allSourceFiles) {
       const normalizedPath = file.replace(/\\/g, '/');
       if (normalizedPath.includes('/routes/dev/')) continue;
-      const isStreamController = normalizedPath.endsWith('/lib/state/stream.svelte.ts');
+      const isApprovedParserModule =
+        normalizedPath.endsWith('/lib/state/stream.svelte.ts') ||
+        normalizedPath.endsWith('/lib/studio/greetingPreview.ts');
       const content = readFileSync(file, 'utf-8');
       if (content.includes('parseEnvelope')) {
-        expect(isStreamController).toBe(true);
+        expect(isApprovedParserModule).toBe(true);
       }
     }
   });
 
-  it('ensures {@html is used ONLY inside Markdown.svelte (Sanitization Guard)', () => {
+  it('ensures {@html is used ONLY inside Markdown.svelte and ShowcaseBody.svelte (Sanitization Guard, Amendment A-U2)', () => {
     for (const file of allSourceFiles) {
       const normalizedPath = file.replace(/\\/g, '/');
       if (normalizedPath.includes('/routes/dev/')) continue;
-      const isMarkdownComponent = normalizedPath.endsWith('/lib/components/ui/Markdown.svelte');
+      const isApprovedHtmlSink =
+        normalizedPath.endsWith('/lib/components/ui/Markdown.svelte') ||
+        normalizedPath.endsWith('/lib/components/showcase/ShowcaseBody.svelte');
       const content = readFileSync(file, 'utf-8');
       if (content.includes('{@html')) {
-        expect(isMarkdownComponent).toBe(true);
+        expect(isApprovedHtmlSink).toBe(true);
       }
     }
   });

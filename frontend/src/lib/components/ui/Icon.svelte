@@ -11,6 +11,7 @@
       | 'continue'
       | 'chevron-left'
       | 'chevron-right'
+      | 'arrow-left'
       | 'edit'
       | 'trash'
       | 'copy'
@@ -18,10 +19,16 @@
       | 'settings'
       | 'menu'
       | 'close'
+      | 'x'
       | 'check'
       | 'arrow-down'
       | 'plus'
-      | 'sparkles';
+      | 'sparkles'
+      | 'user'
+      | 'upload'
+      | 'more-horizontal'
+      | 'star'
+      | 'book';
     size?: number;
     class?: string;
   } = $props();
@@ -76,9 +83,28 @@
     <line x1="4" x2="20" y1="12" y2="12" />
     <line x1="4" x2="20" y1="6" y2="6" />
     <line x1="4" x2="20" y1="18" y2="18" />
-  {:else if name === 'close'}
+  {:else if name === 'close' || name === 'x'}
     <path d="M18 6 6 18" />
     <path d="m6 6 12 12" />
+  {:else if name === 'arrow-left'}
+    <path d="m12 19-7-7 7-7" />
+    <path d="M19 12H5" />
+  {:else if name === 'user'}
+    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
+  {:else if name === 'upload'}
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="17 8 12 3 7 8" />
+    <line x1="12" x2="12" y1="3" y2="15" />
+  {:else if name === 'more-horizontal'}
+    <circle cx="12" cy="12" r="1" />
+    <circle cx="19" cy="12" r="1" />
+    <circle cx="5" cy="12" r="1" />
+  {:else if name === 'star'}
+    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+  {:else if name === 'book'}
+    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
+    <path d="M6 2v20" />
   {:else if name === 'check'}
     <path d="M20 6 9 17l-5-5" />
   {:else if name === 'arrow-down'}

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ChatView, CharacterCard } from '@formatavern/shared';
+  import type { ChatView, CharacterCard, CharacterSummary } from '@formatavern/shared';
   import Icon from '../ui/Icon.svelte';
   import Spinner from '../ui/Spinner.svelte';
   import ConfirmDialog from '../dialogs/ConfirmDialog.svelte';
@@ -17,7 +17,7 @@
     open: boolean;
     activeChatId?: string;
     chats?: ChatView[];
-    characters?: CharacterCard[];
+    characters?: (CharacterCard | CharacterSummary)[];
     onClose: () => void;
     onSelectChat?: (chatId: string) => void;
     onNewChat?: (characterId?: string) => void;
@@ -44,7 +44,7 @@
 
   // Group chats by character
   const groupedChats = $derived.by(() => {
-    const groups: { character: CharacterCard | null; characterId: string; items: ChatView[] }[] = [];
+    const groups: { character: CharacterCard | CharacterSummary | null; characterId: string; items: ChatView[] }[] = [];
     const map = new Map<string, ChatView[]>();
 
     for (const chat of chats) {

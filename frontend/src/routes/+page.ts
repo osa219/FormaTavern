@@ -1,20 +1,22 @@
 import type { PageLoad } from './$types';
-import type { CharacterCard, ChatView } from '@formatavern/shared';
+import type { CharacterSummary, ChatView } from '@formatavern/shared';
 
 export const load: PageLoad = async ({ fetch }) => {
   try {
     const [charsRes, chatsRes] = await Promise.all([
-      fetch('/api/characters').then((r) => (r.ok ? r.json() : [])),
+      fetch('/api/characters').then((r) => (r.ok ? r.json() : { items: [] })),
       fetch('/api/chats').then((r) => (r.ok ? r.json() : []))
     ]);
 
+    const characters = Array.isArray(charsRes) ? charsRes : charsRes?.items ?? [];
+
     return {
-      characters: (charsRes ?? []) as CharacterCard[],
-      chats: (chatsRes ?? []) as ChatView[]
+      characters: characters as CharacterSummary[],
+      chats: (Array.isArray(chatsRes) ? chatsRes : []) as ChatView[]
     };
   } catch {
     return {
-      characters: [] as CharacterCard[],
+      characters: [] as CharacterSummary[],
       chats: [] as ChatView[]
     };
   }

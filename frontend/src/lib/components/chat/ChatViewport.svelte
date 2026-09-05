@@ -3,7 +3,7 @@
   import { goto } from '$app/navigation';
   import type { ChatSession } from '$lib/state/session.svelte';
   import type { ThemeEngine } from '$lib/theme/engine.svelte';
-  import type { CharacterCard, ChatView, MessageWithTree, StateVector } from '@formatavern/shared';
+  import type { CharacterCard, ChatView, MessageWithTree, Persona, StateVector } from '@formatavern/shared';
   import { api, toUiError } from '$lib/api';
   import { media } from '$lib/state/media.svelte';
   import { prefs } from '$lib/state/prefs.svelte';
@@ -15,6 +15,7 @@
   import MessageLog from './MessageLog.svelte';
   import Composer from '../composer/Composer.svelte';
   import NavDrawer from '../nav/NavDrawer.svelte';
+  import LoreDrawer from './LoreDrawer.svelte';
   import SettingsSheet from '../settings/SettingsSheet.svelte';
   import EditTurnDialog from '../dialogs/EditTurnDialog.svelte';
   import ConfirmDialog from '../dialogs/ConfirmDialog.svelte';
@@ -29,6 +30,7 @@
 
   let ready = $state(false);
   let navOpen = $state(false);
+  let loreOpen = $state(false);
   let settingsOpen = $state(false);
   let directorOpen = $state(false);
   let editingTurn = $state<MessageWithTree | null>(null);
@@ -36,6 +38,7 @@
 
   let navChats = $state<ChatView[]>([]);
   let navCharacters = $state<CharacterCard[]>([]);
+  let personas = $state<Persona[]>([]);
 
   // First-frame gate for transitions to avoid neutral swoop on load
   onMount(() => {
@@ -57,9 +60,10 @@
 
   async function loadNavData() {
     try {
-      const [chatsRes, charsRes] = await Promise.all([
+      const [chatsRes, charsRes, personasRes] = await Promise.all([
         api.api.chats.get(),
-        api.api.characters.get()
+        api.api.characters.get(),
+        api.api.personas.get()
       ]);
       if (chatsRes.data && Array.isArray(chatsRes.data)) {
         navChats = chatsRes.data as ChatView[];
@@ -67,8 +71,36 @@
       if (charsRes.data && Array.isArray(charsRes.data)) {
         navCharacters = charsRes.data as CharacterCard[];
       }
+      if (personasRes.data && Array.isArray(personasRes.data)) {
+        personas = personasRes.data as Persona[];
+      }
     } catch {
       // Non-fatal
+    }
+  }
+
+  async function handleSwitchPersona(personaId: string) {
+    if (session.busy) {
+      toasts.error('Cannot switch persona while companion is generating');
+      return;
+    }
+    try {
+      const res = await (api.api.chats({ id: session.chatId }).patch as any)({
+        activePersonaId: personaId
+      });
+      if (res.error) {
+        toasts.error(toUiError(res.error).message);
+        return;
+      }
+      const target = personas.find((p) => p.id === personaId);
+      if (target) {
+        session.persona = target;
+        toasts.success(
+          `You are now ${target.name} — future replies address you as ${target.name}; earlier turns are unchanged.`
+        );
+      }
+    } catch (err: any) {
+      toasts.error(toUiError(err).message);
     }
   }
 
@@ -156,6 +188,10 @@
       settingsOpen = false;
       return true;
     }
+    if (loreOpen) {
+      loreOpen = false;
+      return true;
+    }
     if (navOpen) {
       navOpen = false;
       return true;
@@ -214,8 +250,15 @@
         },
         onToggleNav: () => {
           settingsOpen = false;
+          loreOpen = false;
           loadNavData();
           navOpen = !navOpen;
+        },
+        onToggleLore: () => {
+          settingsOpen = false;
+          navOpen = false;
+          directorOpen = false;
+          loreOpen = !loreOpen;
         },
         onPrevSwipe: () => {
           handlePrevSwipe();
@@ -257,7 +300,14 @@
     }}
     onToggleSettings={() => {
       navOpen = false;
+      loreOpen = false;
       settingsOpen = true;
+    }}
+    onToggleLore={() => {
+      settingsOpen = false;
+      navOpen = false;
+      directorOpen = false;
+      loreOpen = !loreOpen;
     }}
     onOverrideState={(patch) => {
       session.overrideState(patch);
@@ -368,5 +418,21 @@
     onCancel={() => {
       deletingTurn = null;
     }}
+  />
+{/if}
+
+<!-- In-Chat Lore Drawer (Alt+L) rendered on theme root -->
+{#if session.character}
+  <LoreDrawer
+    open={loreOpen}
+    character={session.character}
+    chat={session.chat}
+    currentPersona={session.persona}
+    {personas}
+    currentState={session.currentState}
+    busy={session.busy}
+    onClose={() => (loreOpen = false)}
+    onSwitchPersona={handleSwitchPersona}
+    onOpenStateOverride={() => (directorOpen = true)}
   />
 {/if}

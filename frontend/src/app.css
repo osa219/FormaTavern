@@ -204,3 +204,118 @@
 dialog:not([open]) {
   display: none !important;
 }
+
+/* Author-authored Companion Showcase styling (A-U2) */
+.showcase-body {
+  color: var(--n-200);
+  font-family: var(--font-chrome);
+  line-height: 1.75;
+  text-wrap: pretty;
+}
+
+.showcase-body h1,
+.showcase-body h2,
+.showcase-body h3,
+.showcase-body h4,
+.showcase-body h5,
+.showcase-body h6 {
+  color: var(--n-50);
+  font-weight: 700;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.25;
+}
+
+.showcase-body h1 { font-size: 2rem; }
+.showcase-body h2 { font-size: 1.5rem; }
+.showcase-body h3 { font-size: 1.25rem; }
+
+.showcase-body p {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.showcase-body a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.showcase-body blockquote {
+  border-left: 3px solid var(--chrome-line);
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: var(--n-400);
+  font-style: italic;
+}
+
+.showcase-body ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin: 0.75rem 0;
+}
+
+.showcase-body ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin: 0.75rem 0;
+}
+
+.showcase-body li {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.showcase-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+}
+
+.showcase-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.showcase-body th,
+.showcase-body td {
+  border: 1px solid var(--chrome-line);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.showcase-body th {
+  background: var(--chrome-surface);
+  color: var(--n-100);
+  font-weight: 600;
+}
+
+.showcase-body hr {
+  border: 0;
+  border-top: 1px solid var(--chrome-line);
+  margin: 2rem 0;
+}
+
+.showcase-body code {
+  font-family: var(--font-mono);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+}
+
+.showcase-body pre {
+  background: var(--n-900);
+  border: 1px solid var(--chrome-line);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.showcase-body pre code {
+  background: transparent;
+  padding: 0;
+}

@@ -11,6 +11,7 @@
     stateWarnings = [],
     onToggleNav,
     onToggleSettings,
+    onToggleLore,
     onOverrideState
   }: {
     character?: CharacterCard | null;
@@ -20,6 +21,7 @@
     stateWarnings?: string[];
     onToggleNav: () => void;
     onToggleSettings: () => void;
+    onToggleLore?: () => void;
     onOverrideState?: (patch: StateVector) => void;
   } = $props();
 
@@ -86,6 +88,18 @@
         schema={character.stateSchema}
         onOverride={onOverrideState}
       />
+    {/if}
+
+    {#if onToggleLore}
+      <button
+        type="button"
+        onclick={onToggleLore}
+        class="flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-800 bg-neutral-850 text-neutral-300 transition-colors hover:bg-neutral-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        aria-label="Open lore codex (Alt+L)"
+        title="Codex & Lore (Alt+L)"
+      >
+        <Icon name="book" size={16} />
+      </button>
     {/if}
 
     <button
