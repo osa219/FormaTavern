@@ -22,7 +22,8 @@ export const ChatMetadataSchema = Type.Object({
       Type.Object({
         displayName: Type.String(),
         avatar: Type.Optional(Type.String()),
-        accent: Type.Optional(Type.String())
+        accent: Type.Optional(Type.String()),
+        voice: Type.Optional(Type.String())
       })
     )
   ),

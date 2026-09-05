@@ -29,11 +29,12 @@ export interface ModelInfo {
   contextLength: number;
 }
 
-export interface AbortSignal {
+export interface AbortSignalLike {
   readonly aborted: boolean;
-  addEventListener?(type: string, listener: (...args: any[]) => void): void;
-  removeEventListener?(type: string, listener: (...args: any[]) => void): void;
+  addEventListener(type: 'abort', cb: () => void, opts?: { once?: boolean }): void;
+  removeEventListener(type: 'abort', cb: () => void): void;
 }
+export type AbortSignal = AbortSignalLike;
 
 export interface LLMProvider {
   id: string;
@@ -45,5 +46,5 @@ export interface LLMProvider {
     nativeStateChannel: boolean;
   };
   listModels?(): Promise<ModelInfo[]>;
-  generate(req: LLMRequest, signal?: AbortSignal): AsyncIterable<StreamEvent>;
+  generate(req: LLMRequest, signal?: AbortSignalLike): AsyncIterable<StreamEvent>;
 }
