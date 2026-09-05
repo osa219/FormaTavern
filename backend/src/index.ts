@@ -7,7 +7,9 @@ import { openDatabase } from './db/connection';
 import { runMigrations } from './db/migrate';
 import { createRepositories } from './db/repositories';
 import { seed } from './db/seeds/seed';
-import { createProviders } from './providers';
+import { recoverStaleGenerations } from './engine/recovery';
+import { GenerationHubImpl } from './engine/hub';
+import { ProviderRegistryImpl } from './engine/providers';
 
 const HOST = process.env.FORMATAVERN_HOST ?? '127.0.0.1';
 const PORT = Number(process.env.FORMATAVERN_PORT ?? 3000);
@@ -26,8 +28,40 @@ ensureDataDirs();
 // 2. Open SQLite database & apply pragmas
 const db = openDatabase(DB_PATH);
 
-// 3. Graceful shutdown to flush WAL
-const shutdown = () => {
+// 3. Run migrations
+const { from, to } = runMigrations(db);
+
+// 4. Repositories & boot recovery
+const repos = createRepositories(db);
+const recoveryResult = recoverStaleGenerations(repos);
+
+// 5. Seed if empty
+const seedResult = seed(repos);
+
+const dbFileName = basename(DB_PATH);
+let dbLog = `[db] ${dbFileName}  migrations: ${from} → ${to}`;
+if (seedResult.seeded) {
+  dbLog += `  seeded: ${seedResult.characters} characters, ${seedResult.personas} persona`;
+}
+dbLog += `  recovered ${recoveryResult.recoveredCount} stale generations`;
+console.log(dbLog);
+
+// 6. Hub & Providers
+const hub = new GenerationHubImpl();
+const providers = new ProviderRegistryImpl();
+
+const settings = repos.settings.getAll();
+const hasOpenRouterKey = Boolean(
+  (settings.openrouter?.apiKey && settings.openrouter.apiKey.trim().length > 0) ||
+    process.env.OPENROUTER_API_KEY
+);
+console.log(`[providers] mock ready, openrouter ${hasOpenRouterKey ? 'ready' : 'disabled (no key)'}`);
+
+// 7. Graceful shutdown
+const shutdown = async () => {
+  try {
+    await hub.abortAll('shutdown');
+  } catch {}
   try {
     db.close();
   } catch {}
@@ -36,26 +70,16 @@ const shutdown = () => {
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 
-// 4. Run migrations
-const { from, to } = runMigrations(db);
+// 8. Assemble Elysia app
+const app = createApp({
+  repos,
+  hub,
+  providers,
+  options: {
+    nodeEnv: process.env.NODE_ENV
+  }
+});
 
-// 5. Initialize repositories & seed if empty
-const repos = createRepositories(db);
-const seedResult = seed(repos);
-
-const dbFileName = basename(DB_PATH);
-let dbLog = `[db] ${dbFileName}  migrations: ${from} → ${to}`;
-if (seedResult.seeded) {
-  dbLog += `  seeded: ${seedResult.characters} characters, ${seedResult.personas} persona`;
-}
-console.log(dbLog);
-
-// 6. Initialize providers
-const providers = createProviders({ openRouterApiKey: process.env.OPENROUTER_API_KEY });
-console.log(`[providers] mock ready, openrouter ${providers.openrouter ? 'ready' : 'disabled (no key)'}`);
-
-// 7. Assemble Elysia app
-const app = createApp({ repos, providers });
 if (PROD && !existsSync(BUILD_DIR)) {
   throw new Error(`Production build missing: ${BUILD_DIR}. Run 'bun run build'.`);
 }
