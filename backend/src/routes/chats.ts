@@ -160,8 +160,20 @@ export function createChatsRouter(deps: {
           throw new ApiError('not_found', 404, `Chat ${params.id} not found`);
         }
 
+        if (patch.activePersonaId !== undefined) {
+          const persona = repos.personas.get(patch.activePersonaId);
+          if (!persona) {
+            throw new ApiError('not_found', 404, `Persona ${patch.activePersonaId} not found`);
+          }
+          const active = hub.activeForChat(params.id);
+          if (active) {
+            throw new ApiError('chat_has_active_generation', 409, 'Cannot switch active persona while generation is active');
+          }
+        }
+
         const updated = repos.chats.update(params.id, {
           title: patch.title,
+          activePersonaId: patch.activePersonaId,
           metadata: patch.metadata ? { ...chat.metadata, ...patch.metadata } : undefined,
           updatedAt: Date.now()
         });

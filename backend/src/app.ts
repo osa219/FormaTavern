@@ -8,27 +8,32 @@ import {
 import type { Repositories } from './db/contracts';
 import type { GenerationHub, ProviderRegistry } from './engine/contracts';
 import { ApiError } from './engine/errors';
-import { createCharactersRouter } from './routes/characters';
+import { createCharactersRouter, createTagsRouter } from './routes/characters';
 import { createPersonasRouter } from './routes/personas';
 import { createSettingsRouter } from './routes/settings';
 import { createChatsRouter } from './routes/chats';
 import { createMessagesRouter } from './routes/messages';
+import { createAssetsRouter } from './routes/assets';
+import type { AssetStore } from './assets/contracts';
 
 export interface AppDeps {
   repos: Repositories;
   hub: GenerationHub;
   providers: ProviderRegistry;
+  assets?: AssetStore;
   options?: {
     nodeEnv?: string;
   };
 }
 
-export function createApp({ repos, hub, providers, options }: AppDeps) {
-  const charactersRouter = createCharactersRouter(repos);
+export function createApp({ repos, hub, providers, assets, options }: AppDeps) {
+  const charactersRouter = createCharactersRouter({ repos, assets });
+  const tagsRouter = createTagsRouter(repos);
   const personasRouter = createPersonasRouter(repos);
   const settingsRouter = createSettingsRouter(repos);
   const chatsRouter = createChatsRouter({ repos, hub, providers });
   const messagesRouter = createMessagesRouter({ repos, hub, providers });
+  const assetsRouter = createAssetsRouter(assets);
 
   return new Elysia({ prefix: '/api' })
     .onError(({ code, error, set, path }) => {
@@ -148,10 +153,12 @@ export function createApp({ repos, hub, providers, options }: AppDeps) {
       });
     })
     .use(charactersRouter)
+    .use(tagsRouter)
     .use(personasRouter)
     .use(settingsRouter)
     .use(chatsRouter)
-    .use(messagesRouter);
+    .use(messagesRouter)
+    .use(assetsRouter);
 }
 
 export type App = ReturnType<typeof createApp>;
