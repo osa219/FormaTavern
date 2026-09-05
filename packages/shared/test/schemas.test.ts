@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'bun:test';
 import {
   CharacterCardSchema,
+  CharacterSummarySchema,
+  CharacterPatchSchema,
   PersonaSchema,
+  PersonaPatchSchema,
+  ChatListItemSchema,
+  TagSchema,
   validate,
   type CharacterCard
 } from '../src/index';
@@ -199,5 +204,90 @@ describe('Shared Schema Validation', () => {
         }
       }
     }
+  });
+
+  describe('Phase 5 Schemas Extension', () => {
+    it('validates TagSchema pattern and constraints', () => {
+      expect(validate(TagSchema, 'fantasy').ok).toBe(true);
+      expect(validate(TagSchema, 'sci-fi').ok).toBe(true);
+      expect(validate(TagSchema, 'cyber_punk').ok).toBe(false);
+      expect(validate(TagSchema, 'UPPERCASE').ok).toBe(false);
+      expect(validate(TagSchema, '').ok).toBe(false);
+    });
+
+    it('validates CharacterCard additions (tagline, creator, tags, showcase, timestamps)', () => {
+      const extendedCard = {
+        ...eldrinFixture,
+        tagline: 'Bound to celestial observatory',
+        creator: 'eldrin-creator',
+        tags: ['fantasy', 'magic'],
+        showcase: '# Eldrin\n\nAncient mage lore and background.',
+        createdAt: 1000,
+        updatedAt: 2000
+      };
+      const res = validate(CharacterCardSchema, extendedCard);
+      expect(res.ok).toBe(true);
+    });
+
+    it('rejects CharacterCard with invalid tags or oversized showcase', () => {
+      const invalidTags = {
+        ...eldrinFixture,
+        tags: ['valid-tag', 'INVALID TAG!']
+      };
+      expect(validate(CharacterCardSchema, invalidTags).ok).toBe(false);
+
+      const oversizedShowcase = {
+        ...eldrinFixture,
+        showcase: 'x'.repeat(65_537)
+      };
+      expect(validate(CharacterCardSchema, oversizedShowcase).ok).toBe(false);
+    });
+
+    it('validates CharacterSummarySchema', () => {
+      const summary = {
+        id: 'eldrin-the-mage',
+        name: 'Eldrin the Mage',
+        tagline: 'Ancient archmage',
+        tags: ['fantasy'],
+        style: eldrinFixture.style,
+        storyCount: 5,
+        lastStoryAt: 5000,
+        updatedAt: 6000
+      };
+      const res = validate(CharacterSummarySchema, summary);
+      expect(res.ok).toBe(true);
+    });
+
+    it('enforces expectedUpdatedAt on CharacterPatchSchema and PersonaPatchSchema', () => {
+      const validCharPatch = { name: 'Eldrin Renewed', expectedUpdatedAt: 12345 };
+      expect(validate(CharacterPatchSchema, validCharPatch).ok).toBe(true);
+
+      const invalidCharPatch = { name: 'Eldrin Renewed' };
+      expect(validate(CharacterPatchSchema, invalidCharPatch).ok).toBe(false);
+
+      const validPersonaPatch = { name: 'New Persona', expectedUpdatedAt: 12345 };
+      expect(validate(PersonaPatchSchema, validPersonaPatch).ok).toBe(true);
+
+      const invalidPersonaPatch = { name: 'New Persona' };
+      expect(validate(PersonaPatchSchema, invalidPersonaPatch).ok).toBe(false);
+    });
+
+    it('validates ChatListItemSchema', () => {
+      const item = {
+        id: 'chat-1',
+        title: 'Story with Eldrin',
+        primaryCharacterId: 'eldrin-the-mage',
+        activePersonaId: 'persona-default',
+        personaId: 'persona-default',
+        activeLeafId: 'msg-1',
+        activeGenerationMessageId: null,
+        createdAt: 1000,
+        updatedAt: 2000,
+        metadata: {},
+        messageCount: 10,
+        turnCount: 5
+      };
+      expect(validate(ChatListItemSchema, item).ok).toBe(true);
+    });
   });
 });

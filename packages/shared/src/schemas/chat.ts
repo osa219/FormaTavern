@@ -20,6 +20,7 @@ export type ChatCreate = Static<typeof ChatCreateSchema>;
 
 export const ChatPatchSchema = Type.Object({
   title: Type.Optional(Type.String({ maxLength: 200 })),
+  activePersonaId: Type.Optional(Id),
   metadata: Type.Optional(Type.Partial(ChatMetadataSchema))
 });
 export type ChatPatch = Static<typeof ChatPatchSchema>;
@@ -37,3 +38,26 @@ export const ChatViewSchema = Type.Object({
   messageCount: Type.Integer()
 });
 export type ChatView = Static<typeof ChatViewSchema>;
+
+export const ChatListItemSchema = Type.Object({
+  id: Id,
+  title: Type.String(),
+  primaryCharacterId: Id,
+  activePersonaId: Id,
+  personaId: Id,
+  activeLeafId: Type.Union([Id, Type.Null()]),
+  activeGenerationMessageId: Type.Union([Id, Type.Null()]),
+  createdAt: UnixMs,
+  updatedAt: UnixMs,
+  metadata: ChatMetadataSchema,
+  messageCount: Type.Integer(),
+  turnCount: Type.Integer()
+});
+export type ChatListItem = Static<typeof ChatListItemSchema>;
+
+export const ChatListQuerySchema = Type.Object({
+  characterId: Type.Optional(Id),
+  limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })),
+  cursor: Type.Optional(Type.String())
+});
+export type ChatListQuery = Static<typeof ChatListQuerySchema>;

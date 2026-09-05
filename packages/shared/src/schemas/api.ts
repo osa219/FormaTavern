@@ -14,6 +14,16 @@ export type ApiErrorCode =
   | 'serialize_failed'
   | 'chat_has_active_generation'
   | 'chat_references'
+  | 'character_in_use'
+  | 'stale_write'
+  | 'slug_taken'
+  | 'asset_type_rejected'
+  | 'asset_too_large'
+  | 'asset_dimensions'
+  | 'asset_quota'
+  | 'persona_is_default'
+  | 'persona_in_use'
+  | 'forbidden'
   | 'internal';
 
 export const ApiErrorCodeSchema = Type.Union([
@@ -30,6 +40,16 @@ export const ApiErrorCodeSchema = Type.Union([
   Type.Literal('serialize_failed'),
   Type.Literal('chat_has_active_generation'),
   Type.Literal('chat_references'),
+  Type.Literal('character_in_use'),
+  Type.Literal('stale_write'),
+  Type.Literal('slug_taken'),
+  Type.Literal('asset_type_rejected'),
+  Type.Literal('asset_too_large'),
+  Type.Literal('asset_dimensions'),
+  Type.Literal('asset_quota'),
+  Type.Literal('persona_is_default'),
+  Type.Literal('persona_in_use'),
+  Type.Literal('forbidden'),
   Type.Literal('internal')
 ]);
 
