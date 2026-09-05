@@ -135,3 +135,12 @@ Schemas in `shared` first · validate at boundaries · monotonic ULIDs · `ApiEr
 
 ## 12. Definition of "done" for a change
 Typecheck clean → tests green (with new tests for new behaviour) → `db:check` passes on a fresh boot → curl/UI evidence per the touched area → docs updated → PR description lists: invariants touched (by id), spec deltas, test count delta, and the evidence artifacts.
+
+## 13. Change recipes
+- **Add a migration** — append `{ version: N+1, name, up }` to `db/migrate.ts` (one statement per `db.run`); add a test to `migrations.test.ts` (fresh → N+1; vN data upgrades; rollback on throw); extend `db:check` if a new invariant needs auditing; update `docs/architecture.md` §5.
+- **Add a route** — schema in `shared/schemas`; handler in `routes/<group>.ts` using injected deps only; error codes in `ApiErrorCode`; route test via `app.handle(new Request(...))` with in-memory DB + `MockLLMProvider({ intervalMs: 5 })`; if SSE, use `sseResponse()` and assert frame bytes; frontend: Eden call in `lib/api/client.ts` (or `readSse` for SSE); update the surface table in `docs/architecture.md` §10.
+- **Add a provider** — implement `LLMProvider` from `shared/types/llm.ts` in `backend/src/providers/`; run `assertStreamContract` (E5) over every path including abort, HTTP error, idle timeout, key scrubbing; register in `engine/providers.ts` and `AppSettingsSchema.provider.id`; add a fake-fetch test suite modelled on `openrouter.test.ts`.
+- **Add a theme token** — `shared/schemas/theme.ts` (as `CssToken`) → `THEME_PATHS` in `theme/cascade.ts` → `CSS_VAR_NAMES` + fallback in `frontend/lib/theme/cssVars.ts` → `@property` registration + `:root` neutral + `@theme inline` bridge in `app.css` → consume via static utility. Update `cssVars.test.ts` (exact list) and `cascade.test.ts`.
+- **Add a parse warning / lenience** — grammar in `shared/envelope/grammar.ts`; add a case to the lenience table in `parser.test.ts`; if it changes output for existing fixtures, bump `PARSER_VERSION` and re-run `properties.test.ts`; consider a new fixture in `fixtures/envelope.ts` (chunks must satisfy the authoring rules and `chunks.join('') === text`).
+- **Add a mock script** — `fixtures/envelope.ts` with `expect` block and adversarial chunks; it automatically appears in `listModels()`, the `/dev` workbench select, and the contract/property suites.
+
