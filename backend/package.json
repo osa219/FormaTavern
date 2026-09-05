@@ -17,13 +17,15 @@
     "db:migrate": "bun scripts/migrate.ts",
     "db:seed": "bun scripts/seed.ts",
     "db:check": "bun scripts/check.ts",
-    "db:reset": "bun scripts/reset.ts"
+    "db:reset": "bun scripts/reset.ts",
+    "smoke:openrouter": "bun scripts/smoke-openrouter.ts"
   },
   "dependencies": {
     "@formatavern/shared": "workspace:*",
     "elysia": "^1.2.0",
     "@elysiajs/static": "^1.2.0",
-    "ulid": "^2.3.0"
+    "ulid": "^2.3.0",
+    "gpt-tokenizer": "^4.0.0"
   },
   "devDependencies": {
     "@types/bun": "latest"

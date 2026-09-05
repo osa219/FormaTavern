@@ -1,4 +1,4 @@
-import type { CharacterCard, Persona } from '@formatavern/shared';
+import type { CharacterCard, Persona, LLMProvider } from '@formatavern/shared';
 
 export interface CharacterRepository {
   list(): CharacterCard[];
@@ -27,4 +27,8 @@ export interface Repositories {
 
 export interface AppDeps {
   repos: Repositories;
+  providers: {
+    mock: LLMProvider;
+    openrouter?: LLMProvider;
+  };
 }
