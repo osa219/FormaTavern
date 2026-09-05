@@ -80,6 +80,7 @@ export function parseEnvelope(input: string, options: ParseOptions): ParseResult
 
   // 4. Agency truncation (unless allowPersona)
   let truncatedAt: 'persona' | null = null;
+  let truncatedIndex: number | null = null;
   if (!options.allowPersona) {
     const lines = text.split('\n');
     let cutIndex = -1;
@@ -120,6 +121,18 @@ export function parseEnvelope(input: string, options: ParseOptions): ParseResult
 
     if (cutIndex !== -1) {
       truncatedAt = 'persona';
+      const cutLine = lines[cutIndex];
+      if (cutIndex === 0) {
+        const idx = input.indexOf(cutLine);
+        truncatedIndex = idx !== -1 ? idx : 0;
+      } else {
+        const prevLine = lines[cutIndex - 1];
+        const prevPos = input.indexOf(prevLine);
+        const idx = prevPos !== -1
+          ? input.indexOf(cutLine, prevPos + prevLine.length)
+          : input.indexOf(cutLine);
+        truncatedIndex = idx !== -1 ? idx : lines.slice(0, cutIndex).join('\n').length;
+      }
       lines.splice(cutIndex);
       text = lines.join('\n');
       if (text.trim().length === 0) {
@@ -227,6 +240,7 @@ export function parseEnvelope(input: string, options: ParseOptions): ParseResult
     statePatch,
     reasoning,
     truncatedAt,
+    truncatedIndex,
     dialect: detectedDialect,
     adherent,
     warnings,
@@ -355,3 +369,5 @@ export function serializeSegments(
 
   return parts.join('\n\n');
 }
+
+export const serializeEnvelope = serializeSegments;

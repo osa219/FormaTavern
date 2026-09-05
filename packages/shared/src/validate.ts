@@ -1,6 +1,8 @@
 import { Value } from '@sinclair/typebox/value';
 import type { Static, TSchema } from '@sinclair/typebox';
 
+export { Value };
+
 export interface ValidationIssue {
   path: string;
   message: string;

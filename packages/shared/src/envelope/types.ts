@@ -1,7 +1,7 @@
 import type { Segment } from '../schemas/narrative';
 import type { StateVector } from '../schemas/state';
 
-export const PARSER_VERSION = 1;
+export const PARSER_VERSION = 2;
 
 export type Dialect = 'directive' | 'xml' | 'prefix';
 
@@ -38,6 +38,7 @@ export interface ParseResult {
   statePatch: StateVector | null;    // raw parsed object; NOT coerced against stateSchema (that is resolveState)
   reasoning: string | null;          // <think>...</think> content, stripped from segments
   truncatedAt: 'persona' | null;
+  truncatedIndex: number | null;     // character index in input text where truncation occurred, or null
   dialect: Dialect | 'none';         // detected, by first header seen
   adherent: boolean;                 // dialect !== 'none' && statePatch !== null && truncatedAt === null
   warnings: ParseWarning[];
