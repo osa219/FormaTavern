@@ -38,9 +38,10 @@ Open the URL Vite prints (e.g. `http://localhost:5173`). First boot creates `for
 | `build` | SvelteKit static build → `frontend/build/`. |
 | `start` | `NODE_ENV=production bun backend/src/index.ts` — single-process production server. |
 | `db:migrate` / `db:seed [--force]` / `db:check` / `db:reset [--yes]` | Database utilities (see §5). |
+| `db:reindex` | Rebuilds FTS5 full-text search index from SQLite `characters` table. |
 | `clean` | Removes `node_modules`, `frontend/.svelte-kit`, `frontend/build`. |
 
-Package-local extras: `bun run --cwd backend smoke:openrouter`, `bun run --cwd backend seed:long-chat` (200-turn chat for scroll/perf checks), `UPDATE_GOLDEN=1 bun test --cwd backend test/prompt`.
+Package-local extras: `bun run --cwd backend smoke:openrouter`, `bun run --cwd backend seed:long-chat` (200-turn chat for scroll/perf checks), `bun run --cwd backend scripts/assets-gc.ts` (cleans stale unpromoted drafts > 24h), `UPDATE_GOLDEN=1 bun test --cwd backend test/prompt`.
 
 ## 5. Database workflows
 - **Boot** = `openDatabase → runMigrations → recover stale streaming rows → seedIfEmpty`. Seeding only runs on an empty `characters` table (deleting a seed character does not resurrect it). `db:seed --force` re-upserts seeds.
@@ -91,6 +92,13 @@ The per-phase blueprints list **required tests by name**; a PR that removes or w
 | U5 | `frontend/unit/scrollPolicy.test.ts` |
 | U7/U9 | `frontend/unit/session.test.ts` |
 | U8 | manual evidence set (§9) + Svelte `a11y-*` = 0 |
+| P1 (Keyset pagination) | `backend/test/routes/characters.test.ts`, `frontend/unit/catalog.test.ts` |
+| P2 (OCC / stale write) | `backend/test/routes/characters.test.ts`, `frontend/unit/studio.test.ts` |
+| P3 (Zero remote assets) | `backend/test/assets/`, `frontend/unit/showcase.test.ts`, `styleAllowlist.test.ts` |
+| P4 (Showcase markdown) | `frontend/unit/showcase.test.ts`, `styleAllowlist.test.ts` |
+| P5 (Greeting preview) | `frontend/unit/greetingPreview.test.ts`, `studio.test.ts` |
+| P6 (FTS5 / LIKE probe) | `backend/test/migrations.test.ts`, `backend/test/repositories/characters.test.ts` |
+| P7 (Atomic defaults) | `backend/test/repositories/personas.test.ts`, `backend/test/routes/personas.test.ts` |
 
 ### 6.4 Writing tests
 - Prefer table-driven cases over prose-heavy ones; assert on codes/paths (`/style/colors/accent`, `state_unclosed`), not message text.

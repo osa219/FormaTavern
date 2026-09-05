@@ -14,6 +14,7 @@
     "db:seed": "bun run --cwd backend db:seed",
     "db:check": "bun run --cwd backend db:check",
     "db:reset": "bun run --cwd backend db:reset",
+    "db:reindex": "bun run --cwd backend db:reindex",
     "clean": "rm -rf node_modules frontend/.svelte-kit frontend/build"
   },
   "devDependencies": {

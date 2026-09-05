@@ -1,6 +1,6 @@
 # FormaTavern — Technical Architecture
 
-**Scope:** the system as built through Phase 4. Normative details live in `docs/blueprints/`; this document is the map. Cross-references to invariants use the canonical ids in `.agents/AGENTS.md` §4.
+**Scope:** the system as built through Phase 5 (Companion Platform & Foyer v2). Normative details live in `docs/blueprints/`; this document is the map. Cross-references to invariants use the canonical ids in `.agents/AGENTS.md` §4.
 
 ---
 
@@ -8,9 +8,10 @@
 
 1. **Stateless backend, authoritative database.** No session state in memory; every request names its `chatId`/`messageId`. The only in-memory state is ephemeral generation coordination (`GenerationHub`), recoverable on restart (S1–S3).
 2. **One shared domain.** TypeBox schemas, the envelope parser, the state engine, and the theme cascade live in `@formatavern/shared` and execute identically in Bun and the browser (I1, I5, E1–E4, U1).
-3. **Styling as data.** A character's look is a `CharacterTheme` of pure CSS values; the UI is one message component and one theme root driven by `--theme-*` custom properties (U1, U2).
+3. **Styling as data.** A character's look is a `CharacterTheme` of pure CSS values; the UI is driven by `--theme-*` custom properties with author showcase chameleon adaptations (U1, U2, A-U2).
 4. **Single-request narrative.** Narrator, character, NPCs, and a state vector arrive in one completion; the parser is a pure function of the full buffer (E1, E2).
 5. **Byte-exact, version-agnostic wire contracts** (S9).
+6. **Self-contained companion ecosystem.** Complete author showcase, companion studio with OCC, persona roster with atomic defaults, FTS5 discovery catalog, and local SHA-256 asset store (P1–P7).
 
 ---
 
@@ -115,7 +116,7 @@ PRAGMA busy_timeout = 5000;
 
 **WAL model:** unlimited readers + one writer; Bun is single-threaded and `bun:sqlite` is synchronous, so writes must be tiny and batched (S5). Sidecar files `-wal`/`-shm` are part of the database while a process is attached; backups must checkpoint first.
 
-### 5.2 Schema (current `user_version = 3`)
+### 5.2 Schema (current `user_version = 4`)
 
 Migrations (`db/migrate.ts`) run once per version inside a transaction; `PRAGMA user_version` is written in the same transaction (I3). A DB newer than the build refuses to open.
 
@@ -136,7 +137,15 @@ settings   (key PK, value JSON, updated_at)
 
 **v3 `chat_branching`** — `chats.active_leaf_id TEXT REFERENCES messages(id) ON DELETE SET NULL` (cycle is safe; tested), partial index on `status='streaming'`, index `(parent_id, id)`; backfill leaf = newest message per chat.
 
-### 5.3 Tree model (S6)
+**v4 `companion_platform`** — Full author showcase, discovery catalog, studio, and persona support:
+- `characters`: adds `tagline TEXT`, `creator TEXT`, `showcase TEXT`; composite index `(updated_at DESC, id DESC)`, `(name ASC, id ASC)`.
+- `character_tags` junction table: `(character_id FK→characters CASCADE, tag TEXT, PRIMARY KEY (character_id, tag))` with indexes `(tag, character_id)` and `(character_id)`.
+- `characters_fts` virtual table: FTS5 full-text search with `unicode61` tokenizer over `(name, tagline, description, personality, scenario, tags)`. Automatic feature-detection probe fallback to LIKE if SQLite lacks FTS5; records `search_backend` in `settings`.
+- `personas`: adds `avatar TEXT`.
+- `chats`: adds index on `updated_at DESC`.
+
+### 5.3 Keyset Pagination & Tree Model (S6, P1)
+- Keyset cursor pagination on `(sort_value, id)` with opaque base64 cursor (`recent`, `name`, `stories`); no offset scanning.
 - One row per generation turn. **Swipes are siblings** (same `parent_id`); branches are subtrees.
 - The active branch is `path(chats.active_leaf_id)` = recursive CTE up `parent_id`, ordered by `id`.
 - Pagination: `pageActiveBranch(chatId, leafId, { before, limit })` — CTE membership + `id < before`, decorated with window functions for `siblingIndex`, `siblingCount`, `hasChildren` (`PARTITION BY chat_id, parent_id`; root siblings via `parent_id IS NULL`).
@@ -156,8 +165,12 @@ settings   (key PK, value JSON, updated_at)
 | `messages.metadata` | `{ directorNote?, parse?: {dialect, parserVersion, adherent, warnings, truncatedAt}, stateSource?, stateWarnings?, reasoning?, error?, edited?, continuations?, recovered? }` |
 | `settings.value` | one top-level key of `AppSettings` per row (`provider`, `openrouter`, `generation`, `narrative`, `preamble`) |
 
-### 5.5 Filesystem
-`data/assets/{characters,backgrounds,fonts}` (env `FORMATAVERN_ASSETS_DIR`), served at `/assets`. Seeds are imageless; the UI renders an ambient gradient when no background image is set.
+### 5.5 Filesystem & Asset Pipeline (`FsAssetStore`)
+- **Storage:** `data/assets/` (env `FORMATAVERN_ASSETS_DIR`), served via `/assets/:filename` or Elysia static plugin.
+- **Addressing:** SHA-256 content addressing `<hash>.<ext>` ensures deduplication.
+- **Safety checks:** Magic byte validation (`sniffImageMime`: PNG, JPEG, WebP, GIF only; SVGs/executables rejected), image header dimension bounds ($\le 4096 \times 4096$), single-file limit 10 MiB, total asset store quota 64 MiB.
+- **Atomicity & containment:** Written via temporary files (`*.tmp`) with atomic rename; strict path containment assertion prevents path traversal (`..`).
+- **Lifecycle & GC:** Provisional uploads use `ownerId = draft-*`; on companion creation/patch, draft owner is promoted. Stale unpromoted drafts (> 24 hours) are reclaimed by `backend/scripts/assets-gc.ts`. Seeds are imageless with ambient fallback.
 
 ---
 
@@ -234,7 +247,16 @@ Errors: `{ error: { code: ApiErrorCode, message, details? } }` — 404 `not_foun
 | Method & path | Notes |
 |---|---|
 | `GET /health` | `{ ok, service, sharedVersion, timestamp, db:{schemaVersion, characters, personas}, activeGenerations }` |
-| `GET/PUT/DELETE /characters[/:id]`, `/personas[/:id]` | validated upserts; DELETE blocked by FK RESTRICT when chats reference |
+| `GET /characters?q&tags&sort&cursor&limit` | Keyset pagination, FTS5 match / LIKE fallback, tag AND filtering |
+| `POST /characters` | Validated creation; promotes draft asset owner |
+| `GET/PATCH/DELETE /characters/:id` | `PATCH` with OCC `expectedUpdatedAt` (409 stale); `DELETE ?cascade=chats` |
+| `POST /characters/:id/duplicate` | Deep clone with slug collision resolution `(copy)` |
+| `GET /characters/:id/usage` | Active chat / story count |
+| `GET /tags` | Aggregated tag frequency counts |
+| `GET /personas`, `POST /personas` | List personas, create persona (atomic default switch) |
+| `PATCH/DELETE /personas/:id` | Update persona; delete with reassignment (`?reassignTo=`) |
+| `POST /assets/upload` | Multipart upload with magic byte sniffing, dimension checks, SHA-256 storage |
+| `GET /assets/:filename` | Asset streaming with path containment guard |
 | `GET/PATCH /settings` | GET masks key (`apiKeySet`, `apiKeyHint`, `source`); PATCH deep-partial, `apiKey: null` clears |
 | `POST /chats` → 201 | inserts the character's `firstMessage` as root assistant node; persists narrative mode/dialect |
 | `GET /chats`, `GET/PATCH/DELETE /chats/:id` | `ChatView` incl. `activeLeafId`, `activeGenerationMessageId`, `messageCount` |
@@ -284,11 +306,17 @@ prefs.disableCharacterThemes/ReactiveTheming ─┘          ▼
 - Chrome (drawers, composer shell, toolbars, focus rings, toasts) uses a fixed neutral OKLCH palette and may borrow ≤ 8 % accent via `color-mix()` (U8).
 - Backdrop: A/B image layers with blur + overlay; no image → ambient accent gradient.
 
-### 11.3 Components
-`ChatViewport` (theme root, 100dvh grid) → `Backdrop`, `TopBar` (`StateHud` → `StateOverridePopover`), `MessageLog` (windowed, `content-visibility:auto`, `JumpToLatest`) → `MessageTurn` (index-keyed segments → `NarratorBlock` | `SpeechBubble` with `StreamCaret`; `TurnToolbar`, `SwipeCarousel`, `ErrorSlate`), `Composer` (`VoiceSelect`, `DirectorDrawer`, Send⇄Stop), `NavDrawer`, `SettingsSheet`, `EditTurnDialog`, `ConfirmDialog` (native `<dialog>`). Foyer (`/`) renders live theme swatches per character. `/dev` hosts the fixture workbench (DEV only).
+### 11.3 Components & Surfaces
+- **Chat:** `ChatViewport` (theme root, 100dvh grid) → `Backdrop`, `TopBar` (`StateHud` → `StateOverridePopover`, Lore drawer trigger), `LoreDrawer` (native slide-over on theme root with About, Voice, You persona switcher with busy lock, and State reference; shortcut `Alt+L`), `MessageLog` (windowed, `content-visibility:auto`, `JumpToLatest`) → `MessageTurn` (index-keyed segments → `NarratorBlock` | `SpeechBubble` with `StreamCaret`; `TurnToolbar`, `SwipeCarousel`, `ErrorSlate`), `Composer` (`VoiceSelect`, `DirectorDrawer`, Send⇄Stop), `NavDrawer`, `SettingsSheet`, `EditTurnDialog`, `ConfirmDialog` (native `<dialog>`).
+- **Foyer v2 (`/`):** Discovery catalog with `CatalogStore` (seq-guarded, 200 ms debounced query, tag AND filtering, sort select `recent`/`name`/`stories`, keyset cursor pagination, URL param sync) rendering `CompanionGrid` with reactive `CompanionCard` swatches.
+- **Author Showcase (`/character/:id`):** `ShowcaseHero` (avatar, creator, tagline, tags), `ActionHub` (keyboard shortcuts `N` new story with `PersonaPicker`, `E` edit, duplicate, cascade delete), `ShowcaseBody` rendering sanitized showcase markdown with safe inline styles (A-U2), and `ResumeMenu` listing recent stories.
+- **Companion Studio (`/character/new`, `/character/:id/edit`):** Tabbed authoring shell with `CharacterDraft` reactive store, TypeBox validation HUD with scroll-to-issue links, `LivePreview` with `parseGreeting` envelope parser (A-U3) and reactive `previewTheme`, `VoicePanel` with lazy code-split `gpt-tokenizer`, `ShowcaseEditor` with split view and snippet insert, 2000 ms local autosave, and OCC safe saves (`expectedUpdatedAt`).
+- **Personas Platform (`/personas`, `/personas/new`, `/personas/:id/edit`):** `PersonasStore`, `PersonaEditor` with canvas 1:1 image cropping, `BubblePreview` reflecting style overrides, and deletion modal with story reassignment.
+- **Dev Workbench (`/dev`):** Dev-only workbench for inspecting mock streams and parser output.
 
-### 11.4 Markdown pipeline (`lib/render/`)
-`marked` (gfm, breaks; raw HTML escaped; images/tables/headings disabled; links `https?:` only) + speech extension (`"…"`/`“…”` on one line → `<q class="speech">`) → DOMPurify allow-list (`p br em strong q code pre blockquote ul ol li hr a span del s`; `class` only `speech`; `href` only `https?:`). `Markdown.svelte` is the only `{@html}` site; `$derived` memoizes per segment.
+### 11.4 Markdown pipelines (`lib/render/`)
+1. **Roleplay prose:** `renderRoleplayMarkdown` via `marked` + speech quotes (`<q class="speech">`) sanitized through strict DOMPurify allow-list (`Markdown.svelte`).
+2. **Author showcase:** `renderShowcaseMarkdown` via `marked` + headings, tables, lists, images (local `/assets/` and `data:image/` only; remote URLs strictly rejected per P3) + safe inline style allowlist (`rebuildStyle` preserving typography, colors, layout, and borders per Amendment A-U2). Rendered exclusively in `ShowcaseBody.svelte`.
 
 ---
 
