@@ -45,7 +45,8 @@ FormaTavern/
 │   ├── src/lib/state/     # ChatSession, StreamController, multi-tab settings sync
 │   ├── src/lib/theme/     # CSS custom property bridge & reactive ThemeEngine
 │   └── src/routes/        # Foyer (/), Chat canvas (/chat/[chatId]), Dev workbench (/dev)
-└── docs/history/          # Architecture Decision Records (ADRs), blueprints & walkthroughs
+└── docs/                  # Living guides (architecture, schema, development, troubleshooting)
+    └── history/           # Historical phase blueprints, walkthroughs, and reports
 ```
 
 ---
@@ -128,7 +129,7 @@ bun run typecheck
 ### Test Coverage Highlights
 - **`packages/shared`** (91 tests): Envelope parser fuzzing, surrogate pair integrity, dialect invariance, state schema normalization, and theme cascade precedence.
 - **`backend`** (127 tests): SQLite foreign-key cascading, migration rollbacks, generation hub crash handling, disconnect immunity, prompt budget pruning, and byte-exact SSE contracts.
-- **`frontend`** (41 tests): Static boundary police (prohibits runtime `<style>`, ensures single-point parser isolation), Marked + DOMPurify XSS attack neutralizing, scroll pinning policy, and rAF-throttled stream buffering.
+- **`frontend`** (42 tests): Static boundary police (prohibits runtime `<style>`, ensures single-point parser isolation), Marked + DOMPurify XSS attack neutralizing, scroll pinning policy, and rAF-throttled stream buffering.
 
 ---
 
@@ -171,8 +172,6 @@ For deep technical context, specifications, and runbooks:
 - **Database & Storage Schema Reference**: [`docs/schema.md`](docs/schema.md)
 - **Development & Testing Guide**: [`docs/development.md`](docs/development.md)
 - **Troubleshooting Runbook**: [`docs/troubleshooting.md`](docs/troubleshooting.md)
-- **Historical Blueprints & ADRs**: [`docs/history/blueprints/`](docs/history/blueprints/)
-- **Phase Walkthroughs**: [`docs/history/walkthroughs/`](docs/history/walkthroughs/)
 
 ---
 
