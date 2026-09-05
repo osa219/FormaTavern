@@ -3,6 +3,32 @@ import { themeToCssVars, serializeVars, CSS_VAR_NAMES } from '../src/lib/theme/c
 import { DEFAULT_CHARACTER_THEME, type CharacterTheme } from '@formatavern/shared';
 
 describe('themeToCssVars & serializeVars', () => {
+  it('pins the exact CSS_VAR_NAMES list as the single canonical source of truth', () => {
+    expect(CSS_VAR_NAMES).toEqual([
+      '--theme-font-family',
+      '--theme-font-size',
+      '--theme-line-height',
+      '--theme-char-bg',
+      '--theme-char-text',
+      '--theme-char-border',
+      '--theme-user-bg',
+      '--theme-user-text',
+      '--theme-user-border',
+      '--theme-accent',
+      '--theme-quote-color',
+      '--theme-action-color',
+      '--theme-narrator-color',
+      '--theme-bubble-radius',
+      '--theme-bubble-padding',
+      '--theme-char-tail',
+      '--theme-user-tail',
+      '--theme-bg-img',
+      '--theme-bg-blur',
+      '--theme-bg-overlay',
+      '--theme-scheme'
+    ]);
+  });
+
   it('produces exact variable set and fixed order matching CSS_VAR_NAMES', () => {
     const vars = themeToCssVars(DEFAULT_CHARACTER_THEME);
     const keys = Object.keys(vars);
