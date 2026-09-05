@@ -102,6 +102,8 @@ Agency truncation (`:::persona`, `Traveler:` …) detected mid-stream truncates 
 
 ## 5. Storage
 
+> For full DDL, column-level data dictionary, JSON schemas, and tree branching query patterns, see [`docs/schema.md`](schema.md).
+
 ### 5.1 Connection (`backend/src/db/connection.ts`)
 ```sql
 PRAGMA journal_mode = WAL;     -- asserted 'wal' on file DBs (memory DBs skip)

@@ -164,11 +164,15 @@ FormaTavern provides two provider modes configurable in the **Settings** sheet (
 
 ---
 
-## Architectural Documentation
+## Architectural & Developer Documentation
 
-For deep technical context, Architecture Decision Records (ADRs), and phase specifications, consult the documents in `docs/history/`:
-- **Blueprints**: [`docs/history/blueprints/`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/docs/history/blueprints/)
-- **Walkthroughs**: [`docs/history/walkthroughs/`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/docs/history/walkthroughs/)
+For deep technical context, specifications, and runbooks:
+- **Architecture Guide**: [`docs/architecture.md`](docs/architecture.md)
+- **Database & Storage Schema Reference**: [`docs/schema.md`](docs/schema.md)
+- **Development & Testing Guide**: [`docs/development.md`](docs/development.md)
+- **Troubleshooting Runbook**: [`docs/troubleshooting.md`](docs/troubleshooting.md)
+- **Historical Blueprints & ADRs**: [`docs/history/blueprints/`](docs/history/blueprints/)
+- **Phase Walkthroughs**: [`docs/history/walkthroughs/`](docs/history/walkthroughs/)
 
 ---
 
