@@ -1,8 +1,9 @@
 import { Elysia } from 'elysia';
 import { existsSync, statSync } from 'node:fs';
 import { join, resolve, basename } from 'node:path';
+import { staticPlugin } from '@elysiajs/static';
 import { createApp } from './app';
-import { DB_PATH, ensureDataDirs } from './db/paths';
+import { DB_PATH, ASSETS_DIR, ensureDataDirs } from './db/paths';
 import { openDatabase } from './db/connection';
 import { runMigrations } from './db/migrate';
 import { createRepositories } from './db/repositories';
@@ -86,14 +87,25 @@ if (PROD && !existsSync(BUILD_DIR)) {
 
 const server = new Elysia()
   .use(app)
+  .use(
+    staticPlugin({
+      assets: ASSETS_DIR,
+      prefix: '/assets',
+      headers: {
+        'Cache-Control': 'public, max-age=3600'
+      }
+    })
+  )
   .all('*', ({ request, set }) => {
-    if (!PROD) {
+    const url = new URL(request.url);
+
+    // API and asset requests that were not matched must 404 with JSON, never HTML
+    if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/assets/')) {
       set.status = 404;
       return { error: 'Not Found' };
     }
 
-    const url = new URL(request.url);
-    if (url.pathname.startsWith('/api/')) {
+    if (!PROD) {
       set.status = 404;
       return { error: 'Not Found' };
     }
