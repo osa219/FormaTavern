@@ -353,6 +353,19 @@ describe('PromptBuilder', () => {
     expect(resolved.state.affinity).toBe(5);
   });
 
+  it('never includes character showcase text in the prompt context (P4 sentinel)', () => {
+    const cardWithShowcase: CharacterCard = {
+      ...eldrinCard,
+      showcase: '### Private Showcase Details\nSecret background never seen by LLM.'
+    };
+    const built = buildPrompt(makeContext({ character: cardWithShowcase }));
+    expect(built.systemPrompt).not.toContain('Private Showcase Details');
+    expect(built.systemPrompt).not.toContain('Secret background never seen by LLM.');
+    for (const msg of built.history) {
+      expect(msg.content).not.toContain('Private Showcase Details');
+    }
+  });
+
   // Golden file assertion
   it('matches canonical golden file exactly', async () => {
     const goldenCtx = makeContext();

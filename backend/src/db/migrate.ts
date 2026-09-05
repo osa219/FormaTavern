@@ -70,6 +70,65 @@ export const migrations: readonly Migration[] = [
       db.run(`CREATE INDEX IF NOT EXISTS idx_messages_parent_id_id ON messages(parent_id, id);`);
       db.run(`UPDATE chats SET active_leaf_id = (SELECT id FROM messages WHERE chat_id = chats.id ORDER BY id DESC LIMIT 1);`);
     }
+  },
+  {
+    version: 4,
+    name: 'companion_platform',
+    up: (db) => {
+      // 1. characters display-only columns
+      db.run(`ALTER TABLE characters ADD COLUMN tagline TEXT;`);
+      db.run(`ALTER TABLE characters ADD COLUMN creator TEXT;`);
+      db.run(`ALTER TABLE characters ADD COLUMN showcase TEXT;`);
+
+      // 2. tags join table
+      db.run(`CREATE TABLE IF NOT EXISTS character_tags (
+        character_id TEXT NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+        tag          TEXT NOT NULL,
+        PRIMARY KEY (character_id, tag)
+      ) WITHOUT ROWID;`);
+      db.run(`CREATE INDEX IF NOT EXISTS idx_character_tags_tag ON character_tags(tag, character_id);`);
+
+      // Backfill creator from metadata JSON if present
+      db.run(`UPDATE characters SET creator = json_extract(metadata, '$.creator')
+        WHERE metadata IS NOT NULL AND json_valid(metadata) AND json_extract(metadata, '$.creator') IS NOT NULL;`);
+
+      // Backfill character_tags from metadata.tags JSON array if present
+      try {
+        db.run(`INSERT OR IGNORE INTO character_tags (character_id, tag)
+          SELECT c.id, lower(trim(j.value))
+          FROM characters c, json_each(c.metadata, '$.tags') j
+          WHERE c.metadata IS NOT NULL AND json_valid(c.metadata) AND length(trim(j.value)) > 0;`);
+      } catch {}
+
+      // 3. FTS5 feature detect & virtual table
+      const ftsRow = db.query(`SELECT 1 FROM pragma_compile_options WHERE compile_options = 'ENABLE_FTS5';`).get();
+      const hasFts5 = Boolean(ftsRow);
+
+      if (hasFts5) {
+        db.run(`CREATE VIRTUAL TABLE IF NOT EXISTS characters_fts USING fts5(
+          id UNINDEXED, name, tagline, description, creator, tags,
+          tokenize = 'unicode61 remove_diacritics 2'
+        );`);
+
+        // Backfill FTS
+        db.run(`INSERT INTO characters_fts(id, name, tagline, description, creator, tags)
+          SELECT c.id, c.name, coalesce(c.tagline, ''), c.description, coalesce(c.creator, ''),
+                 coalesce((SELECT group_concat(tag, ' ') FROM character_tags WHERE character_id = c.id), '')
+          FROM characters c;`);
+      }
+
+      // 4. Name nocase index
+      db.run(`CREATE INDEX IF NOT EXISTS idx_characters_name_nocase ON characters(name COLLATE NOCASE, id);`);
+
+      // 5. Record search backend in settings
+      const now = Date.now();
+      const searchBackend = hasFts5 ? 'fts5' : 'like';
+      db.run(
+        `INSERT INTO settings (key, value, updated_at) VALUES ('search_backend', json_quote(?), ?)
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at;`,
+        [searchBackend, now]
+      );
+    }
   }
 ];
 

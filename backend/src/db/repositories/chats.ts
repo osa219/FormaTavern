@@ -23,7 +23,7 @@ export class SQLiteChatRepository implements ChatRepository {
     title: string;
     primaryCharacterId: string;
     activePersonaId: string;
-    metadata: ChatMetadata;
+    metadata?: ChatMetadata;
   }): ChatRow {
     const now = Date.now();
     this.db.run(
@@ -48,7 +48,7 @@ export class SQLiteChatRepository implements ChatRepository {
       activeLeafId: null,
       createdAt: now,
       updatedAt: now,
-      metadata: input.metadata
+      metadata: input.metadata ?? {}
     };
   }
 
@@ -57,20 +57,37 @@ export class SQLiteChatRepository implements ChatRepository {
     return row ? toChatRow(row) : null;
   }
 
-  list(): Array<ChatRow & { messageCount: number }> {
-    const rows = this.db
-      .query(
-        `SELECT c.*, COUNT(m.id) AS message_count
-         FROM chats c
-         LEFT JOIN messages m ON m.chat_id = c.id
-         GROUP BY c.id
-         ORDER BY c.updated_at DESC;`
-      )
-      .all() as any[];
+  list(opts?: { characterId?: string; limit?: number; cursor?: string }): Array<ChatRow & { messageCount: number; turnCount: number }> {
+    let sql = `SELECT c.*,
+      COUNT(m.id) AS message_count,
+      COUNT(CASE WHEN m.role = 'assistant' THEN 1 END) AS turn_count
+      FROM chats c
+      LEFT JOIN messages m ON m.chat_id = c.id`;
+    const params: any[] = [];
+    const wheres: string[] = [];
+
+    if (opts?.characterId) {
+      wheres.push(`c.primary_character_id = ?`);
+      params.push(opts.characterId);
+    }
+    if (opts?.cursor) {
+      wheres.push(`c.updated_at < ?`);
+      params.push(Number(opts.cursor));
+    }
+    if (wheres.length > 0) {
+      sql += ` WHERE ` + wheres.join(' AND ');
+    }
+    sql += ` GROUP BY c.id ORDER BY c.updated_at DESC`;
+    if (opts?.limit) {
+      sql += ` LIMIT ?`;
+      params.push(opts.limit);
+    }
+    const rows = this.db.query(sql).all(...params) as any[];
 
     return rows.map((r) => ({
       ...toChatRow(r),
-      messageCount: Number(r.message_count ?? 0)
+      messageCount: Number(r.message_count ?? 0),
+      turnCount: Number(r.turn_count ?? 0)
     }));
   }
 

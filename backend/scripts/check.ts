@@ -2,7 +2,7 @@ import { DB_PATH } from '../src/db/paths';
 import { openDatabase } from '../src/db/connection';
 import { createRepositories } from '../src/db/repositories';
 import { nearestState } from '../src/engine/context';
-import { validate, CharacterCardSchema, PersonaSchema } from '@formatavern/shared';
+import { validate, CharacterCardSchema, CharacterSummarySchema, PersonaSchema } from '@formatavern/shared';
 
 let db;
 try {
@@ -31,8 +31,8 @@ try {
     console.error(`[check] ERROR: foreign_keys is not 1`);
     hasFailure = true;
   }
-  if (user_version !== 3) {
-    console.error(`[check] ERROR: user_version is ${user_version}, expected 3`);
+  if (user_version !== 4) {
+    console.error(`[check] ERROR: user_version is ${user_version}, expected 4`);
     hasFailure = true;
   }
 
@@ -117,20 +117,63 @@ try {
   }
   console.log(`active_leaf_integrity=ok`);
   console.log(`current_state_integrity=ok`);
-  const characters = repos.characters.list();
+  // Audit 4: search_backend setting
+  const searchSetting = db.query("SELECT value FROM settings WHERE key = 'search_backend';").get() as { value: string } | null;
+  const searchBackend = searchSetting ? JSON.parse(searchSetting.value) : 'none';
+  console.log(`search_backend=${searchBackend}`);
+
+  // Audit 5: tags orphans
+  const tagOrphans = (
+    db.query('SELECT COUNT(*) as count FROM character_tags ct LEFT JOIN characters c ON ct.character_id = c.id WHERE c.id IS NULL;').get() as { count: number }
+  )?.count ?? 0;
+  if (tagOrphans > 0) {
+    console.error(`[check] ERROR: Found ${tagOrphans} orphaned rows in character_tags`);
+    hasFailure = true;
+  } else {
+    console.log(`tags_orphans=0`);
+  }
+
+  // Audit 6: FTS parity (if characters_fts exists)
+  const ftsTable = db.query("SELECT name FROM sqlite_master WHERE type='table' AND name='characters_fts';").get();
+  if (ftsTable) {
+    const charCount = (db.query('SELECT COUNT(*) as count FROM characters;').get() as { count: number }).count;
+    const ftsCount = (db.query('SELECT COUNT(*) as count FROM characters_fts;').get() as { count: number }).count;
+    if (charCount !== ftsCount) {
+      console.error(`[check] ERROR: FTS parity failure: characters=${charCount}, characters_fts=${ftsCount}`);
+      hasFailure = true;
+    } else {
+      console.log(`fts_parity=ok (${charCount}/${ftsCount})`);
+    }
+  } else {
+    console.log(`fts_parity=skipped (no characters_fts table)`);
+  }
+
+  const characterSummaries = repos.characters.list().items;
   const personas = repos.personas.list();
 
-  console.log(`counts: ${characters.length} characters, ${personas.length} personas`);
+  console.log(`counts: ${characterSummaries.length} characters, ${personas.length} personas`);
 
   let validChars = 0;
-  for (const c of characters) {
-    const v = validate(CharacterCardSchema, c);
-    if (v.ok) {
-      validChars++;
-    } else {
-      console.error(`[check] Character ${c.id} failed validation:`, v.issues);
+  for (const cs of characterSummaries) {
+    const vs = validate(CharacterSummarySchema, cs);
+    if (!vs.ok) {
+      console.error(`[check] Character summary ${cs.id} failed validation:`, vs.issues);
       hasFailure = true;
+      continue;
     }
+    const full = repos.characters.get(cs.id);
+    if (!full) {
+      console.error(`[check] Character ${cs.id} could not be retrieved in full`);
+      hasFailure = true;
+      continue;
+    }
+    const vf = validate(CharacterCardSchema, full);
+    if (!vf.ok) {
+      console.error(`[check] Character full card ${cs.id} failed validation:`, vf.issues);
+      hasFailure = true;
+      continue;
+    }
+    validChars++;
   }
 
   let validPersonas = 0;
@@ -144,7 +187,7 @@ try {
     }
   }
 
-  console.log(`${validChars}/${characters.length} characters valid, ${validPersonas}/${personas.length} personas valid`);
+  console.log(`${validChars}/${characterSummaries.length} characters valid, ${validPersonas}/${personas.length} personas valid`);
 
   if (hasFailure) {
     process.exit(1);

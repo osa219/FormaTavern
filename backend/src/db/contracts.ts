@@ -1,6 +1,12 @@
 import type {
   CharacterCard,
+  CharacterSummary,
+  CharacterCreate,
+  CharacterPatch,
+  CharacterListQuery,
   Persona,
+  PersonaCreate,
+  PersonaPatch,
   LLMProvider,
   ChatMetadata,
   Segment,
@@ -15,11 +21,17 @@ import type {
 } from '@formatavern/shared';
 
 export interface CharacterRepository {
-  list(): CharacterCard[];
+  list(q?: CharacterListQuery): { items: CharacterSummary[]; nextCursor: string | null };
   get(id: string): CharacterCard | null;
+  create(input: CharacterCreate): CharacterCard;
+  patch(id: string, input: CharacterPatch): CharacterCard | 'stale' | 'missing';
+  remove(id: string, opts?: { cascadeChats?: boolean }): { chats: number } | 'restricted';
+  duplicate(id: string): CharacterCard;
+  chatCounts(id: string): { chats: number };
+  popularTags(limit?: number): Array<{ tag: string; count: number }>;
+  tags(): { tag: string; count: number }[];
   upsert(card: CharacterCard): void;
   insertIfAbsent(card: CharacterCard): boolean;
-  remove(id: string): void;
   count(): number;
 }
 
@@ -27,9 +39,13 @@ export interface PersonaRepository {
   list(): Persona[];
   get(id: string): Persona | null;
   getDefault(): Persona | null;
+  create(input: PersonaCreate): Persona;
+  patch(id: string, input: PersonaPatch): Persona | 'stale' | 'missing';
+  setDefault(id: string): Persona[];
+  remove(id: string, opts?: { reassignTo?: string }): { chats: number } | 'restricted' | 'is_default';
+  chatCounts(id: string): { chats: number };
   upsert(persona: Persona): void;
   insertIfAbsent(persona: Persona): boolean;
-  remove(id: string): void;
   count(): number;
 }
 
@@ -73,10 +89,10 @@ export interface ChatRepository {
     title: string;
     primaryCharacterId: string;
     activePersonaId: string;
-    metadata: ChatMetadata;
+    metadata?: ChatMetadata;
   }): ChatRow;
   get(id: string): ChatRow | null;
-  list(): Array<ChatRow & { messageCount: number }>;
+  list(opts?: { characterId?: string; limit?: number; cursor?: string }): Array<ChatRow & { messageCount: number; turnCount: number }>;
   update(
     id: string,
     patch: {

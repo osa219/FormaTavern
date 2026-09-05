@@ -73,7 +73,9 @@ describe('SQLite Repositories', () => {
     repos.characters.upsert(testEldrin);
     const retrieved = repos.characters.get('eldrin-the-mage');
     expect(retrieved).not.toBeNull();
-    expect(retrieved).toEqual(testEldrin);
+    expect(retrieved).toMatchObject(testEldrin);
+    expect(typeof retrieved?.createdAt).toBe('number');
+    expect(typeof retrieved?.updatedAt).toBe('number');
 
     // Verify no undefined keys in object
     for (const key of Object.keys(retrieved!)) {

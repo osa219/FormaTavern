@@ -11,6 +11,7 @@ import { seed } from './db/seeds/seed';
 import { recoverStaleGenerations } from './engine/recovery';
 import { GenerationHubImpl } from './engine/hub';
 import { ProviderRegistryImpl } from './engine/providers';
+import { FsAssetStore } from './assets/store';
 
 const HOST = process.env.FORMATAVERN_HOST ?? '127.0.0.1';
 const PORT = Number(process.env.FORMATAVERN_PORT ?? 3000);
@@ -72,10 +73,12 @@ process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 
 // 8. Assemble Elysia app
+const assets = new FsAssetStore(ASSETS_DIR);
 const app = createApp({
   repos,
   hub,
   providers,
+  assets,
   options: {
     nodeEnv: process.env.NODE_ENV
   }
@@ -92,7 +95,8 @@ const server = new Elysia()
       assets: ASSETS_DIR,
       prefix: '/assets',
       headers: {
-        'Cache-Control': 'public, max-age=3600'
+        'Cache-Control': 'public, max-age=31536000, immutable',
+        'X-Content-Type-Options': 'nosniff'
       }
     })
   )
