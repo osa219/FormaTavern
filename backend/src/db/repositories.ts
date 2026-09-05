@@ -9,6 +9,9 @@ import {
   type ThemeOverrides
 } from '@formatavern/shared';
 import type { CharacterRepository, PersonaRepository, Repositories } from './contracts';
+import { SQLiteChatRepository } from './repositories/chats';
+import { SQLiteMessageRepository } from './repositories/messages';
+import { SQLiteSettingsRepository } from './repositories/settings';
 
 interface CharacterRow {
   id: string;
@@ -317,13 +320,22 @@ export class SqlitePersonaRepository implements PersonaRepository {
 export function createRepositories(db: Database): Repositories {
   const characters = new SqliteCharacterRepository(db);
   const personas = new SqlitePersonaRepository(db);
+  const chats = new SQLiteChatRepository(db);
+  const messages = new SQLiteMessageRepository(db);
+  const settings = new SQLiteSettingsRepository(db);
 
   return {
     characters,
     personas,
+    chats,
+    messages,
+    settings,
     schemaVersion() {
       const row = db.query('PRAGMA user_version;').get() as { user_version: number };
       return row.user_version;
+    },
+    transaction<T>(fn: () => T): T {
+      return db.transaction(fn)();
     }
   };
 }

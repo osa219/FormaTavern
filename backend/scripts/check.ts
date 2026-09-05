@@ -1,6 +1,7 @@
 import { DB_PATH } from '../src/db/paths';
 import { openDatabase } from '../src/db/connection';
 import { createRepositories } from '../src/db/repositories';
+import { nearestState } from '../src/engine/context';
 import { validate, CharacterCardSchema, PersonaSchema } from '@formatavern/shared';
 
 let db;
@@ -30,8 +31,8 @@ try {
     console.error(`[check] ERROR: foreign_keys is not 1`);
     hasFailure = true;
   }
-  if (user_version !== 2) {
-    console.error(`[check] ERROR: user_version is not 2`);
+  if (user_version !== 3) {
+    console.error(`[check] ERROR: user_version is ${user_version}, expected 3`);
     hasFailure = true;
   }
 
@@ -63,7 +64,59 @@ try {
     }
   }
 
+  const chatCols = db.query('PRAGMA table_info(chats);').all() as Array<{ name: string }>;
+  const chatColNames = chatCols.map((c) => c.name);
+  if (!chatColNames.includes('active_leaf_id')) {
+    console.error(`[check] ERROR: chats table missing required column 'active_leaf_id'`);
+    hasFailure = true;
+  }
+
+  // Audit 1: No streaming rows
+  const streamingCount = (
+    db.query("SELECT COUNT(*) as count FROM messages WHERE status = 'streaming';").get() as { count: number }
+  )?.count ?? 0;
+  if (streamingCount > 0) {
+    console.error(`[check] ERROR: Found ${streamingCount} stale 'streaming' message rows`);
+    hasFailure = true;
+  } else {
+    console.log(`no_streaming_rows=ok`);
+  }
+
+  // Audit 2: active_leaf_id in-chat
+  const chatsWithLeaves = db
+    .query('SELECT id, primary_character_id, active_leaf_id, metadata FROM chats WHERE active_leaf_id IS NOT NULL;')
+    .all() as Array<{ id: string; primary_character_id: string; active_leaf_id: string; metadata: string | null }>;
+
   const repos = createRepositories(db);
+
+  for (const c of chatsWithLeaves) {
+    const leafMsg = db.query('SELECT chat_id FROM messages WHERE id = ?;').get(c.active_leaf_id) as {
+      chat_id: string;
+    } | null;
+    if (!leafMsg || leafMsg.chat_id !== c.id) {
+      console.error(
+        `[check] ERROR: Chat ${c.id} active_leaf_id ${c.active_leaf_id} not in chat (found in chat ${leafMsg?.chat_id})`
+      );
+      hasFailure = true;
+    }
+
+    // Audit 3: currentState matches leaf ancestor state
+    const path = repos.messages.path(c.active_leaf_id);
+    const char = repos.characters.get(c.primary_character_id);
+    const expectedState = nearestState(path, char ?? { stateSchema: undefined, initialState: undefined });
+    const chatMeta = c.metadata ? JSON.parse(c.metadata) : {};
+    const currentState = chatMeta.currentState ?? {};
+
+    const diff = Object.keys(expectedState).some((k) => expectedState[k] !== currentState[k]);
+    if (diff) {
+      console.error(
+        `[check] ERROR: Chat ${c.id} currentState does not match leaf state. Expected: ${JSON.stringify(expectedState)}, Found: ${JSON.stringify(currentState)}`
+      );
+      hasFailure = true;
+    }
+  }
+  console.log(`active_leaf_integrity=ok`);
+  console.log(`current_state_integrity=ok`);
   const characters = repos.characters.list();
   const personas = repos.personas.list();
 

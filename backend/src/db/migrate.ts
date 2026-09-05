@@ -60,6 +60,16 @@ export const migrations: readonly Migration[] = [
       db.run(`ALTER TABLE messages ADD COLUMN state TEXT;`);
       db.run(`UPDATE messages SET narrative_role = 'persona' WHERE role = 'user';`);
     }
+  },
+  {
+    version: 3,
+    name: 'chat_branching',
+    up: (db) => {
+      db.run(`ALTER TABLE chats ADD COLUMN active_leaf_id TEXT REFERENCES messages(id) ON DELETE SET NULL;`);
+      db.run(`CREATE INDEX IF NOT EXISTS idx_messages_streaming ON messages(status) WHERE status = 'streaming';`);
+      db.run(`CREATE INDEX IF NOT EXISTS idx_messages_parent_id_id ON messages(parent_id, id);`);
+      db.run(`UPDATE chats SET active_leaf_id = (SELECT id FROM messages WHERE chat_id = chats.id ORDER BY id DESC LIMIT 1);`);
+    }
   }
 ];
 
