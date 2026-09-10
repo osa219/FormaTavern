@@ -1,10 +1,14 @@
 <script lang="ts">
   import type { PageData } from './$types';
   import type { CharacterCard, ChatView, Persona } from '@formatavern/shared';
+  import { resolveTheme } from '@formatavern/shared';
+  import { serializeVars, themeToCssVars } from '$lib/theme/cssVars';
+  import { prefs } from '$lib/state/prefs.svelte';
   import { api, toUiError } from '$lib/api';
   import { toasts } from '$lib/state/toasts.svelte';
 
   import Icon from '$lib/components/ui/Icon.svelte';
+  import Backdrop from '$lib/components/chat/Backdrop.svelte';
   import ShowcaseHero from '$lib/components/showcase/ShowcaseHero.svelte';
   import ActionHub from '$lib/components/showcase/ActionHub.svelte';
   import ResumeMenu from '$lib/components/showcase/ResumeMenu.svelte';
@@ -16,6 +20,22 @@
   const character = $derived(data.character as CharacterCard);
   let chats = $state<ChatView[]>([]);
   const personas = $derived((data.personas ?? []) as Persona[]);
+
+  // Showcase is a theme root for this companion: character.style only
+  // (no bindings, no persona), per the Phase 5 blueprint. Static content
+  // page, so transitions stay off. Derived from the resolved theme so the
+  // a11y kill-switch (disableCharacterThemes) is honored for backdrop too.
+  const showcaseTheme = $derived(
+    resolveTheme({
+      character: character.style,
+      a11y: {
+        disableCharacterThemes: prefs.disableCharacterThemes,
+        disableReactiveTheming: true
+      }
+    })
+  );
+  const showcaseStyle = $derived(serializeVars(themeToCssVars(showcaseTheme.theme)));
+  const showcaseBg = $derived(showcaseTheme.theme.background.image ?? null);
 
   $effect(() => {
     chats = data.chats ?? [];
@@ -53,9 +73,16 @@
   <title>{character.name} — FormaTavern</title>
 </svelte:head>
 
-<div class="min-h-screen bg-neutral-950 text-neutral-100 font-sans">
+<div
+  style={showcaseStyle}
+  data-transitions="off"
+  class="relative isolate min-h-screen bg-neutral-950 text-neutral-100 font-sans"
+>
+  <!-- Ambient character backdrop (image + overlay, or accent gradient fallback) -->
+  <Backdrop image={showcaseBg} />
+
   <!-- Top Bar -->
-  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/80 bg-neutral-900/80 px-6 backdrop-blur-md">
+  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/40 bg-transparent px-6 backdrop-blur-md">
     <div class="flex items-center gap-3">
       <a
         href="/"

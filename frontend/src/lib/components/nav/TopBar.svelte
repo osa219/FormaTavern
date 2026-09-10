@@ -27,7 +27,7 @@
 
 </script>
 
-<header class="relative z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/80 bg-neutral-900/80 px-3 backdrop-blur-md">
+<header class="relative z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/80 bg-neutral-900/50 px-3 backdrop-blur-md">
   <!-- Left: Navigation Menu & Home -->
   <div class="flex items-center gap-2">
     <button

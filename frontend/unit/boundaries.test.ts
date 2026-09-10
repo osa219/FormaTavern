@@ -74,4 +74,13 @@ describe('Architecture & Boundary Police (Invariant U2, U3, U6)', () => {
       }
     }
   });
+
+  it('ensures every Backdrop host establishes a stacking context (isolate) so the -z-10 backdrop paints above the root background', () => {
+    for (const file of allSourceFiles) {
+      const content = readFileSync(file, 'utf-8');
+      if (content.includes('<Backdrop')) {
+        expect(content).toMatch(/\bisolate\b/);
+      }
+    }
+  });
 });

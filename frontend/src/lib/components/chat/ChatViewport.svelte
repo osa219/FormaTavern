@@ -282,7 +282,7 @@
   style={themeEngine.styleAttr}
   data-theme-scheme={themeEngine.themeScheme}
   data-transitions={transitionAttr}
-  class="relative grid h-[100dvh] w-full grid-rows-[auto_1fr_auto] overflow-hidden bg-neutral-950 font-sans text-neutral-100 select-text"
+  class="relative isolate grid h-[100dvh] w-full grid-rows-[auto_1fr_auto] overflow-hidden bg-neutral-950 font-sans text-neutral-100 select-text"
 >
   <!-- Backdrop image / ambient gradient layer -->
   <Backdrop image={themeEngine.backgroundImage} />
@@ -328,7 +328,7 @@
   </main>
 
   <!-- Composer & Director Drawer -->
-  <footer class="relative z-20 w-full border-t border-neutral-800/80 bg-neutral-900/80 backdrop-blur-md">
+  <footer class="relative z-20 w-full border-t border-neutral-800/40 bg-transparent backdrop-blur-md">
     <Composer
       busy={session.busy}
       personaName={session.persona?.name || 'Traveler'}

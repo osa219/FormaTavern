@@ -83,7 +83,7 @@
   }
 </script>
 
-<div class="relative w-full border-t border-neutral-800 bg-neutral-950/90 p-3 md:px-6 backdrop-blur-sm">
+<div class="relative w-full border-t border-neutral-800/40 bg-neutral-950/30 p-3 md:px-6 backdrop-blur-sm">
   <DirectorDrawer
     open={directorOpen}
     {directorNote}

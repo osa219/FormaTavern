@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import { media } from '$lib/state/media.svelte';
 
   let { image = null }: { image?: string | null } = $props();
@@ -8,23 +9,40 @@
   let activeLayer = $state<'A' | 'B'>('A');
 
   $effect(() => {
-    if (!image) {
+    const target = image;
+    if (!target) {
       layerA = null;
       layerB = null;
+      activeLayer = 'A';
       return;
     }
 
-    // Preload new image
-    const img = new Image();
-    img.src = image;
-    img.onload = () => {
-      if (activeLayer === 'A') {
-        layerB = image;
+    // Preload new image before cross-fading it in.
+    // activeLayer is read untracked: this effect writes it, so tracking
+    // the read would retrigger the effect forever (effect_update_depth_exceeded).
+    let cancelled = false;
+    const show = () => {
+      if (cancelled) return;
+      const current = untrack(() => activeLayer);
+      if (current === 'A') {
+        layerB = target;
         activeLayer = 'B';
       } else {
-        layerA = image;
+        layerA = target;
         activeLayer = 'A';
       }
+    };
+    const img = new Image();
+    img.onload = show;
+    img.onerror = () => {
+      if (!cancelled) console.warn(`[Backdrop] failed to load background image: ${target}`);
+    };
+    img.src = target;
+    // Already cached: onload may not fire again after assignment.
+    if (img.complete && img.naturalWidth > 0) show();
+
+    return () => {
+      cancelled = true;
     };
   });
 </script>
