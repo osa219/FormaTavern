@@ -29,7 +29,31 @@ Cascade: `neutral → global → character → bindings → persona → a11y`.
 
 ---
 
-## §2 — (reserved)
+## §2 — Stories pile up with nowhere to browse them
+
+**Observed on:** current build, Foyer with a growing number of chats.
+
+The home screen mixes everything: the companion catalog plus a flat list of recent stories. As chats accumulate, older stories get buried — there is no place to browse all characters and their stories in one view, grouped and sortable.
+
+### Proposal P2: a dedicated library page for characters and their stories
+
+**Idea:** add a separate page listing every character, each with its stories tucked beneath it in an expandable group showing the story count. Groups can be sorted in different ways (by story count, newest activity, oldest activity).
+
+The home screen keeps only recent characters and recent stories, with a "view all" path into the library.
+
+**Why it matters:**
+
+- Home stays light and fast, which matters most on phones.
+- Browsing a large history needs room — a full page scans far better than a drawer on a small screen.
+- Grouping matches how the app already thinks: stories already belong to characters (the stories drawer groups them the same way).
+
+**Shape of the page:**
+
+- Collapsed groups by default on mobile; the open/closed state survives going back.
+- Newest activity first unless the user picks another sort.
+- Each story row shows what is needed to recognize it: relative date, turn count, in-progress badge, and a delete control that works by touch.
+- A filter box to narrow characters and stories.
+- One shared grouping behind both this page and the stories drawer, so the two can never drift apart.
 
 ---
 
