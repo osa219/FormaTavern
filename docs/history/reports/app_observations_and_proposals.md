@@ -50,3 +50,27 @@ Same link on desktop and phone. Desktop keeps its current first screen. Phone ge
 - Most sessions will be on phones, so first impression is a mobile concern.
 - Faster perceived start with less shifting on small screens.
 - One codebase and one link to share and maintain.
+
+---
+
+## §4 — A phone on the same WiFi cannot reach the app
+
+**Observed on:** current build, phone browser on the same home network.
+
+The app only listens on its own computer. Typing the same address on a phone leads to a "site can't be reached" error, which reads as if the app is broken when it is simply not shared on the network. Testing on a real phone — where most use will happen — currently needs manual workarounds.
+
+### Proposal P4: one supported way to share on home WiFi
+
+**Idea:** offer a single, supported sharing mode that produces a phone-openable address for the same app (screen and data together on one address). The desktop flow stays exactly as it is.
+
+**Why it matters:**
+
+- Real-phone testing becomes a normal step instead of a networking chore.
+- One obvious path beats scattered per-device fixes.
+
+**Guardrails:**
+
+- Private-only by default; sharing on the network is an explicit, temporary choice.
+- Sharing shows a clear warning that anyone on the same WiFi can open the app.
+
+**Not in scope:** public internet access, tunnels, or logins — home WiFi only.
