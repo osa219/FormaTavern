@@ -94,7 +94,7 @@
     <div class="flex flex-wrap items-center gap-1.5">
       <button
         type="button"
-        onclick={() => insertSnippet('.ft-hero {\n  /* Custom hero styling */\n}\n')}
+        onclick={() => insertSnippet('.ft-hero {\n  border: 1px solid var(--theme-accent);\n}\n')}
         class="rounded-lg border border-neutral-800 bg-neutral-850 px-2.5 py-1 text-xs font-mono text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
       >
         .ft-hero

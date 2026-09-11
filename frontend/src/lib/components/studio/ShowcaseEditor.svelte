@@ -123,7 +123,10 @@
 
     <!-- Live Showcase Preview -->
     {#if activeMode === 'split' || activeMode === 'preview'}
-      <div class="flex flex-col rounded-2xl border border-neutral-800 bg-neutral-950 p-6 overflow-y-auto max-h-[600px]">
+      <div
+        data-ft-surface="character"
+        class="flex flex-col rounded-2xl border border-neutral-800 bg-neutral-950 p-6 overflow-y-auto max-h-[600px]"
+      >
         {#if draft.card.showcase}
           <ShowcaseBody markdown={draft.card.showcase} />
         {:else}

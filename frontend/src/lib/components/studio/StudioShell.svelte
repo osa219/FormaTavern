@@ -185,7 +185,7 @@
 
     <!-- Right Rail: Live Preview (5 Cols) -->
     <div class="{mobilePreviewOpen ? 'flex' : 'hidden lg:flex'} lg:col-span-5 flex-col p-4 bg-neutral-950 overflow-hidden">
-      <LivePreview {draft} />
+      <LivePreview {draft} activeStudioTab={activeTab} />
     </div>
   </div>
 </div>
