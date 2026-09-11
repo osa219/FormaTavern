@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { CharacterCard } from '@formatavern/shared';
+  import { HOOKS } from '@formatavern/shared';
   import TagChips from './TagChips.svelte';
   import CreatorCredit from './CreatorCredit.svelte';
 
@@ -12,7 +13,7 @@
   const accent = $derived(character.style?.colors?.accent ?? '#38bdf8');
 </script>
 
-<div class="relative overflow-hidden rounded-3xl border border-neutral-800 bg-neutral-900/60 p-6 md:p-8 backdrop-blur-md">
+<div class="relative overflow-hidden rounded-3xl border border-neutral-800 bg-neutral-900/60 p-6 md:p-8 backdrop-blur-md {HOOKS.character.hero}">
   <!-- Subtle Chameleon Glow from Character Accent -->
   <div
     class="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full opacity-15 blur-3xl"

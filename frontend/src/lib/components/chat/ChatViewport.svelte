@@ -4,6 +4,7 @@
   import type { ChatSession } from '$lib/state/session.svelte';
   import type { ThemeEngine } from '$lib/theme/engine.svelte';
   import type { CharacterCard, ChatView, MessageWithTree, Persona, StateVector } from '@formatavern/shared';
+import { HOOKS } from '@formatavern/shared';
   import { api, toUiError } from '$lib/api';
   import { media } from '$lib/state/media.svelte';
   import { prefs } from '$lib/state/prefs.svelte';
@@ -282,7 +283,8 @@
   style={themeEngine.styleAttr}
   data-theme-scheme={themeEngine.themeScheme}
   data-transitions={transitionAttr}
-  class="relative isolate grid h-[100dvh] w-full grid-rows-[auto_1fr_auto] overflow-hidden bg-neutral-950 font-sans text-neutral-100 select-text"
+  data-ft-surface="chat"
+  class="relative isolate grid h-[100dvh] w-full grid-rows-[auto_1fr_auto] overflow-hidden bg-neutral-950 font-sans text-neutral-100 select-text {HOOKS.chat.viewport}"
 >
   <!-- Backdrop image / ambient gradient layer -->
   <Backdrop image={themeEngine.backgroundImage} />

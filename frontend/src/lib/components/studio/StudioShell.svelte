@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
   import type { CharacterDraft } from '$lib/studio/draft.svelte';
+  import { HOOKS } from '@formatavern/shared';
   import Icon from '$lib/components/ui/Icon.svelte';
   import Spinner from '$lib/components/ui/Spinner.svelte';
 
@@ -55,7 +56,7 @@
 
 <svelte:window onbeforeunload={beforeUnload} />
 
-<div class="flex h-[100dvh] w-full flex-col bg-neutral-950 font-sans text-neutral-100 overflow-hidden">
+<div class="flex h-[100dvh] w-full flex-col bg-neutral-950 font-sans text-neutral-100 overflow-hidden {HOOKS.shell.studio}" data-ft-surface="shell">
   <!-- Publish Bar / Header -->
   <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/80 bg-neutral-900/90 px-6 backdrop-blur-md shrink-0">
     <div class="flex items-center gap-4 min-w-0">

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { Persona } from '@formatavern/shared';
+  import { HOOKS } from '@formatavern/shared';
   import Icon from '$lib/components/ui/Icon.svelte';
 
   let {
@@ -53,7 +54,7 @@
 
 {#if open}
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-    <div class="w-full max-w-md rounded-2xl border border-neutral-800 bg-neutral-900 p-6 shadow-2xl">
+    <div class="w-full max-w-md rounded-2xl border border-neutral-800 bg-neutral-900 p-6 shadow-2xl {HOOKS.chrome.dialog}">
       <div class="flex items-center justify-between">
         <h3 class="text-base font-semibold text-neutral-100">
           Choose Your Persona

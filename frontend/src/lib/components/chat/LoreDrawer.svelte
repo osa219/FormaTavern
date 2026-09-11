@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { CharacterCard, ChatView, Persona, StateVector } from '@formatavern/shared';
+  import { HOOKS } from '@formatavern/shared';
   import ShowcaseBody from '$lib/components/showcase/ShowcaseBody.svelte';
   import Icon from '$lib/components/ui/Icon.svelte';
 
@@ -59,7 +60,7 @@
       role="dialog"
       aria-modal="true"
       aria-label="Companion Lore and Info"
-      class="flex h-full w-full max-w-[28rem] flex-col border-l border-neutral-800 bg-neutral-900/95 font-sans text-neutral-100 shadow-2xl backdrop-blur-md"
+      class="flex h-full w-full max-w-[28rem] flex-col border-l border-neutral-800 bg-neutral-900/95 font-sans text-neutral-100 shadow-2xl backdrop-blur-md {HOOKS.chat.loreDrawer}"
     >
       <!-- Drawer Header -->
       <div class="flex items-center justify-between border-b border-neutral-800 px-5 py-3.5">

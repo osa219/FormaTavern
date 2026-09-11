@@ -1,6 +1,7 @@
 <script lang="ts">
   import Markdown from '../ui/Markdown.svelte';
   import StreamCaret from './StreamCaret.svelte';
+  import { HOOKS } from '@formatavern/shared';
 
   let {
     variant,
@@ -24,6 +25,9 @@
     isNpc ? Boolean(name) : !isUser && Boolean(name) && name !== primaryName
   );
   const tailSide = $derived(isUser ? 'right' : 'left');
+  const bubbleHook = $derived(
+    isUser ? HOOKS.chat.bubbleUser : isNpc ? HOOKS.chat.bubbleNpc : HOOKS.chat.bubbleChar
+  );
 
   const npcStyle = $derived(
     isNpc && hue !== null
@@ -34,7 +38,7 @@
 
 <div class="flex w-full {isUser ? 'justify-end' : 'justify-start'}">
   <div
-    class="bubble-tail relative max-w-[85%] md:max-w-[70%] shadow-md {isUser
+    class="bubble-tail relative max-w-[85%] md:max-w-[70%] shadow-md {bubbleHook} {isUser
       ? 'bg-user-bg text-user-text border border-user-border rounded-bubble p-(--theme-bubble-padding)'
       : isNpc
         ? 'text-char-text border border-char-border/60 rounded-bubble p-(--theme-bubble-padding)'

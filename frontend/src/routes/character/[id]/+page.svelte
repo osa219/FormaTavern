@@ -76,6 +76,7 @@
 <div
   style={showcaseStyle}
   data-transitions="off"
+  data-ft-surface="character"
   class="relative isolate min-h-screen bg-neutral-950 text-neutral-100 font-sans"
 >
   <!-- Ambient character backdrop (image + overlay, or accent gradient fallback) -->

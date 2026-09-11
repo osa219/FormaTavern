@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { defaultState, resolveTheme, type CharacterCard as CharacterCardType } from '@formatavern/shared';
+  import { defaultState, resolveTheme, HOOKS, type CharacterCard as CharacterCardType } from '@formatavern/shared';
   import { themeToCssVars } from '$lib/theme/cssVars';
   import Icon from '../ui/Icon.svelte';
   import Spinner from '../ui/Spinner.svelte';
@@ -49,7 +49,7 @@
 <div
   style={styleAttr}
   data-transitions="off"
-  class="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-neutral-800/90 bg-neutral-900/90 p-5 shadow-xl transition-colors duration-200 hover:border-neutral-700 hover:shadow-2xl"
+  class="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-neutral-800/90 bg-neutral-900/90 p-5 shadow-xl transition-colors duration-200 hover:border-neutral-700 hover:shadow-2xl {HOOKS.chrome.card}"
 >
   <!-- Ambient Gradient Swatch Background -->
   <div

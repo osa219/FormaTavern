@@ -2,7 +2,7 @@
   import Icon from '../ui/Icon.svelte';
   import SwipeCarousel from './SwipeCarousel.svelte';
   import { toasts } from '$lib/state/toasts.svelte';
-  import { stripOutOfBand } from '@formatavern/shared';
+  import { stripOutOfBand, HOOKS } from '@formatavern/shared';
 
   let {
     messageId,
@@ -45,7 +45,7 @@
   const isAssistant = $derived(role === 'assistant');
 </script>
 
-<div class="flex items-center justify-between gap-2 text-xs text-neutral-400">
+<div class="flex items-center justify-between gap-2 text-xs text-neutral-400 {HOOKS.chat.turnToolbar}">
   <div class="flex items-center gap-1.5">
     {#if isAssistant && siblingCount > 1}
       <SwipeCarousel

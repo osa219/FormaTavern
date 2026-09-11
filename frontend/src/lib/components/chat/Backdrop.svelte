@@ -1,5 +1,6 @@
 <script lang="ts">
   import { untrack } from 'svelte';
+  import { HOOKS } from '@formatavern/shared';
   import { media } from '$lib/state/media.svelte';
 
   let { image = null }: { image?: string | null } = $props();
@@ -47,7 +48,7 @@
   });
 </script>
 
-<div class="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
+<div class="pointer-events-none absolute inset-0 -z-10 overflow-hidden {HOOKS.chat.backdrop}" aria-hidden="true">
   <!-- Layer A -->
   {#if layerA}
     <div

@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { CharacterSummary } from '@formatavern/shared';
+  import { HOOKS } from '@formatavern/shared';
   import CompanionCard from './CompanionCard.svelte';
   import EmptyState from './EmptyState.svelte';
   import Spinner from '$lib/components/ui/Spinner.svelte';
@@ -25,7 +26,7 @@
   } = $props();
 </script>
 
-<div>
+<div class={HOOKS.shell.foyerGrid}>
   {#if loading && companions.length === 0}
     <!-- Skeleton Grid -->
     <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">

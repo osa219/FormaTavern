@@ -1,6 +1,7 @@
 <script lang="ts">
   import Icon from '../ui/Icon.svelte';
   import { api } from '$lib/api';
+  import { HOOKS } from '@formatavern/shared';
 
   let {
     messageId,
@@ -60,7 +61,7 @@
 </script>
 
 <div
-  class="flex items-center gap-1 rounded border border-neutral-800 bg-neutral-900/80 px-1.5 py-0.5 text-[11px] font-medium text-neutral-400"
+  class="flex items-center gap-1 rounded border border-neutral-800 bg-neutral-900/80 px-1.5 py-0.5 text-[11px] font-medium text-neutral-400 {HOOKS.chat.swipeCarousel}"
   onmouseenter={ensureSiblings}
   onfocusin={ensureSiblings}
   role="region"

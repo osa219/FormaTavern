@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import type { CharacterCard, Persona } from '@formatavern/shared';
+  import { HOOKS } from '@formatavern/shared';
   import { api, toUiError } from '$lib/api';
   import { toasts } from '$lib/state/toasts.svelte';
   import Icon from '$lib/components/ui/Icon.svelte';
@@ -126,7 +127,7 @@
 
 <svelte:window onkeydown={handleKeydown} onclick={() => { if (menuOpen) menuOpen = false; }} />
 
-<div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-neutral-800/80 bg-neutral-900/60 p-4 backdrop-blur-md">
+<div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-neutral-800/80 bg-neutral-900/60 p-4 backdrop-blur-md {HOOKS.character.actionHub}">
   <div class="flex items-center gap-3">
     <!-- Start New Story Button -->
     <button

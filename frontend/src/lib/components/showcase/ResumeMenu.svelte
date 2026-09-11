@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import type { ChatView } from '@formatavern/shared';
+  import { HOOKS } from '@formatavern/shared';
   import Icon from '$lib/components/ui/Icon.svelte';
 
   let {
@@ -26,7 +27,7 @@
 </script>
 
 {#if chats.length > 0}
-  <div class="space-y-3">
+  <div class="space-y-3 {HOOKS.character.resumeMenu}">
     <div class="flex items-center justify-between border-b border-neutral-800 pb-2">
       <h3 class="text-xs font-semibold uppercase tracking-wider text-neutral-400">
         Resume Existing Story

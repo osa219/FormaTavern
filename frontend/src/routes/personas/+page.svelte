@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import type { Persona } from '@formatavern/shared';
+  import { HOOKS } from '@formatavern/shared';
   import { personasStore } from '$lib/state/personas.svelte';
   import { toasts } from '$lib/state/toasts.svelte';
 
@@ -49,7 +50,7 @@
   }
 </script>
 
-<div class="min-h-screen bg-neutral-950 text-neutral-100 font-sans">
+<div class="min-h-screen bg-neutral-950 text-neutral-100 font-sans {HOOKS.shell.personas}" data-ft-surface="shell">
   <!-- Header -->
   <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/80 bg-neutral-900/80 px-6 backdrop-blur-md">
     <div class="flex items-center gap-3">

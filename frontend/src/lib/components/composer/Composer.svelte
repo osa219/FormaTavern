@@ -6,6 +6,7 @@
   import { autosize } from '$lib/actions/autosize';
   import { prefs } from '$lib/state/prefs.svelte';
   import type { NarrativeRole } from '@formatavern/shared';
+  import { HOOKS } from '@formatavern/shared';
 
   let {
     busy = false,
@@ -83,7 +84,7 @@
   }
 </script>
 
-<div class="relative w-full border-t border-neutral-800/40 bg-neutral-950/30 p-3 md:px-6 backdrop-blur-sm">
+<div class="relative w-full border-t border-neutral-800/40 bg-neutral-950/30 p-3 md:px-6 backdrop-blur-sm {HOOKS.chat.composer}">
   <DirectorDrawer
     open={directorOpen}
     {directorNote}

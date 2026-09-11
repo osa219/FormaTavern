@@ -1,6 +1,7 @@
 <script lang="ts">
   import Markdown from '../ui/Markdown.svelte';
   import StreamCaret from './StreamCaret.svelte';
+  import { HOOKS } from '@formatavern/shared';
 
   let {
     text = '',
@@ -13,7 +14,7 @@
   } = $props();
 </script>
 
-<div class="relative mx-auto my-2 w-full max-w-[62ch] px-4 text-center">
+<div class="relative mx-auto my-2 w-full max-w-[62ch] px-4 text-center {HOOKS.chat.narrator}">
   {#if showSeparator}
     <div
       class="mx-auto mb-3 h-[1px] w-12 opacity-60"

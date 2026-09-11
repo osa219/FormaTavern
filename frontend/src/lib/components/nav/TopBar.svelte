@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { CharacterCard, ChatView, StateVector } from '@formatavern/shared';
+  import { HOOKS } from '@formatavern/shared';
   import Icon from '../ui/Icon.svelte';
   import StateHud from '../hud/StateHud.svelte';
 
@@ -27,7 +28,7 @@
 
 </script>
 
-<header class="relative z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/80 bg-neutral-900/50 px-3 backdrop-blur-md">
+<header class="relative z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/80 bg-neutral-900/50 px-3 backdrop-blur-md {HOOKS.chrome.topbar}">
   <!-- Left: Navigation Menu & Home -->
   <div class="flex items-center gap-2">
     <button

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import type { CharacterSummary } from '@formatavern/shared';
-  import { displayTag } from '@formatavern/shared';
+  import { displayTag, HOOKS } from '@formatavern/shared';
   import Icon from '$lib/components/ui/Icon.svelte';
 
   let {
@@ -27,7 +27,7 @@
       goto(`/character/${companion.id}`);
     }
   }}
-  class="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-neutral-800/80 bg-neutral-900/60 p-5 transition-colors hover:border-neutral-700 hover:bg-neutral-850/80 cursor-pointer text-left shadow-lg hover:shadow-xl"
+  class="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-neutral-800/80 bg-neutral-900/60 p-5 transition-colors hover:border-neutral-700 hover:bg-neutral-850/80 cursor-pointer text-left shadow-lg hover:shadow-xl {HOOKS.chrome.card}"
 >
   <!-- Subtle accent glow -->
   <div

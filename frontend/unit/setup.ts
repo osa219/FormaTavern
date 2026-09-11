@@ -47,3 +47,21 @@ statePolyfill.raw = (initial: any) => initial;
 const derivedPolyfill: any = (fn: any) => (typeof fn === 'function' ? fn() : fn);
 derivedPolyfill.by = (fn: any) => fn();
 (globalThis as any).$derived = derivedPolyfill;
+
+import { plugin } from 'bun';
+import { compile } from 'svelte/compiler';
+import { join } from 'node:path';
+
+// SvelteKit virtual modules and Svelte file compilation in Bun test runner
+plugin({
+  name: 'svelte-test-loader',
+  setup(build) {
+    build.onLoad({ filter: /\.svelte$/ }, async ({ path }) => {
+      const source = await Bun.file(path).text();
+      const { js } = compile(source, { filename: path, generate: 'server' });
+      const mockDir = join(import.meta.dir, 'mocks/app').replace(/\\/g, '/');
+      const rewritten = js.code.replace(/(['"])\$app\/([^'"]+)\1/g, `'${mockDir}/$2.ts'`);
+      return { contents: rewritten, loader: 'js' };
+    });
+  }
+});

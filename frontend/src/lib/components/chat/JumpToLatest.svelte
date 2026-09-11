@@ -1,5 +1,6 @@
 <script lang="ts">
   import Icon from '../ui/Icon.svelte';
+  import { HOOKS } from '@formatavern/shared';
 
   let {
     visible = false,
@@ -13,7 +14,7 @@
 </script>
 
 {#if visible}
-  <div class="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 z-20">
+  <div class="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 z-20 {HOOKS.chat.jumpToLatest}">
     <button
       type="button"
       {onclick}

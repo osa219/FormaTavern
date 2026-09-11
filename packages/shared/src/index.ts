@@ -35,3 +35,4 @@ export * from './text/slug';
 export * from './fixtures/stream';
 export * from './fixtures/envelope';
 export * from './theme';
+export * from './hooks/manifest';

@@ -6,6 +6,7 @@
   import TurnToolbar from './TurnToolbar.svelte';
   import JumpToLatest from './JumpToLatest.svelte';
   import type { MessageWithTree } from '@formatavern/shared';
+  import { HOOKS } from '@formatavern/shared';
 
   let {
     session,
@@ -73,7 +74,7 @@
 <div class="relative flex-1 min-h-0 w-full">
   <div
     bind:this={logEl}
-    class="h-full w-full overflow-y-auto px-4 py-6 md:px-8 focus:outline-none"
+    class="h-full w-full overflow-y-auto px-4 py-6 md:px-8 focus:outline-none {HOOKS.chat.messageLog}"
     style="overflow-anchor: none;"
     tabindex="-1"
     role="region"

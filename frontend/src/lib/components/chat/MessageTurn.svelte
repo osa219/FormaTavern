@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Segment, MessageStatus, NarrativeRole } from '@formatavern/shared';
+  import { HOOKS } from '@formatavern/shared';
   import NarratorBlock from './NarratorBlock.svelte';
   import SpeechBubble from './SpeechBubble.svelte';
   import ErrorSlate from './ErrorSlate.svelte';
@@ -32,7 +33,7 @@
 </script>
 
 <article
-  class="turn group relative my-2 flex w-full flex-col gap-1.5"
+  class="turn group relative my-2 flex w-full flex-col gap-1.5 {HOOKS.chat.turn}"
   data-role={narrativeRole}
   data-status={status}
   aria-busy={streaming}

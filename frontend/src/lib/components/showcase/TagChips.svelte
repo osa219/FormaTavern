@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { displayTag } from '@formatavern/shared';
+  import { displayTag, HOOKS } from '@formatavern/shared';
 
   let {
     tags = []
@@ -9,7 +9,7 @@
 </script>
 
 {#if tags && tags.length > 0}
-  <div class="flex flex-wrap items-center gap-1.5">
+  <div class="flex flex-wrap items-center gap-1.5 {HOOKS.character.tagChips}">
     {#each tags as tag (tag)}
       <a
         href="/?tags={encodeURIComponent(tag)}"

@@ -3,6 +3,7 @@
   import { goto } from '$app/navigation';
   import type { PageData } from './$types';
   import type { ChatView } from '@formatavern/shared';
+  import { HOOKS } from '@formatavern/shared';
   import { api, toUiError } from '$lib/api';
   import { toasts } from '$lib/state/toasts.svelte';
   import { catalogStore } from '$lib/state/catalog.svelte';
@@ -112,9 +113,9 @@
   <title>FormaTavern — Companion Catalog</title>
 </svelte:head>
 
-<div class="min-h-screen bg-neutral-950 text-neutral-100 font-sans">
+<div class="min-h-screen bg-neutral-950 text-neutral-100 font-sans" data-ft-surface="shell">
   <!-- Top Navigation Header -->
-  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/80 bg-neutral-900/80 px-6 backdrop-blur-md">
+  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/80 bg-neutral-900/80 px-6 backdrop-blur-md {HOOKS.shell.foyerHeader}">
     <div class="flex items-center gap-3">
       <span class="text-accent text-lg">◈</span>
       <h1 class="text-sm font-bold tracking-wide text-neutral-100 uppercase">
@@ -202,7 +203,7 @@
     </section>
 
     <!-- Companion Grid (Foyer v2) -->
-    <section aria-label="Available Companions">
+    <section aria-label="Available Companions" class={HOOKS.shell.foyerGrid}>
       <CompanionGrid
         companions={catalogStore.items}
         loading={catalogStore.loading}
@@ -219,7 +220,7 @@
     </section>
 
     <!-- Recent Stories Section -->
-    <section aria-label="Recent Stories" class="border-t border-neutral-800/80 pt-8 space-y-4">
+    <section aria-label="Recent Stories" class="border-t border-neutral-800/80 pt-8 space-y-4 {HOOKS.shell.recentStories}">
       <div class="flex items-center justify-between border-b border-neutral-800 pb-2">
         <h3 class="text-xs font-semibold uppercase tracking-wider text-neutral-400">
           Recent Stories
