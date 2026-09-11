@@ -278,4 +278,67 @@ describe('Phase 5 Routes', () => {
     expect(json.items.length).toBe(4);
     expect(json.items.some((c: any) => c.name === 'Companion A')).toBe(true);
   });
+
+  it('handles customCss on POST/PATCH, rejects oversized payloads with 422, and clears with null', async () => {
+    const { app } = setupTestApp();
+
+    const sampleCss = '.ft-char-avatar { border-radius: 9999px; }';
+    const createRes = await app.handle(
+      new Request('http://127.0.0.1/api/characters', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...makeCardInput('Styled Char'),
+          customCss: sampleCss
+        })
+      })
+    );
+    expect(createRes.status).toBe(201);
+    const created = (await createRes.json()) as any;
+    expect(created.customCss).toBe(sampleCss);
+
+    // Reject oversized customCss (> 131,072 characters)
+    const oversizedCss = 'a'.repeat(131_073);
+    const overRes = await app.handle(
+      new Request('http://127.0.0.1/api/characters', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...makeCardInput('Oversized Char'),
+          customCss: oversizedCss
+        })
+      })
+    );
+    expect(overRes.status).toBe(422);
+
+    // Patch with new CSS
+    const patchRes = await app.handle(
+      new Request(`http://127.0.0.1/api/characters/${created.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customCss: '.ft-char-name { color: red; }',
+          expectedUpdatedAt: created.updatedAt
+        })
+      })
+    );
+    expect(patchRes.status).toBe(200);
+    const patched = (await patchRes.json()) as any;
+    expect(patched.customCss).toBe('.ft-char-name { color: red; }');
+
+    // Patch with null to clear customCss
+    const clearRes = await app.handle(
+      new Request(`http://127.0.0.1/api/characters/${created.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customCss: null,
+          expectedUpdatedAt: patched.updatedAt
+        })
+      })
+    );
+    expect(clearRes.status).toBe(200);
+    const cleared = (await clearRes.json()) as any;
+    expect(cleared.customCss).toBeUndefined();
+  });
 });

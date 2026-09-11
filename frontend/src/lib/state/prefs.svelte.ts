@@ -4,6 +4,7 @@ class PrefsStore {
   enterToSend = $state<boolean>(true);
   devMode = $state<boolean>(false);
   reducedMotion = $state<'system' | 'on' | 'off'>('system');
+  hideCustomStyling = $state<boolean>(false);
 
   constructor() {
     if (typeof localStorage !== 'undefined') {
@@ -26,6 +27,9 @@ class PrefsStore {
           if (['system', 'on', 'off'].includes(parsed.reducedMotion)) {
             this.reducedMotion = parsed.reducedMotion;
           }
+          if (typeof parsed.hideCustomStyling === 'boolean') {
+            this.hideCustomStyling = parsed.hideCustomStyling;
+          }
         }
       } catch {
         // ignore localStorage failure
@@ -43,7 +47,8 @@ class PrefsStore {
             disableReactiveTheming: this.disableReactiveTheming,
             enterToSend: this.enterToSend,
             devMode: this.devMode,
-            reducedMotion: this.reducedMotion
+            reducedMotion: this.reducedMotion,
+            hideCustomStyling: this.hideCustomStyling
           })
         );
       } catch {

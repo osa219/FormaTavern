@@ -13,12 +13,13 @@
   import StatePanel from './StatePanel.svelte';
   import BindingsPanel from './BindingsPanel.svelte';
   import GalleryManager from './GalleryManager.svelte';
+  import CustomCssPanel from './CustomCssPanel.svelte';
   import LivePreview from './LivePreview.svelte';
   import ConfirmDialog from '$lib/components/dialogs/ConfirmDialog.svelte';
 
   let { draft }: { draft: CharacterDraft } = $props();
 
-  type StudioTab = 'identity' | 'voice' | 'showcase' | 'aesthetic' | 'state' | 'bindings' | 'gallery';
+  type StudioTab = 'identity' | 'voice' | 'showcase' | 'aesthetic' | 'css' | 'state' | 'bindings' | 'gallery';
   let activeTab = $state<StudioTab>('identity');
   let saving = $state(false);
   let discardConfirmOpen = $state(false);
@@ -143,6 +144,7 @@
           { id: 'voice', label: 'Voice' },
           { id: 'showcase', label: 'Showcase' },
           { id: 'aesthetic', label: 'Aesthetic' },
+          { id: 'css', label: 'CSS' },
           { id: 'state', label: 'State' },
           { id: 'bindings', label: 'Bindings' },
           { id: 'gallery', label: 'Gallery' }
@@ -169,6 +171,8 @@
           <ShowcaseEditor {draft} />
         {:else if activeTab === 'aesthetic'}
           <AestheticPanel {draft} />
+        {:else if activeTab === 'css'}
+          <CustomCssPanel {draft} />
         {:else if activeTab === 'state'}
           <StatePanel {draft} />
         {:else if activeTab === 'bindings'}

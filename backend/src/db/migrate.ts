@@ -129,6 +129,13 @@ export const migrations: readonly Migration[] = [
         [searchBackend, now]
       );
     }
+  },
+  {
+    version: 5,
+    name: 'creator_customization',
+    up: (db) => {
+      db.run(`ALTER TABLE characters ADD COLUMN custom_css TEXT;`);
+    }
   }
 ];
 

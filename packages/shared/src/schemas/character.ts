@@ -24,6 +24,7 @@ export const CharacterCardSchema = Type.Object({
   tags: Type.Optional(Type.Array(TagSchema, { default: [], maxItems: 12, uniqueItems: true })),
   creator: Type.Optional(Type.String({ maxLength: 80 })),
   showcase: Type.Optional(Type.String({ maxLength: 65_536 })), // Display only (P4)
+  customCss: Type.Optional(Type.String({ maxLength: 131_072 })), // raw authored CSS; sanitized at render (C10)
   version: Type.Optional(Type.String()),
   createdAt: Type.Optional(UnixMs),
   updatedAt: Type.Optional(UnixMs)
@@ -53,9 +54,10 @@ export const CharacterCreateSchema = Type.Composite([
 export type CharacterCreate = Static<typeof CharacterCreateSchema>;
 
 export const CharacterPatchSchema = Type.Composite([
-  Type.Partial(Type.Omit(CharacterCardSchema, ['id', 'createdAt', 'updatedAt'])),
+  Type.Partial(Type.Omit(CharacterCardSchema, ['id', 'createdAt', 'updatedAt', 'customCss'])),
   Type.Object({
-    expectedUpdatedAt: UnixMs
+    expectedUpdatedAt: UnixMs,
+    customCss: Type.Optional(Type.Union([Type.String({ maxLength: 131_072 }), Type.Null()]))
   })
 ]);
 export type CharacterPatch = Static<typeof CharacterPatchSchema>;

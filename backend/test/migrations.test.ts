@@ -9,13 +9,13 @@ describe('Database Migrations', () => {
     inst?.cleanup();
   });
 
-  it('runs migrations on fresh database from v0 to v4 and alters schema', () => {
+  it('runs migrations on fresh database from v0 to v5 and alters schema', () => {
     inst = openTestDb(':memory:');
     const res = runMigrations(inst.db);
-    expect(res).toEqual({ from: 0, to: 4 });
+    expect(res).toEqual({ from: 0, to: 5 });
 
     const { user_version } = inst.db.query('PRAGMA user_version;').get() as { user_version: number };
-    expect(user_version).toBe(4);
+    expect(user_version).toBe(5);
 
     const msgCols = inst.db.query('PRAGMA table_info(messages);').all() as Array<{ name: string }>;
     const msgColMap = new Set(msgCols.map((c) => c.name));
@@ -33,6 +33,7 @@ describe('Database Migrations', () => {
     expect(charColMap.has('tagline')).toBe(true);
     expect(charColMap.has('creator')).toBe(true);
     expect(charColMap.has('showcase')).toBe(true);
+    expect(charColMap.has('custom_css')).toBe(true);
 
     const tagTable = inst.db
       .query(`SELECT name FROM sqlite_master WHERE type='table' AND name='character_tags';`)
@@ -59,10 +60,10 @@ describe('Database Migrations', () => {
     inst = openTestDb(':memory:');
     runMigrations(inst.db);
     const second = runMigrations(inst.db);
-    expect(second).toEqual({ from: 4, to: 4 });
+    expect(second).toEqual({ from: 5, to: 5 });
   });
 
-  it('upgrades v2 database to v4 and backfills active_leaf_id and tags', () => {
+  it('upgrades v2 database to v5 and backfills active_leaf_id and tags', () => {
     inst = openTestDb(':memory:');
     // Run v1 and v2
     const v2Only = migrations.slice(0, 2);
@@ -92,17 +93,21 @@ describe('Database Migrations', () => {
       [now + 1]
     );
 
-    // Run full migrations (upgrades to v4)
+    // Run full migrations (upgrades to v5)
     const upgrade = runMigrations(inst.db);
-    expect(upgrade).toEqual({ from: 2, to: 4 });
+    expect(upgrade).toEqual({ from: 2, to: 5 });
 
     const chat1 = inst.db.query(`SELECT active_leaf_id FROM chats WHERE id = 'chat1';`).get() as {
       active_leaf_id: string;
     };
     expect(chat1.active_leaf_id).toBe('01M2');
 
-    const hero = inst.db.query(`SELECT creator FROM characters WHERE id = 'c1';`).get() as { creator: string };
+    const hero = inst.db.query(`SELECT creator, custom_css FROM characters WHERE id = 'c1';`).get() as {
+      creator: string;
+      custom_css: string | null;
+    };
     expect(hero.creator).toBe('Alice');
+    expect(hero.custom_css).toBeNull();
 
     const tags = inst.db.query(`SELECT tag FROM character_tags WHERE character_id = 'c1' ORDER BY tag ASC;`).all() as Array<{ tag: string }>;
     expect(tags.map((t) => t.tag)).toEqual(['brave', 'warrior']);
@@ -161,8 +166,8 @@ describe('Database Migrations', () => {
     inst = openTestDb(':memory:');
     runMigrations(inst.db);
 
-    const failingV5: Migration = {
-      version: 5,
+    const failingV6: Migration = {
+      version: 6,
       name: 'failing_migration',
       up: (db) => {
         db.run(`CREATE TABLE test_rollback (id TEXT PRIMARY KEY);`);
@@ -170,12 +175,12 @@ describe('Database Migrations', () => {
       }
     };
 
-    expect(() => runMigrations(inst.db, [...migrations, failingV5])).toThrow(
+    expect(() => runMigrations(inst.db, [...migrations, failingV6])).toThrow(
       'Simulation of unexpected migration failure'
     );
 
     const { user_version } = inst.db.query('PRAGMA user_version;').get() as { user_version: number };
-    expect(user_version).toBe(4);
+    expect(user_version).toBe(5);
 
     const tableCheck = inst.db
       .query(`SELECT name FROM sqlite_master WHERE type='table' AND name='test_rollback';`)
@@ -186,7 +191,7 @@ describe('Database Migrations', () => {
   it('refuses to open if user_version is newer than supported migrations', () => {
     inst = openTestDb(':memory:');
     inst.db.run('PRAGMA user_version = 99;');
-    expect(() => runMigrations(inst.db)).toThrow(/Database is schema v99; this build supports up to v4/);
+    expect(() => runMigrations(inst.db)).toThrow(/Database is schema v99; this build supports up to v5/);
   });
 
   it('rejects non-contiguous migration sequences before running', () => {

@@ -261,4 +261,43 @@ describe('SqliteCharacterRepository (Phase 5)', () => {
       { tag: 'sci-fi', count: 1 }
     ]);
   });
+
+  it('preserves raw CSS comments and whitespace on round-trip', () => {
+    inst = openTestDb(':memory:');
+    runMigrations(inst.db);
+    const repos = createRepositories(inst.db);
+
+    const rawCss = '/* Header comment */\n.ft-char-avatar { border-radius: 50%; } /* inline comment */';
+    const c = repos.characters.create({
+      ...makeCard('styled', 'Styled Character'),
+      customCss: rawCss
+    });
+    expect(c.customCss).toBe(rawCss);
+
+    const fetched = repos.characters.get('styled');
+    expect(fetched?.customCss).toBe(rawCss);
+
+    // Duplication preserves customCss
+    const dup = repos.characters.duplicate('styled');
+    expect(dup.customCss).toBe(rawCss);
+
+    // Summary excludes customCss
+    const list = repos.characters.list();
+    const summary = list.items.find((i) => i.id === 'styled') as any;
+    expect(summary).toBeDefined();
+    expect(summary.customCss).toBeUndefined();
+
+    // Patch clearing customCss
+    const patched = repos.characters.patch('styled', {
+      customCss: null,
+      expectedUpdatedAt: fetched!.updatedAt!
+    });
+    expect(patched).not.toBe('stale');
+    expect(patched).not.toBe('missing');
+    if (typeof patched !== 'string') {
+      expect(patched.customCss).toBeUndefined();
+    }
+    const refetched = repos.characters.get('styled');
+    expect(refetched?.customCss).toBeUndefined();
+  });
 });

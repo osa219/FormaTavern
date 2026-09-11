@@ -21,12 +21,25 @@ const SRC_DIR = resolve(import.meta.dir, '../src');
 describe('Architecture & Boundary Police (Invariant U2, U3, U6)', () => {
   const allSourceFiles = walkDir(SRC_DIR);
 
-  it('prohibits document.createElement("style") and insertRule across all frontend src', () => {
+  it('prohibits document.createElement("style") and insertRule across all frontend src (Invariant U2, Amendment A-U2b)', () => {
+    for (const file of allSourceFiles) {
+      const normalizedPath = file.replace(/\\/g, '/');
+      const isApprovedStyleOutlet = normalizedPath.endsWith('/lib/components/custom/CustomStyleOutlet.svelte');
+      const content = readFileSync(file, 'utf-8');
+      if (!isApprovedStyleOutlet) {
+        expect(content).not.toContain("createElement('style')");
+        expect(content).not.toContain('createElement("style")');
+      }
+      expect(content).not.toContain('insertRule(');
+    }
+  });
+
+  it('ensures @formatavern/shared/customCss is NOT statically imported at runtime outside loader or tests (Invariant C13)', () => {
     for (const file of allSourceFiles) {
       const content = readFileSync(file, 'utf-8');
-      expect(content).not.toContain("createElement('style')");
-      expect(content).not.toContain('createElement("style")');
-      expect(content).not.toContain('insertRule(');
+      // Prohibit value imports from @formatavern/shared/customCss
+      const valueImportRegex = /import\s+(?!type\s+)(?:[\w*\s{},]+)\s+from\s+['"]@formatavern\/shared\/customCss(?:\/index)?['"]/;
+      expect(valueImportRegex.test(content)).toBe(false);
     }
   });
 

@@ -8,6 +8,7 @@ import {
   type StateVector,
   type ValidationIssue
 } from '@formatavern/shared';
+import { loadCustomCss } from '@formatavern/shared/customCss/loader';
 import { api, toUiError } from '$lib/api';
 import { toasts } from '$lib/state/toasts.svelte';
 
@@ -22,6 +23,7 @@ export function createEmptyCard(): CharacterCreate {
     firstMessage: '',
     exampleDialogue: '',
     showcase: '',
+    customCss: '',
     tags: [],
     style: JSON.parse(JSON.stringify(DEFAULT_CHARACTER_THEME)),
     stateSchema: {},
@@ -94,6 +96,7 @@ export class CharacterDraft {
         firstMessage: initialCard.firstMessage,
         exampleDialogue: initialCard.exampleDialogue ?? '',
         showcase: initialCard.showcase ?? '',
+        customCss: initialCard.customCss ?? '',
         tags: [...(initialCard.tags ?? [])],
         style: JSON.parse(JSON.stringify(initialCard.style)),
         stateSchema: initialCard.stateSchema ? JSON.parse(JSON.stringify(initialCard.stateSchema)) : {},
@@ -181,13 +184,30 @@ export class CharacterDraft {
       return 'invalid';
     }
 
+    if (this.card.customCss?.trim()) {
+      try {
+        const { sanitizeCss } = await loadCustomCss();
+        const out = sanitizeCss(this.card.customCss, 'character');
+        const fatal = out.report.find((r) => r.kind === 'parse-fatal');
+        if (fatal) {
+          toasts.error(`Cannot save: CSS syntax error: ${fatal.detail}`);
+          return 'invalid';
+        }
+      } catch (err: any) {
+        toasts.error(`CSS validation failed: ${err.message}`);
+        return 'invalid';
+      }
+    }
+
     try {
       if (this.characterId) {
         // PATCH existing character with OCC expectedUpdatedAt
-        const res = await (this.client.api.characters({ id: this.characterId }).patch as any)({
+        const payload: any = {
           ...this.card,
+          customCss: this.card.customCss?.trim() ? this.card.customCss : null,
           expectedUpdatedAt: this.expectedUpdatedAt ?? Date.now()
-        });
+        };
+        const res = await (this.client.api.characters({ id: this.characterId }).patch as any)(payload);
 
         if (res.error) {
           const err = toUiError(res.error);
@@ -206,7 +226,11 @@ export class CharacterDraft {
         return 'saved';
       } else {
         // POST new character (promotes draft owner if uploaded)
-        const res = await (this.client.api.characters.post as any)(this.card);
+        const payload: any = {
+          ...this.card,
+          customCss: this.card.customCss?.trim() ? this.card.customCss : undefined
+        };
+        const res = await (this.client.api.characters.post as any)(payload);
         if (res.error) {
           toasts.error(toUiError(res.error).message);
           return 'error';

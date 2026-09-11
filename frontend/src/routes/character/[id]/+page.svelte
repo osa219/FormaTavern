@@ -14,6 +14,7 @@
   import ResumeMenu from '$lib/components/showcase/ResumeMenu.svelte';
   import ShowcaseBody from '$lib/components/showcase/ShowcaseBody.svelte';
   import ConfirmDialog from '$lib/components/dialogs/ConfirmDialog.svelte';
+  import CustomStyleOutlet from '$lib/components/custom/CustomStyleOutlet.svelte';
 
   let { data }: { data: PageData } = $props();
 
@@ -79,6 +80,8 @@
   data-ft-surface="character"
   class="relative isolate min-h-screen bg-neutral-950 text-neutral-100 font-sans"
 >
+  <CustomStyleOutlet scope="character" css={character.customCss} />
+
   <!-- Ambient character backdrop (image + overlay, or accent gradient fallback) -->
   <Backdrop image={showcaseBg} />
 

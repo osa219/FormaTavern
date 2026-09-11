@@ -190,6 +190,23 @@
           />
         </label>
 
+        <!-- Hide Custom Styling -->
+        <label class="flex items-center justify-between rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-3 cursor-pointer hover:bg-neutral-850">
+          <div>
+            <div class="font-medium text-neutral-200">Hide Custom Styling</div>
+            <div class="text-[11px] text-neutral-400">Hides creator-authored custom CSS across cards and chats</div>
+          </div>
+          <input
+            type="checkbox"
+            checked={prefs.hideCustomStyling}
+            onchange={(e) => {
+              prefs.hideCustomStyling = e.currentTarget.checked;
+              prefs.save();
+            }}
+            class="h-4 w-4 rounded border-neutral-700 bg-neutral-900 text-accent focus:ring-accent"
+          />
+        </label>
+
         <!-- Disable Reactive Theming -->
         <label class="flex items-center justify-between rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-3 cursor-pointer hover:bg-neutral-850">
           <div>

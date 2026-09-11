@@ -4,6 +4,7 @@
   import { parseGreeting } from '$lib/studio/greetingPreview';
   import SpeechBubble from '$lib/components/chat/SpeechBubble.svelte';
   import NarratorBlock from '$lib/components/chat/NarratorBlock.svelte';
+  import CustomStyleOutlet from '$lib/components/custom/CustomStyleOutlet.svelte';
 
   let { draft }: { draft: CharacterDraft } = $props();
 
@@ -89,8 +90,10 @@
   <!-- Viewport Root applying author theme CSS variables -->
   <div
     style="{themeVars};"
+    data-ft-surface="character"
     class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-neutral-950 font-(--theme-font-family) text-neutral-100"
   >
+    <CustomStyleOutlet scope="character" css={draft.card.customCss} />
     {#if activeTab === 'greeting'}
       {#if segments.length === 0}
         <div class="flex h-48 flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-800 text-center p-6 text-neutral-500 text-xs">

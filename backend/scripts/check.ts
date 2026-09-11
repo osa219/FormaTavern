@@ -31,8 +31,8 @@ try {
     console.error(`[check] ERROR: foreign_keys is not 1`);
     hasFailure = true;
   }
-  if (user_version !== 4) {
-    console.error(`[check] ERROR: user_version is ${user_version}, expected 4`);
+  if (user_version !== 5) {
+    console.error(`[check] ERROR: user_version is ${user_version}, expected 5`);
     hasFailure = true;
   }
 
@@ -50,6 +50,21 @@ try {
     hasFailure = true;
   } else {
     console.log(`foreign_key_check=empty`);
+  }
+
+  const charCols = db.query('PRAGMA table_info(characters);').all() as Array<{ name: string }>;
+  const charColNames = charCols.map((c) => c.name);
+  if (!charColNames.includes('custom_css')) {
+    console.error(`[check] ERROR: characters table missing required column 'custom_css'`);
+    hasFailure = true;
+  } else {
+    const overCapCss = db.query('SELECT COUNT(*) as count FROM characters WHERE length(custom_css) > 131072;').get() as { count: number };
+    if ((overCapCss?.count ?? 0) > 0) {
+      console.error(`[check] ERROR: Found ${overCapCss.count} characters with custom_css exceeding 131,072 characters`);
+      hasFailure = true;
+    } else {
+      console.log(`custom_css_column=ok`);
+    }
   }
 
   const msgCols = db.query('PRAGMA table_info(messages);').all() as Array<{ name: string }>;

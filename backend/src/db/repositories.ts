@@ -29,6 +29,7 @@ interface CharacterRow {
   tagline: string | null;
   creator: string | null;
   showcase: string | null;
+  custom_css: string | null;
   description: string;
   personality: string;
   scenario: string;
@@ -84,6 +85,7 @@ function cardToRow(card: CharacterCard, now: number) {
     tagline: card.tagline ?? null,
     creator: card.creator ?? null,
     showcase: card.showcase ?? null,
+    custom_css: card.customCss ?? null,
     description: card.description,
     personality: card.personality,
     scenario: card.scenario,
@@ -113,6 +115,7 @@ function rowToCard(row: CharacterRow, tags: string[] = []): CharacterCard {
   if (row.tagline) card.tagline = row.tagline;
   if (row.creator) card.creator = row.creator;
   if (row.showcase) card.showcase = row.showcase;
+  if (row.custom_css) card.customCss = row.custom_css;
 
   if (row.metadata) {
     const meta = JSON.parse(row.metadata) as CharacterMetadata;
@@ -174,20 +177,20 @@ export class SqliteCharacterRepository implements CharacterRepository {
 
     this.stmtInsert = db.query(`
       INSERT INTO characters (
-        id, name, avatar, tagline, creator, showcase, description, personality, scenario,
+        id, name, avatar, tagline, creator, showcase, custom_css, description, personality, scenario,
         first_message, style, created_at, updated_at, metadata
       ) VALUES (
-        $id, $name, $avatar, $tagline, $creator, $showcase, $description, $personality, $scenario,
+        $id, $name, $avatar, $tagline, $creator, $showcase, $custom_css, $description, $personality, $scenario,
         $first_message, $style, $created_at, $updated_at, $metadata
       );
     `);
 
     this.stmtUpsert = db.query(`
       INSERT INTO characters (
-        id, name, avatar, tagline, creator, showcase, description, personality, scenario,
+        id, name, avatar, tagline, creator, showcase, custom_css, description, personality, scenario,
         first_message, style, created_at, updated_at, metadata
       ) VALUES (
-        $id, $name, $avatar, $tagline, $creator, $showcase, $description, $personality, $scenario,
+        $id, $name, $avatar, $tagline, $creator, $showcase, $custom_css, $description, $personality, $scenario,
         $first_message, $style, $created_at, $updated_at, $metadata
       )
       ON CONFLICT(id) DO UPDATE SET
@@ -196,6 +199,7 @@ export class SqliteCharacterRepository implements CharacterRepository {
         tagline = excluded.tagline,
         creator = excluded.creator,
         showcase = excluded.showcase,
+        custom_css = excluded.custom_css,
         description = excluded.description,
         personality = excluded.personality,
         scenario = excluded.scenario,
@@ -207,10 +211,10 @@ export class SqliteCharacterRepository implements CharacterRepository {
 
     this.stmtInsertIfAbsent = db.query(`
       INSERT INTO characters (
-        id, name, avatar, tagline, creator, showcase, description, personality, scenario,
+        id, name, avatar, tagline, creator, showcase, custom_css, description, personality, scenario,
         first_message, style, created_at, updated_at, metadata
       ) VALUES (
-        $id, $name, $avatar, $tagline, $creator, $showcase, $description, $personality, $scenario,
+        $id, $name, $avatar, $tagline, $creator, $showcase, $custom_css, $description, $personality, $scenario,
         $first_message, $style, $created_at, $updated_at, $metadata
       )
       ON CONFLICT(id) DO NOTHING;
@@ -429,6 +433,7 @@ export class SqliteCharacterRepository implements CharacterRepository {
         tagline: row.tagline,
         creator: row.creator,
         showcase: row.showcase,
+        custom_css: row.custom_css,
         description: row.description,
         personality: row.personality,
         scenario: row.scenario,
@@ -475,6 +480,10 @@ export class SqliteCharacterRepository implements CharacterRepository {
         tagline: input.tagline !== undefined ? input.tagline : currentCard.tagline,
         creator: input.creator !== undefined ? input.creator : currentCard.creator,
         showcase: input.showcase !== undefined ? input.showcase : currentCard.showcase,
+        customCss:
+          input.customCss !== undefined
+            ? (input.customCss ?? undefined)
+            : currentCard.customCss,
         description: input.description !== undefined ? input.description : currentCard.description,
         personality: input.personality !== undefined ? input.personality : currentCard.personality,
         scenario: input.scenario !== undefined ? input.scenario : currentCard.scenario,
@@ -499,6 +508,7 @@ export class SqliteCharacterRepository implements CharacterRepository {
           tagline = ?,
           creator = ?,
           showcase = ?,
+          custom_css = ?,
           description = ?,
           personality = ?,
           scenario = ?,
@@ -513,6 +523,7 @@ export class SqliteCharacterRepository implements CharacterRepository {
           row.tagline,
           row.creator,
           row.showcase,
+          row.custom_css,
           row.description,
           row.personality,
           row.scenario,
@@ -617,6 +628,7 @@ export class SqliteCharacterRepository implements CharacterRepository {
         tagline: row.tagline,
         creator: row.creator,
         showcase: row.showcase,
+        custom_css: row.custom_css,
         description: row.description,
         personality: row.personality,
         scenario: row.scenario,
@@ -645,6 +657,7 @@ export class SqliteCharacterRepository implements CharacterRepository {
         tagline: row.tagline,
         creator: row.creator,
         showcase: row.showcase,
+        custom_css: row.custom_css,
         description: row.description,
         personality: row.personality,
         scenario: row.scenario,
