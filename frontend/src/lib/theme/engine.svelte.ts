@@ -1,12 +1,14 @@
-import { resolveTheme, type CharacterCard, type Persona, type StateVector } from '@formatavern/shared';
+import { resolveTheme, shellToThemeOverrides, type CharacterCard, type Persona, type StateVector } from '@formatavern/shared';
 import { themeToCssVars, serializeVars } from './cssVars';
 import { prefs } from '../state/prefs.svelte';
+import { shellTheme } from '../state/shellTheme.svelte';
 
 export class ThemeEngine {
   constructor(private inputs: () => { character?: CharacterCard; persona?: Persona; state: StateVector }) {}
 
   readonly resolved = $derived.by(() =>
     resolveTheme({
+      global: shellToThemeOverrides(shellTheme.theme),
       character: this.inputs().character?.style,
       bindings: this.inputs().character?.stateBindings,
       state: this.inputs().state,

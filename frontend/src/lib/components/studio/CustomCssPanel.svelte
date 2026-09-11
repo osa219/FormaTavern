@@ -1,21 +1,43 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
   import type { CharacterDraft } from '$lib/studio/draft.svelte';
-  import { HOOKS } from '@formatavern/shared';
+  import { HOOKS, type SurfaceScope } from '@formatavern/shared';
   import { loadCustomCss } from '@formatavern/shared/customCss/loader';
   import type { SanitizeIssue, LintIssue } from '@formatavern/shared/customCss';
   import { toasts } from '$lib/state/toasts.svelte';
 
-  let { draft }: { draft: CharacterDraft } = $props();
+  interface Props {
+    draft?: CharacterDraft;
+    value?: string;
+    onchange?: (val: string) => void;
+    scope?: SurfaceScope;
+  }
+
+  let { draft, value, onchange, scope = 'character' }: Props = $props();
 
   let textarea = $state<HTMLTextAreaElement>();
   let activeTab = $state<'editor' | 'hooks'>('editor');
   let copiedHook = $state<string | null>(null);
 
+  const targetScope = $derived(draft ? 'character' : scope);
+  const code = $derived(draft ? (draft.card.customCss ?? '') : (value ?? ''));
+
+  function updateCode(newVal: string) {
+    if (draft) {
+      draft.card.customCss = newVal;
+    } else {
+      onchange?.(newVal);
+    }
+  }
+
   const MAX_CHARS = 131_072;
-  const charCount = $derived((draft.card.customCss ?? '').length);
+  const charCount = $derived(code.length);
   const percentUsed = $derived(Math.min(100, Math.round((charCount / MAX_CHARS) * 100)));
-  const placeholderText = `/* Author custom CSS scoped to companion showcase.\n   Example:\n   .ft-hero {\n     border: 1px solid var(--theme-accent);\n   }\n*/`;
+  const placeholderText = $derived(
+    targetScope === 'shell'
+      ? `/* Shell custom CSS.\n   Example:\n   .ft-foyer-header {\n     border-bottom: 1px solid var(--theme-accent);\n   }\n*/`
+      : `/* Author custom CSS scoped to companion showcase.\n   Example:\n   .ft-hero {\n     border: 1px solid var(--theme-accent);\n   }\n*/`
+  );
 
   let reports = $state<SanitizeIssue[]>([]);
   let lints = $state<LintIssue[]>([]);
@@ -23,10 +45,10 @@
   let debounceTimer: any = null;
 
   $effect(() => {
-    const code = draft.card.customCss ?? '';
+    const currentCode = code;
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(async () => {
-      if (!code.trim()) {
+      if (!currentCode.trim()) {
         reports = [];
         lints = [];
         return;
@@ -34,9 +56,9 @@
       isAnalyzing = true;
       try {
         const { sanitizeCss, lintSheet } = await loadCustomCss();
-        const out = sanitizeCss(code, 'character');
+        const out = sanitizeCss(currentCode, targetScope);
         reports = out.report;
-        lints = lintSheet(code);
+        lints = lintSheet(currentCode);
       } catch (err: any) {
         reports = [{ kind: 'parse-fatal', detail: err?.message ?? 'Unknown CSS parse error' }];
         lints = [];
@@ -63,8 +85,9 @@
     if (!textarea) return;
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-    const current = draft.card.customCss ?? '';
-    draft.card.customCss = current.slice(0, start) + snippet + current.slice(end);
+    const current = code;
+    const updated = current.slice(0, start) + snippet + current.slice(end);
+    updateCode(updated);
 
     setTimeout(() => {
       if (!textarea) return;
@@ -92,27 +115,51 @@
   <!-- Toolbar: Quick Snippets & Size Meter -->
   <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-neutral-800 bg-neutral-900/80 p-2.5 shrink-0">
     <div class="flex flex-wrap items-center gap-1.5">
-      <button
-        type="button"
-        onclick={() => insertSnippet('.ft-hero {\n  border: 1px solid var(--theme-accent);\n}\n')}
-        class="rounded-lg border border-neutral-800 bg-neutral-850 px-2.5 py-1 text-xs font-mono text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
-      >
-        .ft-hero
-      </button>
-      <button
-        type="button"
-        onclick={() => insertSnippet('.ft-showcase-body {\n  /* Custom showcase styling */\n}\n')}
-        class="rounded-lg border border-neutral-800 bg-neutral-850 px-2.5 py-1 text-xs font-mono text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
-      >
-        .ft-showcase-body
-      </button>
-      <button
-        type="button"
-        onclick={() => insertSnippet('.ft-action-hub {\n  /* Custom action buttons */\n}\n')}
-        class="rounded-lg border border-neutral-800 bg-neutral-850 px-2.5 py-1 text-xs font-mono text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
-      >
-        .ft-action-hub
-      </button>
+      {#if targetScope === 'shell'}
+        <button
+          type="button"
+          onclick={() => insertSnippet('.ft-foyer-header {\n  /* Header styling */\n}\n')}
+          class="rounded-lg border border-neutral-800 bg-neutral-850 px-2.5 py-1 text-xs font-mono text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
+        >
+          .ft-foyer-header
+        </button>
+        <button
+          type="button"
+          onclick={() => insertSnippet('.ft-foyer-grid {\n  /* Companion grid styling */\n}\n')}
+          class="rounded-lg border border-neutral-800 bg-neutral-850 px-2.5 py-1 text-xs font-mono text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
+        >
+          .ft-foyer-grid
+        </button>
+        <button
+          type="button"
+          onclick={() => insertSnippet('.ft-char-card {\n  /* Card styling */\n}\n')}
+          class="rounded-lg border border-neutral-800 bg-neutral-850 px-2.5 py-1 text-xs font-mono text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
+        >
+          .ft-char-card
+        </button>
+      {:else}
+        <button
+          type="button"
+          onclick={() => insertSnippet('.ft-hero {\n  border: 1px solid var(--theme-accent);\n}\n')}
+          class="rounded-lg border border-neutral-800 bg-neutral-850 px-2.5 py-1 text-xs font-mono text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
+        >
+          .ft-hero
+        </button>
+        <button
+          type="button"
+          onclick={() => insertSnippet('.ft-showcase-body {\n  /* Custom showcase styling */\n}\n')}
+          class="rounded-lg border border-neutral-800 bg-neutral-850 px-2.5 py-1 text-xs font-mono text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
+        >
+          .ft-showcase-body
+        </button>
+        <button
+          type="button"
+          onclick={() => insertSnippet('.ft-action-hub {\n  /* Custom action buttons */\n}\n')}
+          class="rounded-lg border border-neutral-800 bg-neutral-850 px-2.5 py-1 text-xs font-mono text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
+        >
+          .ft-action-hub
+        </button>
+      {/if}
       <button
         type="button"
         onclick={() => insertSnippet('@keyframes float {\n  0%, 100% { transform: translateY(0); }\n  50% { transform: translateY(-6px); }\n}\n')}
@@ -146,7 +193,7 @@
         </span>
       {:else if isAnalyzing}
         <span class="text-neutral-500 text-[11px]">Validating...</span>
-      {:else if (draft.card.customCss ?? '').trim()}
+      {:else if code.trim()}
         <span class="inline-flex items-center gap-1 rounded bg-emerald-500/20 px-2 py-0.5 text-[11px] font-semibold text-emerald-300 border border-emerald-500/40">
           Valid
         </span>
@@ -171,11 +218,12 @@
     <div class="xl:col-span-2 flex flex-col min-h-[350px] h-full rounded-xl border border-neutral-800 bg-neutral-950 overflow-hidden">
       <div class="flex items-center justify-between border-b border-neutral-800/80 bg-neutral-900/60 px-3 py-1.5 text-xs text-neutral-400">
         <span class="font-mono text-[11px]">custom.css</span>
-        <span class="text-[11px] text-neutral-500">Pure CSS • Scoped to Character Page</span>
+        <span class="text-[11px] text-neutral-500">Pure CSS • Scoped to {targetScope === 'shell' ? 'Shell Surface' : 'Character Page'}</span>
       </div>
       <textarea
         bind:this={textarea}
-        bind:value={draft.card.customCss}
+        value={code}
+        oninput={(e) => updateCode(e.currentTarget.value)}
         placeholder={placeholderText}
         spellcheck="false"
         class="flex-1 w-full resize-none bg-transparent p-4 font-mono text-xs text-neutral-200 placeholder:text-neutral-600 focus:outline-none leading-relaxed"
@@ -289,43 +337,83 @@
               Click any hook to copy its selector. Use these stable contract classes in your CSS.
             </p>
 
-            <!-- Character Surface Hooks -->
-            <div class="space-y-1.5">
-              <div class="text-[10px] font-mono uppercase tracking-wider text-neutral-500">Character Surface</div>
-              <div class="grid grid-cols-1 gap-1">
-                {#each Object.entries(HOOKS.character) as [name, hook]}
-                  <button
-                    type="button"
-                    onclick={() => copyHook(hook)}
-                    class="flex items-center justify-between rounded-lg border border-neutral-800 bg-neutral-850/60 px-2.5 py-1.5 text-left font-mono text-[11px] text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
-                  >
-                    <span>.{hook}</span>
-                    <span class="text-[10px] text-neutral-500">
-                      {copiedHook === hook ? '✓ Copied' : name}
-                    </span>
-                  </button>
-                {/each}
+            {#if targetScope === 'shell'}
+              <!-- Shell Surface Hooks -->
+              <div class="space-y-1.5">
+                <div class="text-[10px] font-mono uppercase tracking-wider text-neutral-500">Shell Surface</div>
+                <div class="grid grid-cols-1 gap-1">
+                  {#each Object.entries(HOOKS.shell) as [name, hook]}
+                    <button
+                      type="button"
+                      onclick={() => copyHook(hook)}
+                      class="flex items-center justify-between rounded-lg border border-neutral-800 bg-neutral-850/60 px-2.5 py-1.5 text-left font-mono text-[11px] text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
+                    >
+                      <span>.{hook}</span>
+                      <span class="text-[10px] text-neutral-500">
+                        {copiedHook === hook ? '✓ Copied' : name}
+                      </span>
+                    </button>
+                  {/each}
+                </div>
               </div>
-            </div>
 
-            <!-- Chat & Speech Hooks -->
-            <div class="space-y-1.5">
-              <div class="text-[10px] font-mono uppercase tracking-wider text-neutral-500">Speech & Turns</div>
-              <div class="grid grid-cols-1 gap-1">
-                {#each Object.entries(HOOKS.chat) as [name, hook]}
-                  <button
-                    type="button"
-                    onclick={() => copyHook(hook)}
-                    class="flex items-center justify-between rounded-lg border border-neutral-800 bg-neutral-850/60 px-2.5 py-1.5 text-left font-mono text-[11px] text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
-                  >
-                    <span>.{hook}</span>
-                    <span class="text-[10px] text-neutral-500">
-                      {copiedHook === hook ? '✓ Copied' : name}
-                    </span>
-                  </button>
-                {/each}
+              <!-- Chrome Components Hooks -->
+              <div class="space-y-1.5">
+                <div class="text-[10px] font-mono uppercase tracking-wider text-neutral-500">Chrome Components</div>
+                <div class="grid grid-cols-1 gap-1">
+                  {#each Object.entries(HOOKS.chrome) as [name, hook]}
+                    <button
+                      type="button"
+                      onclick={() => copyHook(hook)}
+                      class="flex items-center justify-between rounded-lg border border-neutral-800 bg-neutral-850/60 px-2.5 py-1.5 text-left font-mono text-[11px] text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
+                    >
+                      <span>.{hook}</span>
+                      <span class="text-[10px] text-neutral-500">
+                        {copiedHook === hook ? '✓ Copied' : name}
+                      </span>
+                    </button>
+                  {/each}
+                </div>
               </div>
-            </div>
+            {:else}
+              <!-- Character Surface Hooks -->
+              <div class="space-y-1.5">
+                <div class="text-[10px] font-mono uppercase tracking-wider text-neutral-500">Character Surface</div>
+                <div class="grid grid-cols-1 gap-1">
+                  {#each Object.entries(HOOKS.character) as [name, hook]}
+                    <button
+                      type="button"
+                      onclick={() => copyHook(hook)}
+                      class="flex items-center justify-between rounded-lg border border-neutral-800 bg-neutral-850/60 px-2.5 py-1.5 text-left font-mono text-[11px] text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
+                    >
+                      <span>.{hook}</span>
+                      <span class="text-[10px] text-neutral-500">
+                        {copiedHook === hook ? '✓ Copied' : name}
+                      </span>
+                    </button>
+                  {/each}
+                </div>
+              </div>
+
+              <!-- Chat & Speech Hooks -->
+              <div class="space-y-1.5">
+                <div class="text-[10px] font-mono uppercase tracking-wider text-neutral-500">Speech & Turns</div>
+                <div class="grid grid-cols-1 gap-1">
+                  {#each Object.entries(HOOKS.chat) as [name, hook]}
+                    <button
+                      type="button"
+                      onclick={() => copyHook(hook)}
+                      class="flex items-center justify-between rounded-lg border border-neutral-800 bg-neutral-850/60 px-2.5 py-1.5 text-left font-mono text-[11px] text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
+                    >
+                      <span>.{hook}</span>
+                      <span class="text-[10px] text-neutral-500">
+                        {copiedHook === hook ? '✓ Copied' : name}
+                      </span>
+                    </button>
+                  {/each}
+                </div>
+              </div>
+            {/if}
           </div>
         {/if}
       </div>

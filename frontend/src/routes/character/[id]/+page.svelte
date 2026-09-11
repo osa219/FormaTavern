@@ -1,9 +1,10 @@
 <script lang="ts">
   import type { PageData } from './$types';
   import type { CharacterCard, ChatView, Persona } from '@formatavern/shared';
-  import { resolveTheme } from '@formatavern/shared';
+  import { resolveTheme, shellToThemeOverrides } from '@formatavern/shared';
   import { serializeVars, themeToCssVars } from '$lib/theme/cssVars';
   import { prefs } from '$lib/state/prefs.svelte';
+  import { shellTheme } from '$lib/state/shellTheme.svelte';
   import { api, toUiError } from '$lib/api';
   import { toasts } from '$lib/state/toasts.svelte';
 
@@ -28,6 +29,7 @@
   // a11y kill-switch (disableCharacterThemes) is honored for backdrop too.
   const showcaseTheme = $derived(
     resolveTheme({
+      global: shellToThemeOverrides(shellTheme.theme),
       character: character.style,
       a11y: {
         disableCharacterThemes: prefs.disableCharacterThemes,

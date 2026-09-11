@@ -8,6 +8,7 @@
   import { toasts } from '$lib/state/toasts.svelte';
   import { catalogStore } from '$lib/state/catalog.svelte';
   import { personasStore } from '$lib/state/personas.svelte';
+  import { shellTheme } from '$lib/state/shellTheme.svelte';
 
   import Icon from '$lib/components/ui/Icon.svelte';
   import SearchBar from '$lib/components/discovery/SearchBar.svelte';
@@ -16,6 +17,7 @@
   import CompanionGrid from '$lib/components/discovery/CompanionGrid.svelte';
   import SettingsSheet from '$lib/components/settings/SettingsSheet.svelte';
   import ConfirmDialog from '$lib/components/dialogs/ConfirmDialog.svelte';
+  import ShellSurface from '$lib/components/custom/ShellSurface.svelte';
 
   let { data }: { data: PageData } = $props();
 
@@ -110,16 +112,16 @@
 </script>
 
 <svelte:head>
-  <title>FormaTavern — Companion Catalog</title>
+  <title>{shellTheme.theme.labels?.foyerTitle || 'FormaTavern'} — Companion Catalog</title>
 </svelte:head>
 
-<div class="min-h-screen bg-neutral-950 text-neutral-100 font-sans" data-ft-surface="shell">
+<ShellSurface>
   <!-- Top Navigation Header -->
   <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/80 bg-neutral-900/80 px-6 backdrop-blur-md {HOOKS.shell.foyerHeader}">
     <div class="flex items-center gap-3">
       <span class="text-accent text-lg">◈</span>
       <h1 class="text-sm font-bold tracking-wide text-neutral-100 uppercase">
-        FormaTavern
+        {shellTheme.theme.labels?.foyerTitle || 'FormaTavern'}
       </h1>
       <span class="rounded bg-neutral-800 px-2 py-0.5 text-[10px] font-mono text-neutral-400">
         Foyer
@@ -289,7 +291,7 @@
       {/if}
     </section>
   </main>
-</div>
+</ShellSurface>
 
 <!-- Settings Sheet -->
 <SettingsSheet

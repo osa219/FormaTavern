@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { defaultState, resolveTheme, HOOKS, type CharacterCard as CharacterCardType } from '@formatavern/shared';
+  import { defaultState, resolveTheme, shellToThemeOverrides, HOOKS, type CharacterCard as CharacterCardType } from '@formatavern/shared';
   import { themeToCssVars } from '$lib/theme/cssVars';
+  import { shellTheme } from '$lib/state/shellTheme.svelte';
   import Icon from '../ui/Icon.svelte';
   import Spinner from '../ui/Spinner.svelte';
 
@@ -16,6 +17,7 @@
 
   const resolved = $derived(
     resolveTheme({
+      global: shellToThemeOverrides(shellTheme.theme),
       character: character.style,
       bindings: character.stateBindings,
       state: defaultState(character),
@@ -47,9 +49,9 @@
 </script>
 
 <div
-  style={styleAttr}
+  style="{styleAttr}; border-radius: var(--chrome-card-radius, 1rem); padding: var(--chrome-card-padding, 1.25rem); font-family: var(--chrome-font, var(--theme-font-family)); color: var(--chrome-text, inherit);"
   data-transitions="off"
-  class="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-neutral-800/90 bg-neutral-900/90 p-5 shadow-xl transition-colors duration-200 hover:border-neutral-700 hover:shadow-2xl {HOOKS.chrome.card}"
+  class="relative flex flex-col justify-between overflow-hidden border border-neutral-800/90 bg-neutral-900/90 shadow-xl transition-colors duration-200 hover:border-neutral-700 hover:shadow-2xl {HOOKS.chrome.card}"
 >
   <!-- Ambient Gradient Swatch Background -->
   <div

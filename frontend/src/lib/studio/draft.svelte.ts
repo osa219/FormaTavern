@@ -2,6 +2,7 @@ import {
   CharacterCardSchema,
   DEFAULT_CHARACTER_THEME,
   resolveTheme,
+  shellToThemeOverrides,
   validate,
   type CharacterCard,
   type CharacterCreate,
@@ -11,6 +12,7 @@ import {
 import { loadCustomCss } from '@formatavern/shared/customCss/loader';
 import { api, toUiError } from '$lib/api';
 import { toasts } from '$lib/state/toasts.svelte';
+import { shellTheme } from '$lib/state/shellTheme.svelte';
 
 export function createEmptyCard(): CharacterCreate {
   return {
@@ -66,6 +68,7 @@ export class CharacterDraft {
 
   get previewTheme() {
     return resolveTheme({
+      global: shellToThemeOverrides(shellTheme.theme),
       character: this.card.style,
       bindings: this.card.stateBindings,
       state: this.previewState,

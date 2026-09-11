@@ -1,4 +1,4 @@
-export const SHARED_VERSION = '0.5.0-phase5';
+export const SHARED_VERSION = '0.6.0-customization';
 
 export interface HealthResponse {
   ok: true;
@@ -23,6 +23,7 @@ export * from './schemas/api';
 export * from './schemas/chat';
 export * from './schemas/message';
 export * from './schemas/settings';
+export * from './schemas/shellTheme';
 export * from './types/llm';
 export * from './types/chatStream';
 export * from './validate';

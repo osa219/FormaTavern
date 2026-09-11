@@ -149,4 +149,75 @@ describe('routes/settings', () => {
     // Invariant P7 / 7.4: Error message stored in DB must NOT contain the secret key!
     expect(JSON.stringify(asstMsg!.metadata)).not.toContain(testSecret);
   });
+
+  describe('GET/PUT /api/settings/shell-theme (Slice 4)', () => {
+    it('returns empty DEFAULT_SHELL_THEME on initial GET', async () => {
+      const { app } = setupTestApp();
+      const res = await app.handle(new Request('http://127.0.0.1/api/settings/shell-theme'));
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json).toEqual({});
+    });
+
+    it('roundtrips valid ShellTheme document on PUT', async () => {
+      const { app } = setupTestApp();
+      const payload = {
+        font: { family: 'Cinzel', size: '1.1rem' },
+        chrome: { accent: '#38bdf8', surface: 'rgba(15,15,15,0.9)' },
+        card: { radius: '0.75rem', density: 'compact' },
+        scrim: '0.75',
+        labels: { foyerTitle: 'Tavern Hall' },
+        customCss: '.ft-topbar { box-shadow: none; }'
+      };
+
+      const putRes = await app.handle(
+        new Request('http://127.0.0.1/api/settings/shell-theme', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+      );
+      expect(putRes.status).toBe(200);
+      const putJson = await putRes.json();
+      expect(putJson).toEqual(payload);
+
+      // Subsequent GET should match
+      const getRes = await app.handle(new Request('http://127.0.0.1/api/settings/shell-theme'));
+      expect(getRes.status).toBe(200);
+      const getJson = await getRes.json();
+      expect(getJson).toEqual(payload);
+    });
+
+    it('rejects PUT with 422 when customCss exceeds 131,072 characters', async () => {
+      const { app } = setupTestApp();
+      const overCapPayload = {
+        customCss: 'x'.repeat(131_073)
+      };
+
+      const res = await app.handle(
+        new Request('http://127.0.0.1/api/settings/shell-theme', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(overCapPayload)
+        })
+      );
+      expect(res.status).toBe(422);
+    });
+
+    it('rejects PUT with 422 on invalid schema fields (e.g. invalid density)', async () => {
+      const { app } = setupTestApp();
+      const invalidPayload = {
+        card: { density: 'extra-huge' }
+      };
+
+      const res = await app.handle(
+        new Request('http://127.0.0.1/api/settings/shell-theme', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(invalidPayload)
+        })
+      );
+      expect(res.status).toBe(422);
+    });
+  });
 });

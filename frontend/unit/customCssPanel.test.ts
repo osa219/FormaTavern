@@ -82,6 +82,21 @@ describe('CustomCssPanel & Studio CSS Integration (Slice 3)', () => {
     expect(capturedPayload.customCss).toBe(authoredCss);
   });
 
+  it('renders CustomCssPanel with shell scope and shell manifest hooks', () => {
+    const rendered = render(CustomCssPanel, {
+      props: {
+        value: '.ft-foyer-header { border-bottom: 1px solid var(--theme-accent); }',
+        scope: 'shell'
+      }
+    });
+
+    expect(rendered.body).toContain('custom.css');
+    expect(rendered.body).toContain('Pure CSS • Scoped to Shell Surface');
+    expect(rendered.body).toContain('.ft-foyer-header');
+    expect(rendered.body).toContain('.ft-foyer-grid');
+    expect(rendered.body).toContain('.ft-char-card');
+  });
+
   it('performs debounced analysis reporting parse-fatal, dropped rules, and lints', async () => {
     const { sanitizeCss, lintSheet } = await loadCustomCss();
 

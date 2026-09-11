@@ -10,6 +10,7 @@
   import Spinner from '$lib/components/ui/Spinner.svelte';
   import PersonaCard from '$lib/components/persona/PersonaCard.svelte';
   import ConfirmDialog from '$lib/components/dialogs/ConfirmDialog.svelte';
+  import ShellSurface from '$lib/components/custom/ShellSurface.svelte';
 
   onMount(() => {
     personasStore.load();
@@ -50,7 +51,7 @@
   }
 </script>
 
-<div class="min-h-screen bg-neutral-950 text-neutral-100 font-sans {HOOKS.shell.personas}" data-ft-surface="shell">
+<ShellSurface class={HOOKS.shell.personas}>
   <!-- Header -->
   <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/80 bg-neutral-900/80 px-6 backdrop-blur-md">
     <div class="flex items-center gap-3">
@@ -104,7 +105,7 @@
       </div>
     {/if}
   </main>
-</div>
+</ShellSurface>
 
 <!-- Confirm Delete Dialog -->
 <ConfirmDialog

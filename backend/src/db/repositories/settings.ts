@@ -3,8 +3,11 @@ import {
   Value,
   AppSettingsSchema,
   DEFAULT_SETTINGS,
+  ShellThemeSchema,
+  DEFAULT_SHELL_THEME,
   type AppSettings,
-  type SettingsPatch
+  type SettingsPatch,
+  type ShellTheme
 } from '@formatavern/shared';
 import type { SettingsRepository } from '../contracts';
 
@@ -106,6 +109,34 @@ export class SQLiteSettingsRepository implements SettingsRepository {
       value: string;
     } | null;
     return row?.value ?? null;
+  }
+
+  getShellTheme(): ShellTheme {
+    const raw = this.getRaw('shell_theme');
+    if (!raw) return DEFAULT_SHELL_THEME;
+    try {
+      const parsed = JSON.parse(raw);
+      if (Value.Check(ShellThemeSchema, parsed)) {
+        return parsed as ShellTheme;
+      }
+      console.warn('[Settings] Invalid or corrupt shell_theme; resetting to default.');
+      return DEFAULT_SHELL_THEME;
+    } catch {
+      console.warn('[Settings] Unparseable JSON for shell_theme; resetting to default.');
+      return DEFAULT_SHELL_THEME;
+    }
+  }
+
+  putShellTheme(doc: ShellTheme): ShellTheme {
+    const now = Date.now();
+    const cleaned = Value.Clean(ShellThemeSchema, doc);
+    this.db
+      .prepare(
+        `INSERT INTO settings (key, value, updated_at) VALUES (?, ?, ?)
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at;`
+      )
+      .run('shell_theme', JSON.stringify(cleaned), now);
+    return this.getShellTheme();
   }
 
   private loadSubObject(key: string): Record<string, any> {

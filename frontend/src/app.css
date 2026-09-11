@@ -46,6 +46,12 @@
   --chrome-surface: color-mix(in oklab, var(--n-900), var(--theme-accent) 8%);
   --chrome-line: color-mix(in oklab, var(--n-800), var(--theme-accent) 10%);
   --chrome-focus: var(--n-200);
+  --chrome-text: var(--n-100);
+  --chrome-font: var(--theme-font-family);
+  --chrome-card-radius: 1.5rem;
+  --chrome-scrim: 0.8;
+  --chrome-card-padding: 1rem;
+  --chrome-card-gap: 1rem;
 
   /* Motion tokens */
   --motion-theme: 600ms;
@@ -91,10 +97,12 @@
   --color-chrome-bg: var(--chrome-bg);
   --color-chrome-surface: var(--chrome-surface);
   --color-chrome-line: var(--chrome-line);
+  --color-chrome-text: var(--chrome-text);
   --font-narrative: var(--theme-font-family);
-  --font-chrome: 'Inter Variable', system-ui, sans-serif;
+  --font-chrome: var(--chrome-font);
   --font-mono: 'JetBrains Mono Variable', monospace;
   --radius-bubble: var(--theme-bubble-radius);
+  --radius-chrome-card: var(--chrome-card-radius);
 }
 
 .theme-root {

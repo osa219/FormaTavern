@@ -257,7 +257,7 @@ describe('Hook Contract & Manifest Invariants (Invariant C1)', () => {
 
     it('verifies surface roots and hooks in route source files', () => {
       const foyerSource = readFileSync(resolve(SRC_DIR, 'routes/+page.svelte'), 'utf-8');
-      expect(foyerSource).toContain('data-ft-surface="shell"');
+      expect(foyerSource.includes('data-ft-surface="shell"') || foyerSource.includes('<ShellSurface')).toBe(true);
       expect(foyerSource).toContain('HOOKS.shell.foyerHeader');
       expect(foyerSource).toContain('HOOKS.shell.foyerGrid');
       expect(foyerSource).toContain('HOOKS.shell.recentStories');
@@ -266,7 +266,7 @@ describe('Hook Contract & Manifest Invariants (Invariant C1)', () => {
       expect(charPageSource).toContain('data-ft-surface="character"');
 
       const personasSource = readFileSync(resolve(SRC_DIR, 'routes/personas/+page.svelte'), 'utf-8');
-      expect(personasSource).toContain('data-ft-surface="shell"');
+      expect(personasSource.includes('data-ft-surface="shell"') || personasSource.includes('<ShellSurface')).toBe(true);
       expect(personasSource).toContain('HOOKS.shell.personas');
     });
   });

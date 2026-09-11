@@ -17,7 +17,8 @@ import type {
   MessageMetrics,
   MessageMetadata,
   AppSettings,
-  SettingsPatch
+  SettingsPatch,
+  ShellTheme
 } from '@formatavern/shared';
 
 export interface CharacterRepository {
@@ -169,6 +170,8 @@ export interface SettingsRepository {
   getAll(): AppSettings;
   patch(p: SettingsPatch): AppSettings;
   getRaw(key: string): string | null;
+  getShellTheme(): ShellTheme;
+  putShellTheme(doc: ShellTheme): ShellTheme;
 }
 
 export interface Repositories {

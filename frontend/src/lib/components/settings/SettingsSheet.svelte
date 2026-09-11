@@ -4,8 +4,10 @@
   import Spinner from '../ui/Spinner.svelte';
   import { settingsStore } from '$lib/state/settings.svelte';
   import { prefs } from '$lib/state/prefs.svelte';
-  import type { SettingsPatch } from '@formatavern/shared';
+  import { shellTheme } from '$lib/state/shellTheme.svelte';
+  import type { SettingsPatch, ShellTheme } from '@formatavern/shared';
   import { HOOKS } from '@formatavern/shared';
+  import CustomCssPanel from '../studio/CustomCssPanel.svelte';
 
   let {
     open = false,
@@ -16,7 +18,9 @@
   } = $props();
 
   let dialogEl = $state<HTMLDialogElement | null>(null);
-  let activeTab = $state<'provider' | 'generation' | 'narrative' | 'a11y' | 'shortcuts'>('provider');
+  let activeTab = $state<'provider' | 'appearance' | 'generation' | 'narrative' | 'a11y' | 'shortcuts'>('provider');
+
+  const ACCENT_PRESETS = ['#38bdf8', '#818cf8', '#a855f7', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#10b981', '#14b8a6'];
 
   // OpenRouter key draft
   let apiKeyDraft = $state('');
@@ -24,6 +28,19 @@
 
   // Debounce timers for numeric inputs
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  let shellDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function queueShellPatch(patch: Partial<ShellTheme>, delay = 400) {
+    if (shellDebounceTimer) clearTimeout(shellDebounceTimer);
+    shellDebounceTimer = setTimeout(() => {
+      const current = shellTheme.theme;
+      const updated: ShellTheme = {
+        ...current,
+        ...patch
+      };
+      shellTheme.save(updated);
+    }, delay);
+  }
 
   $effect(() => {
     if (open) {
@@ -122,6 +139,16 @@
       class:border-transparent={activeTab !== 'provider'}
     >
       Provider
+    </button>
+    <button
+      type="button"
+      onclick={() => (activeTab = 'appearance')}
+      class="border-b-2 px-3.5 py-2 transition-colors hover:text-neutral-200"
+      class:border-accent={activeTab === 'appearance'}
+      class:text-neutral-100={activeTab === 'appearance'}
+      class:border-transparent={activeTab !== 'appearance'}
+    >
+      Appearance
     </button>
     <button
       type="button"
@@ -564,6 +591,256 @@
             oninput={(e) => queuePatch({ preamble: e.currentTarget.value }, 600)}
             class="w-full rounded-xl border border-neutral-800 bg-neutral-950 p-3 font-mono text-xs text-neutral-200 focus:border-neutral-700 focus:outline-none"
           ></textarea>
+        </div>
+      </div>
+    {:else if activeTab === 'appearance'}
+      <div class="flex flex-col gap-5">
+        <p class="text-[11px] text-neutral-400">
+          Customize the global shell appearance, chrome accent, and surface styling across the Foyer, Studio, and Personas.
+        </p>
+
+        <!-- Chrome Accent Color -->
+        <div class="rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="font-medium text-neutral-200">Chrome Accent Color</div>
+              <div class="text-[11px] text-neutral-400">Primary highlight color for buttons, borders, and active indicators</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <input
+                type="color"
+                value={shellTheme.theme.chrome?.accent || '#38bdf8'}
+                oninput={(e) => {
+                  const hex = e.currentTarget.value;
+                  queueShellPatch({
+                    chrome: { ...shellTheme.theme.chrome, accent: hex }
+                  });
+                }}
+                class="h-7 w-7 rounded-lg border border-neutral-700 bg-transparent cursor-pointer p-0.5"
+                title="Choose custom accent color"
+              />
+              <input
+                type="text"
+                value={shellTheme.theme.chrome?.accent || '#38bdf8'}
+                onchange={(e) => {
+                  const hex = e.currentTarget.value.trim();
+                  if (hex) {
+                    queueShellPatch({
+                      chrome: { ...shellTheme.theme.chrome, accent: hex }
+                    }, 0);
+                  }
+                }}
+                class="w-24 rounded-lg border border-neutral-800 bg-neutral-900 px-2 py-1 font-mono text-xs text-neutral-200 focus:border-accent focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <!-- Color Presets -->
+          <div class="flex flex-wrap items-center gap-2 pt-1">
+            {#each ACCENT_PRESETS as preset}
+              <button
+                type="button"
+                onclick={() => {
+                  queueShellPatch({
+                    chrome: { ...shellTheme.theme.chrome, accent: preset }
+                  }, 0);
+                }}
+                class="h-6 w-6 rounded-full border border-white/10 transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-accent"
+                style="background-color: {preset};"
+                aria-label="Set accent to {preset}"
+              ></button>
+            {/each}
+          </div>
+        </div>
+
+        <!-- Frosted vs Solid Chrome (forceSolidChrome) -->
+        <label class="flex items-center justify-between rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-3.5 cursor-pointer hover:bg-neutral-850">
+          <div>
+            <div class="font-medium text-neutral-200">Solid Chrome Surface</div>
+            <div class="text-[11px] text-neutral-400">Forces solid background on chrome bars and sheets (disables frosted glass blur)</div>
+          </div>
+          <input
+            type="checkbox"
+            checked={prefs.forceSolidChrome}
+            onchange={(e) => {
+              prefs.forceSolidChrome = e.currentTarget.checked;
+              prefs.save();
+            }}
+            class="h-4 w-4 rounded border-neutral-700 bg-neutral-900 text-accent focus:ring-accent"
+          />
+        </label>
+
+        <!-- Surface Scrim Strength Slider -->
+        <div class="rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-4 space-y-2">
+          <div class="flex items-center justify-between text-neutral-200 font-medium">
+            <div>
+              <label for="scrim-slider" class="block">Surface Scrim Opacity</label>
+              <span class="text-[11px] font-normal text-neutral-400">Controls background darkness/opacity behind chrome elements</span>
+            </div>
+            <span class="font-mono text-neutral-400">
+              {shellTheme.theme.scrim ?? '0.8'}
+            </span>
+          </div>
+          <input
+            id="scrim-slider"
+            type="range"
+            min="0.1"
+            max="1"
+            step="0.05"
+            value={shellTheme.theme.scrim ? parseFloat(shellTheme.theme.scrim) : 0.8}
+            disabled={prefs.forceSolidChrome}
+            oninput={(e) => {
+              const val = e.currentTarget.value;
+              queueShellPatch({ scrim: val });
+            }}
+            class="w-full accent-accent disabled:opacity-40"
+          />
+        </div>
+
+        <!-- Foyer Title Override -->
+        <div class="rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-4 space-y-2">
+          <label for="foyer-title" class="block font-medium text-neutral-200">
+            Foyer Header Title
+          </label>
+          <div class="text-[11px] text-neutral-400">Custom label displayed in the top bar navigation header on the Foyer page</div>
+          <input
+            id="foyer-title"
+            type="text"
+            maxlength="40"
+            value={shellTheme.theme.labels?.foyerTitle ?? ''}
+            placeholder="FormaTavern"
+            oninput={(e) => {
+              const val = e.currentTarget.value;
+              queueShellPatch({
+                labels: { ...shellTheme.theme.labels, foyerTitle: val || undefined }
+              });
+            }}
+            class="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3.5 py-2 text-neutral-200 focus:border-accent focus:outline-none"
+          />
+        </div>
+
+        <!-- Card Layout & Density -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Card Density -->
+          <div class="rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-4 space-y-2">
+            <label for="card-density" class="block font-medium text-neutral-200">
+              Card Density
+            </label>
+            <div class="text-[11px] text-neutral-400">Controls padding and spacing in companion cards</div>
+            <select
+              id="card-density"
+              value={shellTheme.theme.card?.density ?? 'regular'}
+              onchange={(e) => {
+                const density = e.currentTarget.value as 'compact' | 'regular' | 'airy';
+                queueShellPatch({
+                  card: { ...shellTheme.theme.card, density }
+                }, 0);
+              }}
+              class="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-neutral-200 focus:border-accent focus:outline-none"
+            >
+              <option value="compact">Compact (Dense)</option>
+              <option value="regular">Regular (Balanced)</option>
+              <option value="airy">Airy (Spacious)</option>
+            </select>
+          </div>
+
+          <!-- Card Radius -->
+          <div class="rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-4 space-y-2">
+            <label for="card-radius" class="block font-medium text-neutral-200">
+              Card Corner Radius
+            </label>
+            <div class="text-[11px] text-neutral-400">Border radius for companion cards</div>
+            <select
+              id="card-radius"
+              value={shellTheme.theme.card?.radius ?? '1.5rem'}
+              onchange={(e) => {
+                const radius = e.currentTarget.value;
+                queueShellPatch({
+                  card: { ...shellTheme.theme.card, radius }
+                }, 0);
+              }}
+              class="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-neutral-200 focus:border-accent focus:outline-none"
+            >
+              <option value="0.5rem">Subtle (8px)</option>
+              <option value="1rem">Rounded (16px)</option>
+              <option value="1.5rem">Default (24px)</option>
+              <option value="2rem">Pill (32px)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Foyer / Shell Background -->
+        <div class="rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-4 space-y-3">
+          <div class="font-medium text-neutral-200">Foyer Background</div>
+          <div class="text-[11px] text-neutral-400">Optional backdrop image and overlay styling for the shell</div>
+          <div class="space-y-2">
+            <input
+              type="text"
+              placeholder="Background image URL (e.g. /assets/backgrounds/foyer.jpg)"
+              value={shellTheme.theme.background?.image ?? ''}
+              oninput={(e) => {
+                const img = e.currentTarget.value.trim();
+                queueShellPatch({
+                  background: {
+                    ...shellTheme.theme.background,
+                    image: img || undefined
+                  }
+                });
+              }}
+              class="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3.5 py-2 text-neutral-200 focus:border-accent focus:outline-none font-mono text-xs"
+            />
+            <div class="grid grid-cols-2 gap-2">
+              <input
+                type="text"
+                placeholder="Blur (e.g. 0px, 8px)"
+                value={shellTheme.theme.background?.blur ?? ''}
+                oninput={(e) => {
+                  const blur = e.currentTarget.value.trim();
+                  queueShellPatch({
+                    background: {
+                      ...shellTheme.theme.background,
+                      blur: blur || undefined
+                    }
+                  });
+                }}
+                class="rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-neutral-200 focus:border-accent focus:outline-none font-mono text-xs"
+              />
+              <input
+                type="text"
+                placeholder="Overlay (e.g. rgba(0,0,0,0.6))"
+                value={shellTheme.theme.background?.overlay ?? ''}
+                oninput={(e) => {
+                  const overlay = e.currentTarget.value.trim();
+                  queueShellPatch({
+                    background: {
+                      ...shellTheme.theme.background,
+                      overlay: overlay || undefined
+                    }
+                  });
+                }}
+                class="rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-neutral-200 focus:border-accent focus:outline-none font-mono text-xs"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Shell Custom CSS -->
+        <div class="rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="font-medium text-neutral-200">Shell Custom CSS</div>
+              <div class="text-[11px] text-neutral-400">Scoped CSS rules applied to the Foyer, Studio, and Personas shell surfaces</div>
+            </div>
+          </div>
+          <div class="h-[420px]">
+            <CustomCssPanel
+              value={shellTheme.theme.customCss ?? ''}
+              onchange={(val) => {
+                queueShellPatch({ customCss: val || undefined });
+              }}
+              scope="shell"
+            />
+          </div>
         </div>
       </div>
     {/if}

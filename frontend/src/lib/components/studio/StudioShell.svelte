@@ -16,6 +16,7 @@
   import CustomCssPanel from './CustomCssPanel.svelte';
   import LivePreview from './LivePreview.svelte';
   import ConfirmDialog from '$lib/components/dialogs/ConfirmDialog.svelte';
+  import ShellSurface from '$lib/components/custom/ShellSurface.svelte';
 
   let { draft }: { draft: CharacterDraft } = $props();
 
@@ -57,7 +58,7 @@
 
 <svelte:window onbeforeunload={beforeUnload} />
 
-<div class="flex h-[100dvh] w-full flex-col bg-neutral-950 font-sans text-neutral-100 overflow-hidden {HOOKS.shell.studio}" data-ft-surface="shell">
+<ShellSurface withOutlet={false} class="h-[100dvh] overflow-hidden {HOOKS.shell.studio}">
   <!-- Publish Bar / Header -->
   <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/80 bg-neutral-900/90 px-6 backdrop-blur-md shrink-0">
     <div class="flex items-center gap-4 min-w-0">
@@ -188,7 +189,7 @@
       <LivePreview {draft} activeStudioTab={activeTab} />
     </div>
   </div>
-</div>
+</ShellSurface>
 
 <!-- Discard Confirm Dialog -->
 <ConfirmDialog

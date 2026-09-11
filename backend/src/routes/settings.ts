@@ -1,9 +1,11 @@
 import { Elysia } from 'elysia';
 import {
   SettingsPatchSchema,
+  ShellThemeSchema,
   type AppSettings,
   type SettingsPatch,
-  type SettingsView
+  type SettingsView,
+  type ShellTheme
 } from '@formatavern/shared';
 import type { Repositories } from '../db/contracts';
 import { ApiError } from '../engine/errors';
@@ -58,6 +60,18 @@ export function createSettingsRouter(repos: Repositories) {
       },
       {
         body: SettingsPatchSchema
+      }
+    )
+    .get('/shell-theme', (): ShellTheme => {
+      return repos.settings.getShellTheme();
+    })
+    .put(
+      '/shell-theme',
+      ({ body }): ShellTheme => {
+        return repos.settings.putShellTheme(body as ShellTheme);
+      },
+      {
+        body: ShellThemeSchema
       }
     );
 }

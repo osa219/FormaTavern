@@ -30,6 +30,7 @@ export type ThemePath = (typeof THEME_PATHS)[number];
 const THEME_PATH_SET: ReadonlySet<string> = new Set(THEME_PATHS);
 
 export interface ThemeInputs {
+  global?: ThemeOverrides; // Amendment A-U1: lowest authored layer
   character?: CharacterTheme; // undefined → NEUTRAL
   bindings?: StateBinding[];
   state?: StateVector;
@@ -140,8 +141,11 @@ export function resolveTheme(i: ThemeInputs): ResolvedTheme {
     };
   }
 
-  // 1. Start from structuredClone-free deep copy of DEFAULT_CHARACTER_THEME, merge character.style
+  // 1. Start from structuredClone-free deep copy of DEFAULT_CHARACTER_THEME, merge global, then character.style
   const theme = cloneTheme(DEFAULT_CHARACTER_THEME);
+  if (i.global) {
+    deepMergeTheme(theme, i.global);
+  }
   if (i.character) {
     deepMergeTheme(theme, i.character);
   }

@@ -5,6 +5,7 @@ class PrefsStore {
   devMode = $state<boolean>(false);
   reducedMotion = $state<'system' | 'on' | 'off'>('system');
   hideCustomStyling = $state<boolean>(false);
+  forceSolidChrome = $state<boolean>(false);
 
   constructor() {
     if (typeof localStorage !== 'undefined') {
@@ -30,6 +31,9 @@ class PrefsStore {
           if (typeof parsed.hideCustomStyling === 'boolean') {
             this.hideCustomStyling = parsed.hideCustomStyling;
           }
+          if (typeof parsed.forceSolidChrome === 'boolean') {
+            this.forceSolidChrome = parsed.forceSolidChrome;
+          }
         }
       } catch {
         // ignore localStorage failure
@@ -48,7 +52,8 @@ class PrefsStore {
             enterToSend: this.enterToSend,
             devMode: this.devMode,
             reducedMotion: this.reducedMotion,
-            hideCustomStyling: this.hideCustomStyling
+            hideCustomStyling: this.hideCustomStyling,
+            forceSolidChrome: this.forceSolidChrome
           })
         );
       } catch {

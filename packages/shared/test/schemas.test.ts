@@ -7,6 +7,9 @@ import {
   PersonaPatchSchema,
   ChatListItemSchema,
   TagSchema,
+  ShellThemeSchema,
+  DEFAULT_SHELL_THEME,
+  shellToThemeOverrides,
   validate,
   type CharacterCard
 } from '../src/index';
@@ -288,6 +291,64 @@ describe('Shared Schema Validation', () => {
         turnCount: 5
       };
       expect(validate(ChatListItemSchema, item).ok).toBe(true);
+    });
+
+    describe('ShellThemeSchema & shellToThemeOverrides (Slice 4)', () => {
+      it('validates DEFAULT_SHELL_THEME as valid empty object', () => {
+        expect(validate(ShellThemeSchema, DEFAULT_SHELL_THEME).ok).toBe(true);
+      });
+
+      it('validates a complete ShellTheme document', () => {
+        const theme = {
+          font: { family: 'Cinzel', size: '1rem' },
+          background: { image: '/assets/backgrounds/bg.jpg', overlay: 'rgba(0,0,0,0.5)', blur: '8px' },
+          chrome: {
+            accent: '#38bdf8',
+            surface: 'rgba(10, 10, 10, 0.9)',
+            surfaceRaised: 'rgba(20, 20, 20, 0.95)',
+            border: 'rgba(255, 255, 255, 0.1)',
+            text: '#f8fafc',
+            font: 'Inter'
+          },
+          card: {
+            radius: '1rem',
+            density: 'compact' as const
+          },
+          scrim: '0.8',
+          labels: { foyerTitle: 'The Grand Archive' },
+          customCss: '.ft-topbar { border-bottom-color: red; }'
+        };
+        expect(validate(ShellThemeSchema, theme).ok).toBe(true);
+      });
+
+      it('enforces maxLength 131,072 on customCss in ShellThemeSchema', () => {
+        const exactCapTheme = { customCss: 'x'.repeat(131_072) };
+        expect(validate(ShellThemeSchema, exactCapTheme).ok).toBe(true);
+
+        const overCapTheme = { customCss: 'x'.repeat(131_073) };
+        expect(validate(ShellThemeSchema, overCapTheme).ok).toBe(false);
+      });
+
+      it('shellToThemeOverrides extracts only font and background for character cascade', () => {
+        const theme = {
+          font: { family: 'Cinzel', size: '1rem' },
+          background: { image: '/assets/bg.jpg', overlay: 'rgba(0,0,0,0.5)', blur: '8px' },
+          chrome: { accent: '#38bdf8' },
+          card: { radius: '1rem' }
+        };
+        const overrides = shellToThemeOverrides(theme);
+        expect(overrides).toEqual({
+          font: { family: 'Cinzel', size: '1rem' },
+          background: { image: '/assets/bg.jpg', overlay: 'rgba(0,0,0,0.5)', blur: '8px' }
+        });
+        expect((overrides as any).chrome).toBeUndefined();
+        expect((overrides as any).card).toBeUndefined();
+      });
+
+      it('shellToThemeOverrides returns empty object on null/undefined', () => {
+        expect(shellToThemeOverrides(null)).toEqual({});
+        expect(shellToThemeOverrides(undefined)).toEqual({});
+      });
     });
   });
 });

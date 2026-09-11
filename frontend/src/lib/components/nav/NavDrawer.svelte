@@ -96,7 +96,8 @@
   bind:this={dialogEl}
   oncancel={handleCancel}
   onclick={handleBackdropClick}
-  class="fixed inset-y-0 left-0 m-0 hidden open:flex h-full w-full max-w-sm flex-col border-r border-neutral-800 bg-neutral-900/98 p-0 text-neutral-100 shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-sm max-sm:bottom-0 max-sm:top-auto max-sm:h-[80vh] max-sm:max-w-none max-sm:rounded-t-2xl max-sm:border-r-0 max-sm:border-t {HOOKS.chrome.navdrawer}"
+  style="font-family: var(--chrome-font, var(--theme-font-family)); color: var(--chrome-text, inherit);"
+  class="fixed inset-y-0 left-0 m-0 hidden open:flex h-full w-full max-w-sm flex-col border-r border-neutral-800 bg-neutral-900/98 p-0 shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-sm max-sm:bottom-0 max-sm:top-auto max-sm:h-[80vh] max-sm:max-w-none max-sm:rounded-t-2xl max-sm:border-r-0 max-sm:border-t {HOOKS.chrome.navdrawer}"
   aria-labelledby="nav-drawer-title"
 >
   <!-- Drawer Header -->

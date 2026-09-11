@@ -311,5 +311,62 @@ describe('Shared Theme Cascade & matchesWhen', () => {
     it('has exactly 20 legal dotted paths in THEME_PATHS', () => {
       expect(THEME_PATHS.length).toBe(20);
     });
+
+    describe('Amendment A-U1: global shell theme layer in cascade', () => {
+      it('global layer overrides NEUTRAL defaults when character does not set them', () => {
+        const globalOverrides = {
+          font: { family: 'CustomGlobalFont', size: '1.25rem' },
+          background: { blur: '12px' }
+        };
+
+        const resolved = resolveTheme({
+          global: globalOverrides,
+          a11y: { disableCharacterThemes: false, disableReactiveTheming: false }
+        });
+
+        expect(resolved.theme.font.family).toBe('CustomGlobalFont');
+        expect(resolved.theme.font.size).toBe('1.25rem');
+        expect(resolved.theme.background.blur).toBe('12px');
+        // Unset properties still inherit from DEFAULT_CHARACTER_THEME
+        expect(resolved.theme.colors.accent).toBe(DEFAULT_CHARACTER_THEME.colors.accent);
+      });
+
+      it('character theme overrides global layer', () => {
+        const globalOverrides = {
+          font: { family: 'CustomGlobalFont', size: '1.25rem' },
+          background: { blur: '12px' }
+        };
+
+        const charTheme: CharacterTheme = {
+          ...DEFAULT_CHARACTER_THEME,
+          font: { family: 'CharacterSpecificFont', size: '0.9rem', lineHeight: '1.5' }
+        };
+
+        const resolved = resolveTheme({
+          global: globalOverrides,
+          character: charTheme,
+          a11y: { disableCharacterThemes: false, disableReactiveTheming: false }
+        });
+
+        // Character font overrides global font
+        expect(resolved.theme.font.family).toBe('CharacterSpecificFont');
+        expect(resolved.theme.font.size).toBe('0.9rem');
+        // Global background persists because character did not override it
+        expect(resolved.theme.background.blur).toBe('12px');
+      });
+
+      it('a11y.disableCharacterThemes overrides global layer completely', () => {
+        const globalOverrides = {
+          font: { family: 'CustomGlobalFont' }
+        };
+
+        const resolved = resolveTheme({
+          global: globalOverrides,
+          a11y: { disableCharacterThemes: true, disableReactiveTheming: false }
+        });
+
+        expect(resolved.theme).toEqual(NEUTRAL_A11Y_THEME);
+      });
+    });
   });
 });
