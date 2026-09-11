@@ -1,0 +1,177 @@
+{
+ "key": "p4",
+ "url": "https://janitorai.com/profiles/19e6816f-7d70-40ea-a3e1-20ececd48ed6_profile-of-mayu-0910",
+ "landmarks": {
+  "header": "header._header_17iy7_1.profile-top-bar-flex-outer.pp-top-bar-outer",
+  "headerKids": [
+   "div._bar_17iy7_26.pp-top-bar.profile-top-bar"
+  ],
+  "main": "main._main_ckjfh_1._customPadding_ckjfh_16",
+  "mainKids": [
+   {
+    "n": "div.chakra-stack.profile-page-container.css-14l6kwv",
+    "t": "@Mayu0910\n5,493 followers\nMember Since Jun 12, 202"
+   }
+  ]
+ },
+ "profile-card": {
+  "cls": "pp-uc-background profile-uc-background profile-uc-background-flex css-1k0ajgq",
+  "html": "<div class=\"pp-uc-background profile-uc-background profile-uc-background-flex css-1k0ajgq\"><div class=\"profile-background-box-1 css-0\" style=\"background:linear-gradient(140deg, #9999a3 0%, #33333d 20%, rgba(51, 51, 61, 0.9) 90%, rgba(153, 153, 163, 1) 100%);border-radius:8px;bottom:-1px;height:calc(100% + 2px);left:-1px;pointer-events:none;position:absolute;right:-1px;top:-1px;width:calc(100% + 2px)\"></div><div class=\"profile-background-box-2 css-17kq3e7\"></div><div class=\"profile-background-box-3 css-1u4wp4l\"></div><div class=\"profile-info-wrapper-box css-15vqpxh\"><div class=\"chakra-stack profile-info-stack css-8g8ihq\"><div class=\"chakra-stack profile-info-hstack css-1uodvt1\"><div class=\"pp-uc-avatar-container profile-avatar-container css-79elbk\"><img alt=\"Avatar\" src=\"https://ella.janitorai.com/avatars/nzkq1wyeDsEwreiE7U_cs.webp?width=600\" class=\"pp-uc-avatar profile-avatar css-18bnokj\"></div><div class=\"chakra-stack profile-info-stack-inner css-11jxqc6\"><div class=\"profile-info-stack-inner-flex css-lbyqo2\"><h2 class=\"chakra-heading pp-uc-title profile-title-heading css-18242y1\">@<!-- -->Mayu0910</h2><div class=\"profile-janitor-plus-box css-17c2y77\"></div></div><div class=\"pp-uc-followers-count profile-followers-count css-tj1bag\"><span>5,493<!-- --> </span><span>followers</span></div><div class=\"chakra-stack profile-badges css-1n7vfh0\"><div class=\"profile-badge css-x3wokz\"><img alt=\"Halloween 2025 badge\" src=\"https://ella.janitorai.com/events/pumpkin.png\" class=\"profile-badge-img css-1x0d536\"></div></div><div class=\"pp-uc-member-since profile-member-since-box css-16mo0z4\">Member Since<!-- --> <!-- -->Jun 12, 2023</div></div></div><div class=\"pp-uc-about-me profile-about-me css-p5wazl\"><p>I regret my dweeb username and I have no fucking idea what I am doing</p><p>HEY PLEASE DON'T FOLLOW ME I'M JUST A RANDOM GIRL ROTTING IN MY BED AND MY BOTS WILL NEVER BE CONSISTENT ASKSKDKDDKJFLL YOU WILL BENEFIT NOTHING FROM FOLLOWING ME ISTG 😭😭😭😭😭</p><p>but ah well if you do in the end follow me anw know that I'm just publishing whatever I feel like so... it'll be messy ^^;;;</p><p>I also don't take bot requests, sorry... qwq ily tho</p><p></p><p>Update as of november 2025: I found another site I like so I'm not sure if I'll come back. Don't expect anything.</p></div><div class=\"css-3nlpdq\"><div class=\"chakra-stack css-1aq5geu\"><div class=\"pp-uc-follow-flex profile-uc-follow-flex css-1vakbk4\"><button class=\"Btn pp-uc-follow-button profile-uc-follow-button\" data-fo"
+ },
+ "bot-cards": {
+  "count": 12,
+  "firstHref": "/characters/5d8bdff9-7607-4686-87a0-24c5c8a97583_character-real-life-world-rp",
+  "firstHtml": "<div class=\"chakra-stack profile-character-card-stack css-1s5evre\"><a class=\"profile-character-card-stack-link-component\" href=\"/characters/5d8bdff9-7607-4686-87a0-24c5c8a97583_character-real-life-world-rp\" data-discover=\"true\"><div class=\"profile-character-card-stack-link-component-box css-nlxhw4\"> <div class=\"pp-cc-name profile-character-card-name-box css-zgqw37\">Real Life World RP</div></div><div class=\"profile-character-card-stats-box css-10cv7r2\"><span tabindex=\"0\" class=\"css-1baulvz\"><div class=\"_ribbon_67d1x_1 pp-cc-ribbon profile-character-card-ribbon css-1ket5wn\"><div class=\"_content_67d1x_11 pp-cc-ribbon-wrap profile-character-card-ribbon-wrap css-wexxj8\"><div class=\"chakra-stack pp-cc-chats profile-character-card-chats-hstack css-2f7e99\"><svg stroke=\"currentColor\" fill=\"none\" stroke-width=\"2\" viewBox=\"0 0 24 24\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"profile-character-cards-chat-count-tbmessages\" height=\"1em\" width=\"1em\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M21 14l-3 -3h-7a1 1 0 0 1 -1 -1v-6a1 1 0 0 1 1 -1h9a1 1 0 0 1 1 1v10\"></path><path d=\"M14 15v2a1 1 0 0 1 -1 1h-7l-3 3v-10a1 1 0 0 1 1 -1h2\"></path></svg><span class=\"pp-cc-chats-count profile-character-card-chats-count\">59m</span><div class=\"chakra-stack pp-cc-public-chats profile-character-card-public-chats-hstack css-y395z1\"><svg stroke=\"currentColor\" fill=\"none\" stroke-width=\"2\" viewBox=\"0 0 24 24\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"profile-character-card-public-chats-"
+ },
+ "style-overview": {
+  "sheets": 139,
+  "inlineBlocks": 118,
+  "inlineChars": 97422,
+  "biggest": 16081
+ },
+ "custom-css": {
+  "chars": 97539,
+  "ppRefs": 0,
+  "pageDoll": 0,
+  "overlayGif": 0,
+  "profileHooks": 0,
+  "chakraOverrides": 340,
+  "contentDecls": 33,
+  "important": 13,
+  "bgAttachFixed": 0,
+  "urlRefs": 1
+ },
+ "keyframes-anims": {
+  "keyframes": [
+   "animation-14pkoxc",
+   "swipe-out-left",
+   "swipe-out-right",
+   "swipe-out-up",
+   "swipe-out-down",
+   "sonner-fade-in",
+   "sonner-fade-out",
+   "sonner-spin"
+  ],
+  "animations": 24,
+  "transitions": 41,
+  "hover": 29,
+  "focus": 1,
+  "media": [
+   "screen and (min-width: 42rem)",
+   "screen and (min-width: 48em)",
+   "screen and (min-width: 62em)",
+   "screen and (min-width: 30em)",
+   "(hover:none) and (pointer:coarse)",
+   "(max-width:600px)",
+   "(prefers-reduced-motion)",
+   "(prefers-reduced-motion: reduce)"
+  ]
+ },
+ "custom-selectors": {
+  "totalClassSels": 113,
+  "customSels": [
+   ".tf-overlay"
+  ]
+ },
+ "fixed-layers": [
+  {
+   "cls": "pp-page-background profile-page-background css-1bsxmnt",
+   "tag": "DIV",
+   "z": "auto",
+   "pe": "auto"
+  },
+  {
+   "cls": "tf-overlay",
+   "tag": "DIV",
+   "z": "10000",
+   "pe": "auto"
+  },
+  {
+   "cls": "",
+   "tag": "DIV",
+   "z": "5500",
+   "pe": "none"
+  },
+  {
+   "cls": "",
+   "tag": "DIV",
+   "z": "5500",
+   "pe": "none"
+  },
+  {
+   "cls": "",
+   "tag": "DIV",
+   "z": "5500",
+   "pe": "none"
+  },
+  {
+   "cls": "",
+   "tag": "DIV",
+   "z": "5500",
+   "pe": "none"
+  },
+  {
+   "cls": "",
+   "tag": "DIV",
+   "z": "5500",
+   "pe": "none"
+  },
+  {
+   "cls": "",
+   "tag": "DIV",
+   "z": "5500",
+   "pe": "none"
+  }
+ ],
+ "fonts": {
+  "links": [
+   "https://fonts.googleapis.com/",
+   "https://fonts.gstatic.com/",
+   "https://fonts.googleapis.com/css2?family=Jura:wght@300..700&display=swap",
+   "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
+   "https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500;1,9..144,600;1,9..144,700&display=swap",
+   "https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap"
+  ],
+  "families": [
+   "system-ui,sans-serif",
+   "SFMono-Regular,Menlo,Monaco,Consolas,monospace",
+   "inherit",
+   "var(--chakra-fonts-body)",
+   "var(--chakra-fonts-heading)",
+   "Jura",
+   "unset",
+   "'Share Tech Mono',monospace",
+   "ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Robo"
+  ],
+  "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Helvetica, Arial, sans-serif, \"Apple Color Emoji\", \"S"
+ },
+ "backgrounds": {
+  "urls": [
+   ""
+  ],
+  "bodyBg": "none",
+  "imgs": 26,
+  "imgSample": [
+   "https://ella.janitorai.com/avatars/nzkq1wyeDsEwreiE7U_cs.webp?width=600",
+   "https://ella.janitorai.com/events/pumpkin.png",
+   "https://ella.janitorai.com/bot-avatars/19e6816f-7d70-40ea-a3e1-20ececd48ed6_59dee62a-16ef-497e-9401-2638ca2728",
+   "https://ella.janitorai.com/hotlink-ok/star-card.svg",
+   "https://ella.janitorai.com/bot-avatars/19e6816f-7d70-40ea-a3e1-20ececd48ed6_01e4b0ff-a03e-456c-8072-b304bd5b5a",
+   "https://ella.janitorai.com/hotlink-ok/star-card.svg",
+   "https://ella.janitorai.com/bot-avatars/19e6816f-7d70-40ea-a3e1-20ececd48ed6_c52e7955-3edc-4ab1-8d32-47d2367eeb",
+   "https://ella.janitorai.com/hotlink-ok/star-card.svg"
+  ]
+ },
+ "pseudo-swaps": [
+  {
+   "name": "FOLLOW-BTN",
+   "pseudo": "::before",
+   "content": "\"\""
+  }
+ ],
+ "nojs-interactive": {
+  "details": 0,
+  "summaries": [],
+  "tabindex": 17
+ }
+}

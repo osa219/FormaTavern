@@ -1,0 +1,315 @@
+{
+ "key": "p2",
+ "url": "https://janitorai.com/profiles/70d8bef9-497c-4be8-8f7a-9a8b1de8c05d",
+ "landmarks": {
+  "header": "header._header_17iy7_1.profile-top-bar-flex-outer.pp-top-bar-outer",
+  "headerKids": [
+   "div._bar_17iy7_26.pp-top-bar.profile-top-bar"
+  ],
+  "main": "main._main_ckjfh_1._customPadding_ckjfh_16",
+  "mainKids": [
+   {
+    "n": "div.chakra-stack.profile-page-container.css-14l6kwv",
+    "t": "@lonerlove\n4,394 FOLLOWERS\nMember Since Jul 3, 202"
+   }
+  ]
+ },
+ "profile-card": {
+  "cls": "pp-uc-background profile-uc-background profile-uc-background-flex css-vqimyu",
+  "html": "<div class=\"pp-uc-background profile-uc-background profile-uc-background-flex css-vqimyu\"><div class=\"profile-background-box-1 css-0\" style=\"background:linear-gradient(140deg, #999999 0%, #333333 20%, rgba(51, 51, 51, 0.9) 90%, rgba(153, 153, 153, 1) 100%);border-radius:8px;bottom:-1px;height:calc(100% + 2px);left:-1px;pointer-events:none;position:absolute;right:-1px;top:-1px;width:calc(100% + 2px)\"></div><div class=\"profile-background-box-2 css-17kq3e7\"></div><div class=\"profile-background-box-3 css-19cg9cj\"></div><div class=\"profile-info-wrapper-box css-15vqpxh\"><div class=\"chakra-stack profile-info-stack css-8g8ihq\"><div class=\"chakra-stack profile-info-hstack css-1uodvt1\"><div class=\"pp-uc-avatar-container profile-avatar-container css-79elbk\"><img alt=\"Avatar\" src=\"https://ella.janitorai.com/avatars/fHn8nfgvliJonSSJcRR8e.webp?width=600\" class=\"pp-uc-avatar profile-avatar css-18bnokj\"></div><div class=\"chakra-stack profile-info-stack-inner css-11jxqc6\"><div class=\"profile-info-stack-inner-flex css-lbyqo2\"><h2 class=\"chakra-heading pp-uc-title profile-title-heading css-1x4obw2\">@<!-- -->lonerlove</h2><div class=\"profile-verified-box css-17c2y77\"><span class=\"profile-verified-mark css-xeged3\"><svg width=\"24px\" height=\"24px\" viewBox=\"0 0 22 22\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M13.5957 3.011L10.9997 0.5L8.40367 3.011L4.82767 2.505L4.20367 6.063L1.01367 7.755L2.59967 11L1.01367 14.245L4.20367 15.937L4.82767 19.495L8.40367 18.989L10.9997 21.5L13.5957 18.989L17.1717 19.495L17.7957 15.937L20.9857 14.245L19.3997 11L20.9857 7.755L17.7957 6.063L17.1717 2.505L13.5957 3.011ZM5.99967 11.39L9.73967 15.13L15.9397 8.36L14.4697 7L9.66967 12.23L7.40967 9.97L5.99967 11.39Z\" fill=\"url(#paint0_linear_435_5)\"></path><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M13.3478 3.772L10.9998 1.5L8.65084 3.772L5.41584 3.314L4.85084 6.533L1.96484 8.064L3.39984 11L1.96484 13.936L4.85084 15.467L5.41584 18.686L8.65084 18.228L10.9998 20.5L13.3478 18.228L16.5838 18.686L17.1478 15.467L20.0348 13.936L18.5998 11L20.0348 8.064L17.1478 6.533L16.5838 3.314L13.3478 3.772ZM5.99984 11.39L9.73984 15.13L15.9398 8.36L14.4698 7L9.66984 12.23L7.40984 9.97L5.99984 11.39Z\" fill=\"url(#paint1_linear_435_5)\"></path><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M5.99967 11.39L9.73967 15.13L15.9397 8.36L14.4697 7L9.66967 12.23L7.40967 9.97L5.99967 11.39Z\" fill=\"#3A2202\"></path><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M6 11.39L9.74 15."
+ },
+ "bot-cards": {
+  "count": 39,
+  "firstHref": "https://janitorai.com/characters/2ffca4bf-d9d7-4f98-a89f-9468d83ef13c_character-wlw-take-a-hint-solana-wilson",
+  "firstHtml": "<div class=\"carousel-slide s1\">\n      <a node=\"[object Object]\" href=\"https://janitorai.com/characters/2ffca4bf-d9d7-4f98-a89f-9468d83ef13c_character-wlw-take-a-hint-solana-wilson\">\n      <img src=\"https://file.garden/aKsgAx1ivytYf-5C/Solana.png\" class=\"bot-standee\" node=\"[object Object]\" alt=\"\" draggable=\"false\">\n      <div class=\"bot-name\">SOLANA</div>\n      <div class=\"creator-name\">BY ELSKIE</div>\n        </a>\n      <section class=\"creator-arrows\">\n        <a class=\"arrow\" node=\"[object Object]\" href=\"#slide5\">&lt;</a>\n        <a class=\"arrow\" node=\"[object Object]\" href=\"#slide2\">&gt;</a>\n      </section>\n    </div>"
+ },
+ "style-overview": {
+  "sheets": 163,
+  "inlineBlocks": 142,
+  "inlineChars": 162764,
+  "biggest": 33059
+ },
+ "custom-css": {
+  "chars": 162905,
+  "ppRefs": 106,
+  "pageDoll": 0,
+  "overlayGif": 0,
+  "profileHooks": 15,
+  "chakraOverrides": 440,
+  "contentDecls": 74,
+  "important": 33,
+  "bgAttachFixed": 0,
+  "urlRefs": 1
+ },
+ "keyframes-anims": {
+  "keyframes": [
+   "animation-14pkoxc",
+   "swipe-out-left",
+   "swipe-out-right",
+   "swipe-out-up",
+   "swipe-out-down",
+   "sonner-fade-in",
+   "sonner-fade-out",
+   "sonner-spin",
+   "typingEffect",
+   "fadeInOptions"
+  ],
+  "animations": 26,
+  "transitions": 98,
+  "hover": 80,
+  "focus": 1,
+  "media": [
+   "screen and (min-width: 42rem)",
+   "screen and (min-width: 48em)",
+   "screen and (min-width: 62em)",
+   "screen and (min-width: 30em)",
+   "(hover:none) and (pointer:coarse)",
+   "(max-width:600px)",
+   "(prefers-reduced-motion)",
+   "(prefers-reduced-motion: reduce)",
+   "screen and (max-width: 920px)",
+   "screen and (max-width: 660px)",
+   "screen and (max-width: 768px)",
+   "screen and (max-width: 620px)"
+  ]
+ },
+ "custom-selectors": {
+  "totalClassSels": 296,
+  "customSels": [
+   ".tf-overlay",
+   ".profile-page-flex",
+   ".pp-uc-background",
+   ".profile-page-container",
+   ".profile-info-stack",
+   ".pp-uc-about-me",
+   ".profile-info-hstack",
+   ".pp-top-bar-logo-sub-name",
+   ".profile-member-since-box",
+   ".pp-cc-creator-name",
+   ".pp-cc-star-line",
+   ".pp-cc-star",
+   ".profile-character-card-stack",
+   ".pp-tag-holidays2025",
+   ".pp-tabs-button",
+   ".pp-tabs-indicator",
+   ".profile-top-box-search-input-spacer-top",
+   ".pp-top-bar-create-char",
+   ".profile-character-card-box",
+   ".pp-uc-options-menu",
+   ".pp-cc-description",
+   ".pp-cc-tokens-count",
+   ".profile-uc-follow-button",
+   ".pp-uc-avatar-container",
+   ".profile-page-container-flex-box",
+   ".profile-info-wrapper-box",
+   ".pp-page-background",
+   ".lolo-tabs",
+   ".profile-info-stack-inner",
+   ".pp-uc-title",
+   ".profile-info-stack-inner-flex",
+   ".profile-badges",
+   ".profile-badge",
+   ".pp-uc-followers-count",
+   ".pp-uc-member-since",
+   ".profile-uc-follow-text",
+   ".dropdown-close-overlay",
+   ".pp-top-bar",
+   ".pp-top-bar-logo-name",
+   ".pp-top-bar-logo",
+   ".profile-top-bar-search-wrapper",
+   ".pp-top-bar-search-box",
+   ".pp-top-bar-search",
+   ".pp-top-bar-search-clear",
+   ".pp-top-bar-app-menu",
+   ".profile-filters-flex-outer",
+   ".profile-filters-flex-inner",
+   ".profile-filters-flex-inner-hassearchfilter",
+   ".pp-fl-search-input",
+   ".profile-character-search-input-group",
+   ".pp-pg-total",
+   ".pp-pg-total-count",
+   ".pp-pg-total-text",
+   ".pp-fl-filter-button",
+   ".profile-top-bar-app-menu-list",
+   ".chakra-modal__content-container",
+   ".profile-filter-modal-body-tags-flex-box-heading",
+   ".profile-filter-modal-body-flex",
+   ".pp-mnb-container",
+   ".lolo-seriesscrollheader"
+  ]
+ },
+ "fixed-layers": [
+  {
+   "cls": "pp-page-background profile-page-background css-13ve2tw",
+   "tag": "DIV",
+   "z": "auto",
+   "pe": "auto"
+  },
+  {
+   "cls": "target-anchor",
+   "tag": "SPAN",
+   "z": "auto",
+   "pe": "none"
+  },
+  {
+   "cls": "dropdown-close-overlay",
+   "tag": "A",
+   "z": "100",
+   "pe": "auto"
+  },
+  {
+   "cls": "target-anchor",
+   "tag": "DIV",
+   "z": "auto",
+   "pe": "none"
+  },
+  {
+   "cls": "dropdown-close-overlay",
+   "tag": "A",
+   "z": "100",
+   "pe": "auto"
+  },
+  {
+   "cls": "target-anchor",
+   "tag": "SPAN",
+   "z": "auto",
+   "pe": "none"
+  },
+  {
+   "cls": "dropdown-close-overlay",
+   "tag": "A",
+   "z": "100",
+   "pe": "auto"
+  },
+  {
+   "cls": "target-anchor",
+   "tag": "DIV",
+   "z": "auto",
+   "pe": "none"
+  },
+  {
+   "cls": "target-anchor",
+   "tag": "DIV",
+   "z": "auto",
+   "pe": "none"
+  },
+  {
+   "cls": "target-anchor",
+   "tag": "DIV",
+   "z": "auto",
+   "pe": "none"
+  },
+  {
+   "cls": "target-anchor",
+   "tag": "DIV",
+   "z": "auto",
+   "pe": "none"
+  },
+  {
+   "cls": "target-anchor",
+   "tag": "DIV",
+   "z": "auto",
+   "pe": "none"
+  },
+  {
+   "cls": "",
+   "tag": "DIV",
+   "z": "5500",
+   "pe": "none"
+  },
+  {
+   "cls": "",
+   "tag": "DIV",
+   "z": "5500",
+   "pe": "none"
+  },
+  {
+   "cls": "",
+   "tag": "DIV",
+   "z": "5500",
+   "pe": "none"
+  },
+  {
+   "cls": "",
+   "tag": "DIV",
+   "z": "5500",
+   "pe": "none"
+  },
+  {
+   "cls": "",
+   "tag": "DIV",
+   "z": "5500",
+   "pe": "none"
+  },
+  {
+   "cls": "",
+   "tag": "DIV",
+   "z": "5500",
+   "pe": "none"
+  },
+  {
+   "cls": "tf-overlay",
+   "tag": "DIV",
+   "z": "10000",
+   "pe": "auto"
+  }
+ ],
+ "fonts": {
+  "links": [
+   "https://fonts.googleapis.com/",
+   "https://fonts.gstatic.com/",
+   "https://fonts.googleapis.com/css2?family=Jura:wght@300..700&display=swap",
+   "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
+   "https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500;1,9..144,600;1,9..144,700&display=swap",
+   "https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap"
+  ],
+  "families": [
+   "system-ui,sans-serif",
+   "SFMono-Regular,Menlo,Monaco,Consolas,monospace",
+   "inherit",
+   "var(--chakra-fonts-body)",
+   "var(--chakra-fonts-heading)",
+   "Jura",
+   "unset",
+   "'Share Tech Mono',monospace",
+   "ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Robo",
+   "'vt323'",
+   "'press start 2p'",
+   "'Press Start 2P'",
+   "'Poppins'",
+   "VT323",
+   "VT323 !important",
+   "Lato"
+  ],
+  "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Helvetica, Arial, sans-serif, \"Apple Color Emoji\", \"S"
+ },
+ "backgrounds": {
+  "urls": [
+   "https://ella.janitorai.com/media-approved/MdjS6TRIgG0uK4UoFVdJX.webp"
+  ],
+  "bodyBg": "none",
+  "imgs": 128,
+  "imgSample": [
+   "https://ella.janitorai.com/avatars/fHn8nfgvliJonSSJcRR8e.webp?width=600",
+   "https://ella.janitorai.com/events/pumpkin.png",
+   "https://ella.janitorai.com/events/icons/app-beta-badge.webp",
+   "https://ella.janitorai.com/events/icons/appmop.webp",
+   "https://ella.janitorai.com/events/icons/winter2025.webp",
+   "https://ella.janitorai.com/events/icons/valentines2026.webp",
+   "https://ella.janitorai.com/events/icons/spring-fever-badge.png",
+   "https://ella.janitorai.com/events/icons/spring-fever-creator-badge.png"
+  ]
+ },
+ "pseudo-swaps": [
+  {
+   "name": "FOLLOW-BTN",
+   "pseudo": "::before",
+   "content": "\"\""
+  }
+ ],
+ "nojs-interactive": {
+  "details": 0,
+  "summaries": [],
+  "tabindex": 43
+ }
+}

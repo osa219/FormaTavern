@@ -8,3 +8,5 @@ data/assets/**
 .DS_Store
 .env
 repomix-output.*
+# Agent harness scratch (auto-generated per session, never tracked)
+.workbuddy-ai/
