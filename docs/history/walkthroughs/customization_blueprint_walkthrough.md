@@ -118,7 +118,18 @@ Unify the global shell theme with the character theme cascade under Amendment A-
   - Added `GET /api/settings/shell-theme` and `PUT /api/settings/shell-theme` endpoints with `ShellThemeSchema` validation and 128 KiB cap enforcement in [`routes/settings.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/routes/settings.ts).
 - **Frontend Reactive Store with Multi-Tab Sync** ([`shellTheme.svelte.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/state/shellTheme.svelte.ts)):
   - Built `ShellThemeStore` with sequence numbering concurrency guard (`seq`), dependency-injectable client for testing, and `BroadcastChannel('formatavern_sync')` message distribution to immediately synchronize theme changes across open browser tabs without page reloads.
+  - Sanitized payloads via plain JSON serialization (`JSON.parse(JSON.stringify(data))`) and protected with `try...catch` guards to prevent `DOMException: DataCloneError` when posting Svelte 5 reactive `$state` proxy objects across browser tabs.
   - Eager initialization in root [`+layout.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/routes/+layout.svelte).
+- **Global Solid vs. Frosted Chrome Architecture** ([`app.css`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/app.css), [`+layout.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/routes/+layout.svelte)):
+  - Root `+layout.svelte` dynamically attaches `data-ft-chrome="solid" | "frosted"` to `document.documentElement` driven reactively by `prefs.forceSolidChrome`.
+  - Defined `:root` defaults (`--chrome-scrim: 0.8`, `--chrome-backdrop-filter: blur(12px)`) and `[data-ft-chrome="solid"]` overrides (`--chrome-scrim: 1`, `--chrome-backdrop-filter: none`, with modal backdrop blur neutralization).
+  - Introduced unified `.chrome-bar` class using `color-mix` with `--chrome-surface` and `--chrome-scrim` alongside `--chrome-backdrop-filter`, replacing hardcoded `bg-neutral-900/*` and `backdrop-blur-md` across all navigation bars:
+    - Foyer Header ([`+page.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/routes/+page.svelte))
+    - Personas Header ([`personas/+page.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/routes/personas/+page.svelte))
+    - Studio Publish Bar ([`StudioShell.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/studio/StudioShell.svelte))
+    - Chat TopBar ([`TopBar.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/nav/TopBar.svelte))
+    - Character Showcase Header ([`character/[id]/+page.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/routes/character/%5Bid%5D/+page.svelte))
+  - Guarantees immediate zero-blur solid chrome across all routes and dialogs when toggled, and silky frosted glass when off.
 - **Shell Surface Component** ([`ShellSurface.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/custom/ShellSurface.svelte)):
   - Emits `data-ft-surface="shell"`.
   - Dynamically computes inline `--chrome-*` CSS custom properties (`--theme-accent`, `--chrome-bg`, `--chrome-surface`, `--chrome-line`, `--chrome-text`, `--chrome-font`, `--chrome-card-radius`, `--chrome-card-padding`, `--chrome-card-gap`, `--chrome-scrim`).
@@ -132,13 +143,15 @@ Unify the global shell theme with the character theme cascade under Amendment A-
   - Chat and Author Showcase remain strictly outside `ShellSurface`.
 - **Chrome Token Consumers**:
   - `CompanionCard.svelte`, `CharacterCard.svelte`, `TopBar.svelte`, and `NavDrawer.svelte` consume `--chrome-card-radius`, `--chrome-card-padding`, `--chrome-font`, `--chrome-text`, and `--chrome-backdrop-filter` with fallback defaults.
+  - Moved `.ft-char-card` styling rules (`border-radius`, `padding`, `font-family`, `color`) out of inline `style` attributes into [`app.css`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/app.css), allowing creator Custom CSS rules like `.ft-char-card { border-radius: ... }` to take effect immediately without requiring `!important`.
 - **SettingsSheet Appearance Tab** ([`SettingsSheet.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/settings/SettingsSheet.svelte)):
   - Added **Appearance** section:
     - Chrome Accent color picker and palette presets.
     - Solid Chrome toggle (`prefs.forceSolidChrome`).
     - Scrim opacity range slider (0.1–1.0).
     - Foyer Title override input.
-    - Card Density selector (`compact`, `regular`, `airy`) and radius selector.
+    - Card Density selector (`compact`, `regular`, `airy`).
+    - Dual-track Card Corner Radius control: preset dropdown with Sharp (0px), Subtle (8px), Rounded (16px), Default (24px), Pill (32px), plus freeform text input for exact CSS units (`px`, `rem`).
     - Background image, blur, and overlay inputs.
     - Embedded `CustomCssPanel` configured for `scope="shell"` with live validation, size meter, and quick snippets (`.ft-foyer-header`, `.ft-foyer-grid`, `.ft-char-card`).
 - **Reduced Motion Attribute (Invariant C9)**:

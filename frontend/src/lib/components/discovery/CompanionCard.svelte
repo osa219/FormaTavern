@@ -27,7 +27,6 @@
       goto(`/character/${companion.id}`);
     }
   }}
-  style="border-radius: var(--chrome-card-radius, 1rem); padding: var(--chrome-card-padding, 1.25rem); font-family: var(--chrome-font, var(--theme-font-family)); color: var(--chrome-text, inherit);"
   class="group relative flex flex-col justify-between overflow-hidden border border-neutral-800/80 bg-neutral-900/60 transition-colors hover:border-neutral-700 hover:bg-neutral-850/80 cursor-pointer text-left shadow-lg hover:shadow-xl {HOOKS.chrome.card}"
 >
   <!-- Subtle accent glow -->

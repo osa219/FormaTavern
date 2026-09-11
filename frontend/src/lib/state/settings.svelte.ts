@@ -55,11 +55,15 @@ class SettingsStore {
       if (!error && data && 'provider' in data) {
         if (currentSeq === this.seq) {
           this.settings = data as SettingsView;
-          this.channel?.postMessage({
-            type: 'settings_updated',
-            tabId: TAB_ID,
-            settings: this.settings
-          });
+          try {
+            this.channel?.postMessage({
+              type: 'settings_updated',
+              tabId: TAB_ID,
+              settings: JSON.parse(JSON.stringify(data))
+            });
+          } catch (postErr) {
+            console.warn('[Settings] BroadcastChannel sync failed:', postErr);
+          }
         }
       } else if (error) {
         toasts.error(toUiError(error).message);

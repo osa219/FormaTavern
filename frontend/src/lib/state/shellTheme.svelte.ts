@@ -53,11 +53,15 @@ export class ShellThemeStore {
       if (!res.error && res.data) {
         if (currentSeq === this.seq) {
           this.theme = res.data as ShellTheme;
-          this.channel?.postMessage({
-            type: 'shell_theme_updated',
-            tabId: TAB_ID,
-            theme: this.theme
-          });
+          try {
+            this.channel?.postMessage({
+              type: 'shell_theme_updated',
+              tabId: TAB_ID,
+              theme: JSON.parse(JSON.stringify(res.data))
+            });
+          } catch (postErr) {
+            console.warn('[ShellTheme] BroadcastChannel sync failed:', postErr);
+          }
         }
         return true;
       } else if (res.error) {

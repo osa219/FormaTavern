@@ -117,7 +117,7 @@
 
 <ShellSurface>
   <!-- Top Navigation Header -->
-  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/80 bg-neutral-900/80 px-6 backdrop-blur-md {HOOKS.shell.foyerHeader}">
+  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/80 chrome-bar px-6 {HOOKS.shell.foyerHeader}">
     <div class="flex items-center gap-3">
       <span class="text-accent text-lg">◈</span>
       <h1 class="text-sm font-bold tracking-wide text-neutral-100 uppercase">

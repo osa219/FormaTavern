@@ -60,7 +60,7 @@
 
 <ShellSurface withOutlet={false} class="h-[100dvh] overflow-hidden {HOOKS.shell.studio}">
   <!-- Publish Bar / Header -->
-  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/80 bg-neutral-900/90 px-6 backdrop-blur-md shrink-0">
+  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/80 chrome-bar px-6 shrink-0">
     <div class="flex items-center gap-4 min-w-0">
       <a
         href="/"

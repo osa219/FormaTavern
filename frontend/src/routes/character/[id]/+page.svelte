@@ -88,7 +88,7 @@
   <Backdrop image={showcaseBg} />
 
   <!-- Top Bar -->
-  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/40 bg-transparent px-6 backdrop-blur-md">
+  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/40 chrome-bar px-6">
     <div class="flex items-center gap-3">
       <a
         href="/"

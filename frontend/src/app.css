@@ -50,6 +50,7 @@
   --chrome-font: var(--theme-font-family);
   --chrome-card-radius: 1.5rem;
   --chrome-scrim: 0.8;
+  --chrome-backdrop-filter: blur(12px);
   --chrome-card-padding: 1rem;
   --chrome-card-gap: 1rem;
 
@@ -58,6 +59,38 @@
   --motion-ui: 180ms;
   --motion-enter: 240ms;
   --motion-ease: cubic-bezier(.22, 1, .36, 1);
+}
+
+:root[data-ft-chrome="solid"],
+[data-ft-chrome="solid"] {
+  --chrome-scrim: 1;
+  --chrome-backdrop-filter: none;
+}
+
+:root[data-ft-chrome="solid"] dialog::backdrop,
+[data-ft-chrome="solid"] dialog::backdrop {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.chrome-bar {
+  background-color: color-mix(in srgb, var(--chrome-surface) calc(var(--chrome-scrim, 0.8) * 100%), transparent);
+  backdrop-filter: var(--chrome-backdrop-filter, blur(12px));
+  -webkit-backdrop-filter: var(--chrome-backdrop-filter, blur(12px));
+}
+
+:root[data-ft-chrome="solid"] .chrome-bar,
+[data-ft-chrome="solid"] .chrome-bar {
+  background-color: var(--chrome-surface);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.ft-char-card {
+  border-radius: var(--chrome-card-radius, 1.5rem);
+  padding: var(--chrome-card-padding, 1rem);
+  font-family: var(--chrome-font, var(--theme-font-family));
+  color: var(--chrome-text, inherit);
 }
 
 @media (prefers-reduced-motion: reduce) {

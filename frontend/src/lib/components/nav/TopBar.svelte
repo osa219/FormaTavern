@@ -29,8 +29,8 @@
 </script>
 
 <header
-  style="backdrop-filter: var(--chrome-backdrop-filter, blur(12px)); font-family: var(--chrome-font, var(--theme-font-family)); color: var(--chrome-text, inherit);"
-  class="relative z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/80 bg-neutral-900/50 px-3 {HOOKS.chrome.topbar}"
+  style="font-family: var(--chrome-font, var(--theme-font-family)); color: var(--chrome-text, inherit);"
+  class="relative z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/80 chrome-bar px-3 {HOOKS.chrome.topbar}"
 >
   <!-- Left: Navigation Menu & Home -->
   <div class="flex items-center gap-2">

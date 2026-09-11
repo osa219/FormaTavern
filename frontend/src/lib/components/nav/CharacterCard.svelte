@@ -49,7 +49,7 @@
 </script>
 
 <div
-  style="{styleAttr}; border-radius: var(--chrome-card-radius, 1rem); padding: var(--chrome-card-padding, 1.25rem); font-family: var(--chrome-font, var(--theme-font-family)); color: var(--chrome-text, inherit);"
+  style={styleAttr}
   data-transitions="off"
   class="relative flex flex-col justify-between overflow-hidden border border-neutral-800/90 bg-neutral-900/90 shadow-xl transition-colors duration-200 hover:border-neutral-700 hover:shadow-2xl {HOOKS.chrome.card}"
 >

@@ -5,6 +5,7 @@
   import Toaster from '$lib/components/ui/Toaster.svelte';
   import { shellTheme } from '$lib/state/shellTheme.svelte';
   import { media } from '$lib/state/media.svelte';
+  import { prefs } from '$lib/state/prefs.svelte';
 
   let { children } = $props();
 
@@ -15,6 +16,7 @@
   $effect(() => {
     if (typeof document !== 'undefined') {
       document.documentElement.setAttribute('data-ft-motion', media.reducedMotion ? 'reduce' : 'full');
+      document.documentElement.setAttribute('data-ft-chrome', prefs.forceSolidChrome ? 'solid' : 'frosted');
     }
   });
 </script>

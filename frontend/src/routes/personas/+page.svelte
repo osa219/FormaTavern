@@ -53,7 +53,7 @@
 
 <ShellSurface class={HOOKS.shell.personas}>
   <!-- Header -->
-  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/80 bg-neutral-900/80 px-6 backdrop-blur-md">
+  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/80 chrome-bar px-6">
     <div class="flex items-center gap-3">
       <a
         href="/"

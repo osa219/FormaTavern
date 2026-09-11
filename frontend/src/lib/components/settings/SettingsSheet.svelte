@@ -21,6 +21,7 @@
   let activeTab = $state<'provider' | 'appearance' | 'generation' | 'narrative' | 'a11y' | 'shortcuts'>('provider');
 
   const ACCENT_PRESETS = ['#38bdf8', '#818cf8', '#a855f7', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#10b981', '#14b8a6'];
+  const RADIUS_PRESETS = ['0px', '0.5rem', '1rem', '1.5rem', '2rem'];
 
   // OpenRouter key draft
   let apiKeyDraft = $state('');
@@ -750,22 +751,45 @@
               Card Corner Radius
             </label>
             <div class="text-[11px] text-neutral-400">Border radius for companion cards</div>
-            <select
-              id="card-radius"
-              value={shellTheme.theme.card?.radius ?? '1.5rem'}
-              onchange={(e) => {
-                const radius = e.currentTarget.value;
-                queueShellPatch({
-                  card: { ...shellTheme.theme.card, radius }
-                }, 0);
-              }}
-              class="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-neutral-200 focus:border-accent focus:outline-none"
-            >
-              <option value="0.5rem">Subtle (8px)</option>
-              <option value="1rem">Rounded (16px)</option>
-              <option value="1.5rem">Default (24px)</option>
-              <option value="2rem">Pill (32px)</option>
-            </select>
+            <div class="flex items-center gap-2">
+              <select
+                id="card-radius"
+                value={RADIUS_PRESETS.includes(shellTheme.theme.card?.radius ?? '1.5rem') ? (shellTheme.theme.card?.radius ?? '1.5rem') : 'custom'}
+                onchange={(e) => {
+                  const val = e.currentTarget.value;
+                  if (val !== 'custom') {
+                    queueShellPatch({
+                      card: { ...shellTheme.theme.card, radius: val }
+                    }, 0);
+                  }
+                }}
+                class="flex-1 rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-neutral-200 focus:border-accent focus:outline-none text-xs"
+              >
+                <option value="0px">Sharp (0px)</option>
+                <option value="0.5rem">Subtle (8px)</option>
+                <option value="1rem">Rounded (16px)</option>
+                <option value="1.5rem">Default (24px)</option>
+                <option value="2rem">Pill (32px)</option>
+                {#if !RADIUS_PRESETS.includes(shellTheme.theme.card?.radius ?? '1.5rem')}
+                  <option value="custom">Custom</option>
+                {/if}
+              </select>
+              <input
+                type="text"
+                placeholder="1.5rem"
+                value={shellTheme.theme.card?.radius ?? '1.5rem'}
+                oninput={(e) => {
+                  const val = e.currentTarget.value.trim();
+                  if (val) {
+                    queueShellPatch({
+                      card: { ...shellTheme.theme.card, radius: val }
+                    });
+                  }
+                }}
+                class="w-24 rounded-xl border border-neutral-800 bg-neutral-900 px-2.5 py-2 font-mono text-xs text-neutral-200 focus:border-accent focus:outline-none text-center"
+                title="Custom CSS corner radius (e.g. 12px, 0.75rem, 0px)"
+              />
+            </div>
           </div>
         </div>
 
