@@ -120,4 +120,22 @@ describe('Chat Surface Custom Styling & Conservative Profile (Slice 6, Invariant
     expect(el).toBeNull();
     expect(document.head.querySelector('style[data-ft-sheet="chat"]')).toBeNull();
   });
+
+  it('renders NavDrawer, LoreDrawer, and dialogs inside the chat surface root for chameleon theming', () => {
+    const filePath = resolve(import.meta.dir, '../src/lib/components/chat/ChatViewport.svelte');
+    const content = readFileSync(filePath, 'utf-8');
+
+    // Both NavDrawer and LoreDrawer must be positioned before the closing </div> of data-ft-surface="chat"
+    const surfaceRootStart = content.indexOf('data-ft-surface="chat"');
+    expect(surfaceRootStart).toBeGreaterThan(0);
+
+    const navDrawerPos = content.indexOf('<NavDrawer', surfaceRootStart);
+    const loreDrawerPos = content.indexOf('<LoreDrawer', surfaceRootStart);
+    const lastClosingDiv = content.lastIndexOf('</div>');
+
+    expect(navDrawerPos).toBeGreaterThan(surfaceRootStart);
+    expect(loreDrawerPos).toBeGreaterThan(surfaceRootStart);
+    expect(navDrawerPos).toBeLessThan(lastClosingDiv);
+    expect(loreDrawerPos).toBeLessThan(lastClosingDiv);
+  });
 });

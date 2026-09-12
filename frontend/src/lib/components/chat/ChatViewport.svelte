@@ -3,8 +3,8 @@
   import { goto } from '$app/navigation';
   import type { ChatSession } from '$lib/state/session.svelte';
   import type { ThemeEngine } from '$lib/theme/engine.svelte';
-  import type { CharacterCard, ChatView, MessageWithTree, Persona, StateVector } from '@formatavern/shared';
-import { HOOKS } from '@formatavern/shared';
+  import type { CharacterCard, CharacterSummary, ChatView, MessageWithTree, Persona, StateVector } from '@formatavern/shared';
+  import { HOOKS } from '@formatavern/shared';
   import { api, toUiError } from '$lib/api';
   import { media } from '$lib/state/media.svelte';
   import { prefs } from '$lib/state/prefs.svelte';
@@ -40,7 +40,7 @@ import { HOOKS } from '@formatavern/shared';
   let deletingTurn = $state<MessageWithTree | null>(null);
 
   let navChats = $state<ChatView[]>([]);
-  let navCharacters = $state<CharacterCard[]>([]);
+  let navCharacters = $state<(CharacterCard | CharacterSummary)[]>([]);
   let personas = $state<Persona[]>([]);
 
   // First-frame gate for transitions to avoid neutral swoop on load
@@ -71,8 +71,13 @@ import { HOOKS } from '@formatavern/shared';
       if (chatsRes.data && Array.isArray(chatsRes.data)) {
         navChats = chatsRes.data as ChatView[];
       }
-      if (charsRes.data && Array.isArray(charsRes.data)) {
-        navCharacters = charsRes.data as CharacterCard[];
+      if (charsRes.data) {
+        const rawChars = charsRes.data as any;
+        if (Array.isArray(rawChars)) {
+          navCharacters = rawChars;
+        } else if (rawChars.items && Array.isArray(rawChars.items)) {
+          navCharacters = rawChars.items;
+        }
       }
       if (personasRes.data && Array.isArray(personasRes.data)) {
         personas = personasRes.data as Persona[];
@@ -376,72 +381,72 @@ import { HOOKS } from '@formatavern/shared';
       {/if}
     </aside>
   {/if}
-</div>
 
-<!-- Navigation Drawer -->
-<NavDrawer
-  open={navOpen}
-  activeChatId={session.chatId}
-  chats={navChats}
-  characters={navCharacters}
-  onClose={() => {
-    navOpen = false;
-  }}
-  onSelectChat={(chatId) => {
-    goto(`/chat/${chatId}`);
-  }}
-  onNewChat={handleNewChat}
-  onDeleteChat={handleDeleteChat}
-/>
-
-<!-- Settings Sheet -->
-<SettingsSheet
-  open={settingsOpen}
-  onClose={() => {
-    settingsOpen = false;
-  }}
-/>
-
-<!-- Edit Turn Dialog -->
-{#if editingTurn}
-  <EditTurnDialog
-    open={true}
-    content={editingTurn.content}
-    narrativeRole={editingTurn.narrativeRole}
-    onSave={handleSaveEditedTurn}
+  <!-- Navigation Drawer (rendered on theme root for chameleon styling) -->
+  <NavDrawer
+    open={navOpen}
+    activeChatId={session.chatId}
+    chats={navChats}
+    characters={navCharacters}
     onClose={() => {
-      editingTurn = null;
+      navOpen = false;
+    }}
+    onSelectChat={(chatId) => {
+      goto(`/chat/${chatId}`);
+    }}
+    onNewChat={handleNewChat}
+    onDeleteChat={handleDeleteChat}
+  />
+
+  <!-- Settings Sheet -->
+  <SettingsSheet
+    open={settingsOpen}
+    onClose={() => {
+      settingsOpen = false;
     }}
   />
-{/if}
 
-<!-- Confirm Delete Turn Dialog -->
-{#if deletingTurn}
-  <ConfirmDialog
-    open={true}
-    title="Delete Message"
-    message={deleteMessage}
-    confirmLabel="Delete"
-    danger={true}
-    onConfirm={handleConfirmDeleteTurn}
-    onCancel={() => {
-      deletingTurn = null;
-    }}
-  />
-{/if}
+  <!-- Edit Turn Dialog -->
+  {#if editingTurn}
+    <EditTurnDialog
+      open={true}
+      content={editingTurn.content}
+      narrativeRole={editingTurn.narrativeRole}
+      onSave={handleSaveEditedTurn}
+      onClose={() => {
+        editingTurn = null;
+      }}
+    />
+  {/if}
 
-<!-- In-Chat Lore Drawer (Alt+L) rendered on theme root -->
-{#if session.character}
-  <LoreDrawer
-    open={loreOpen}
-    character={session.character}
-    chat={session.chat}
-    currentPersona={session.persona}
-    {personas}
-    currentState={session.currentState}
-    busy={session.busy}
-    onClose={() => (loreOpen = false)}
-    onSwitchPersona={handleSwitchPersona}
-    onOpenStateOverride={() => (directorOpen = true)}
-  />
-{/if}
+  <!-- Confirm Delete Turn Dialog -->
+  {#if deletingTurn}
+    <ConfirmDialog
+      open={true}
+      title="Delete Message"
+      message={deleteMessage}
+      confirmLabel="Delete"
+      danger={true}
+      onConfirm={handleConfirmDeleteTurn}
+      onCancel={() => {
+        deletingTurn = null;
+      }}
+    />
+  {/if}
+
+  <!-- In-Chat Lore Drawer (Alt+L) rendered on theme root -->
+  {#if session.character}
+    <LoreDrawer
+      open={loreOpen}
+      character={session.character}
+      chat={session.chat}
+      currentPersona={session.persona}
+      {personas}
+      currentState={session.currentState}
+      busy={session.busy}
+      onClose={() => (loreOpen = false)}
+      onSwitchPersona={handleSwitchPersona}
+      onOpenStateOverride={() => (directorOpen = true)}
+    />
+  {/if}
+</div>
