@@ -58,7 +58,7 @@
 
 <svelte:window onbeforeunload={beforeUnload} />
 
-<ShellSurface withOutlet={false} class="h-[100dvh] overflow-hidden {HOOKS.shell.studio}">
+<ShellSurface class="h-[100dvh] overflow-hidden {HOOKS.shell.studio}">
   <!-- Publish Bar / Header -->
   <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-(--chrome-line) chrome-bar px-6 shrink-0">
     <div class="flex items-center gap-4 min-w-0">
