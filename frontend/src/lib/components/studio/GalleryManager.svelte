@@ -57,7 +57,7 @@
 
 <div class="space-y-4">
   <div class="flex items-center justify-between">
-    <span class="text-xs font-semibold uppercase tracking-wider text-neutral-300">
+    <span class="text-xs font-semibold uppercase tracking-wider text-(--chrome-text)">
       Companion Asset Gallery
     </span>
     <input
@@ -71,7 +71,7 @@
       type="button"
       disabled={uploading}
       onclick={() => fileInput?.click()}
-      class="inline-flex items-center gap-1.5 rounded-xl bg-neutral-800 px-3 py-1.5 text-xs font-semibold text-neutral-200 hover:bg-neutral-750 disabled:opacity-50 border border-neutral-700"
+      class="inline-flex items-center gap-1.5 rounded-xl bg-(--chrome-surface) px-3 py-1.5 text-xs font-semibold text-(--chrome-text) hover:bg-(--chrome-line)/40 disabled:opacity-50 border border-(--chrome-line) transition-colors"
     >
       {#if uploading}
         <Spinner size={12} class="mr-1" />
@@ -84,13 +84,13 @@
   </div>
 
   {#if uploadedImages.length === 0}
-    <div class="flex h-28 items-center justify-center rounded-xl border border-dashed border-neutral-800 text-xs text-neutral-500">
+    <div class="flex h-28 items-center justify-center rounded-xl border border-dashed border-(--chrome-line) text-xs text-(--chrome-text)/50">
       No assets uploaded to this companion yet.
     </div>
   {:else}
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
       {#each uploadedImages as imgPath (imgPath)}
-        <div class="group relative aspect-square overflow-hidden rounded-xl border border-neutral-800 bg-neutral-900">
+        <div class="group relative aspect-square overflow-hidden rounded-xl border border-(--chrome-line) bg-(--chrome-surface)">
           <img
             src={imgPath}
             alt="Companion gallery item"
@@ -111,7 +111,7 @@
             <button
               type="button"
               onclick={() => copyPath(imgPath)}
-              class="rounded bg-neutral-800 px-2 py-1 text-[11px] text-neutral-200 hover:bg-neutral-700"
+              class="rounded bg-black/70 px-2 py-1 text-[11px] text-white hover:bg-black/90 transition-colors"
             >
               Copy Link
             </button>

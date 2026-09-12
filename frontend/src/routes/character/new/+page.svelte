@@ -28,7 +28,7 @@
 </svelte:head>
 
 {#if showRestoreBanner}
-  <div class="fixed top-16 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-2xl border border-accent/40 bg-neutral-900/95 px-5 py-3 shadow-2xl backdrop-blur-md text-xs text-neutral-100">
+  <div class="fixed top-16 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-2xl border border-accent/40 bg-(--chrome-surface) px-5 py-3 shadow-2xl backdrop-blur-md text-xs text-(--chrome-text)">
     <span>An unsaved companion draft was found from a previous session.</span>
     <button
       type="button"
@@ -40,7 +40,7 @@
     <button
       type="button"
       onclick={handleDismiss}
-      class="text-neutral-400 hover:text-neutral-200"
+      class="text-(--chrome-text)/60 hover:text-(--chrome-text)"
     >
       Dismiss
     </button>

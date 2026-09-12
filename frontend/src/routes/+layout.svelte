@@ -17,6 +17,7 @@
 
   const activeSurface = $derived.by(() => {
     const path = page.url.pathname;
+    if (path === '/character/new' || path.endsWith('/edit')) return 'shell';
     if (path.startsWith('/character/')) return 'character';
     if (path.startsWith('/chat/')) return 'chat';
     return 'shell';

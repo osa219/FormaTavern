@@ -88,7 +88,7 @@
   <div class="flex flex-col sm:flex-row items-start gap-6">
     <!-- Avatar Uploader -->
     <div class="flex flex-col items-center gap-2 shrink-0">
-      <span class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider">
+      <span class="block text-xs font-semibold text-(--chrome-text) uppercase tracking-wider">
         Avatar
       </span>
       <div class="relative group">
@@ -96,10 +96,10 @@
           <img
             src={draft.card.avatar}
             alt="Character avatar"
-            class="h-24 w-24 rounded-2xl object-cover border border-neutral-700 shadow-md"
+            class="h-24 w-24 rounded-2xl object-cover border border-(--chrome-line) shadow-md"
           />
         {:else}
-          <div class="flex h-24 w-24 items-center justify-center rounded-2xl bg-neutral-850 text-2xl font-bold text-neutral-400 border border-neutral-700 shadow-md">
+          <div class="flex h-24 w-24 items-center justify-center rounded-2xl bg-(--chrome-surface) text-2xl font-bold text-(--chrome-text)/60 border border-(--chrome-line) shadow-md">
             {draft.card.name ? draft.card.name.slice(0, 1).toUpperCase() : '?'}
           </div>
         {/if}
@@ -141,7 +141,7 @@
     <!-- Name & Tagline Inputs -->
     <div class="space-y-4 flex-1 w-full">
       <div>
-        <label for="identity-name" class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+        <label for="identity-name" class="block text-xs font-semibold text-(--chrome-text) uppercase tracking-wider mb-1.5">
           Companion Name <span class="text-accent">*</span>
         </label>
         <input
@@ -151,7 +151,7 @@
           placeholder="e.g. Eldrin Vance, Chronomancer"
           maxlength={120}
           required
-          class="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3.5 py-2.5 text-sm text-neutral-100 placeholder-neutral-500 focus:border-accent focus:outline-none"
+          class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3.5 py-2.5 text-sm text-(--chrome-text) placeholder-(--chrome-text)/40 focus:border-accent focus:outline-none"
         />
         {#if draft.issuesByPath.has('/name')}
           <p class="mt-1 text-xs text-red-400">{draft.issuesByPath.get('/name')![0].message}</p>
@@ -159,7 +159,7 @@
       </div>
 
       <div>
-        <label for="identity-tagline" class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+        <label for="identity-tagline" class="block text-xs font-semibold text-(--chrome-text) uppercase tracking-wider mb-1.5">
           Tagline
         </label>
         <input
@@ -168,7 +168,7 @@
           bind:value={draft.card.tagline}
           placeholder="A one-line summary for cards and discovery"
           maxlength={140}
-          class="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3.5 py-2.5 text-sm text-neutral-100 placeholder-neutral-500 focus:border-accent focus:outline-none"
+          class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3.5 py-2.5 text-sm text-(--chrome-text) placeholder-(--chrome-text)/40 focus:border-accent focus:outline-none"
         />
       </div>
     </div>
@@ -176,7 +176,7 @@
 
   <!-- Creator Credit -->
   <div>
-    <label for="identity-creator" class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+    <label for="identity-creator" class="block text-xs font-semibold text-(--chrome-text) uppercase tracking-wider mb-1.5">
       Author / Creator Credit
     </label>
     <input
@@ -185,27 +185,27 @@
       bind:value={draft.card.creator}
       placeholder="Your handle or attribution (optional)"
       maxlength={80}
-      class="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3.5 py-2.5 text-sm text-neutral-100 placeholder-neutral-500 focus:border-accent focus:outline-none"
+      class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3.5 py-2.5 text-sm text-(--chrome-text) placeholder-(--chrome-text)/40 focus:border-accent focus:outline-none"
     />
   </div>
 
   <!-- Tags Chip Input -->
   <div>
     <div class="flex items-center justify-between mb-1.5">
-      <label for="tag-input" class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider">
+      <label for="tag-input" class="block text-xs font-semibold text-(--chrome-text) uppercase tracking-wider">
         Tags ({draft.card.tags?.length ?? 0}/12)
       </label>
-      <span class="text-[11px] text-neutral-500 font-mono">Press Enter or comma to add</span>
+      <span class="text-[11px] text-(--chrome-text)/50 font-mono">Press Enter or comma to add</span>
     </div>
 
-    <div class="flex flex-wrap items-center gap-1.5 rounded-xl border border-neutral-800 bg-neutral-900 p-2 focus-within:border-accent">
+    <div class="flex flex-wrap items-center gap-1.5 rounded-xl border border-(--chrome-line) bg-(--chrome-surface) p-2 focus-within:border-accent">
       {#each draft.card.tags ?? [] as tag (tag)}
-        <span class="inline-flex items-center gap-1 rounded-md bg-neutral-800 px-2 py-1 text-xs font-mono text-neutral-200 border border-neutral-700">
+        <span class="inline-flex items-center gap-1 rounded-md bg-(--chrome-bg) px-2 py-1 text-xs font-mono text-(--chrome-text) border border-(--chrome-line)">
           <span>{displayTag(tag)}</span>
           <button
             type="button"
             onclick={() => removeTag(tag)}
-            class="text-neutral-400 hover:text-red-400"
+            class="text-(--chrome-text)/60 hover:text-red-400"
             aria-label="Remove tag"
           >
             <Icon name="close" size={12} />
@@ -221,7 +221,7 @@
         onkeydown={handleTagKeydown}
         onblur={() => { if (tagInput) addTag(tagInput); }}
         placeholder={draft.card.tags?.length ? 'Add another tag...' : 'e.g. fantasy, sci-fi, roleplay...'}
-        class="flex-1 min-w-[140px] bg-transparent px-2 py-1 text-xs text-neutral-100 placeholder-neutral-500 focus:outline-none font-mono"
+        class="flex-1 min-w-[140px] bg-transparent px-2 py-1 text-xs text-(--chrome-text) placeholder-(--chrome-text)/40 focus:outline-none font-mono"
       />
       <datalist id="suggested-tags-list">
         {#each SUGGESTED_TAGS as suggested (suggested)}

@@ -60,17 +60,17 @@
 
 <ShellSurface withOutlet={false} class="h-[100dvh] overflow-hidden {HOOKS.shell.studio}">
   <!-- Publish Bar / Header -->
-  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/80 chrome-bar px-6 shrink-0">
+  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-(--chrome-line) chrome-bar px-6 shrink-0">
     <div class="flex items-center gap-4 min-w-0">
       <a
         href="/"
-        class="flex items-center gap-1.5 text-xs text-neutral-400 hover:text-neutral-200 shrink-0"
+        class="flex items-center gap-1.5 text-xs text-(--chrome-text)/60 hover:text-(--chrome-text) shrink-0"
       >
         <Icon name="arrow-left" size={14} />
         <span>Foyer</span>
       </a>
-      <span class="text-neutral-700">/</span>
-      <div class="truncate text-xs font-semibold text-neutral-200">
+      <span class="text-(--chrome-text)/40">/</span>
+      <div class="truncate text-xs font-semibold text-(--chrome-text)">
         {draft.card.name || 'Untitled Companion'}
       </div>
       {#if draft.dirty}
@@ -78,7 +78,7 @@
           Unsaved Changes
         </span>
       {:else}
-        <span class="inline-flex items-center rounded bg-neutral-800 px-2 py-0.5 text-[10px] font-mono text-neutral-400">
+        <span class="inline-flex items-center rounded border border-(--chrome-line) bg-(--chrome-surface) px-2 py-0.5 text-[10px] font-mono text-(--chrome-text)/60">
           Saved
         </span>
       {/if}
@@ -96,7 +96,7 @@
       <button
         type="button"
         onclick={() => (mobilePreviewOpen = !mobilePreviewOpen)}
-        class="lg:hidden rounded-xl border border-neutral-800 bg-neutral-850 px-3 py-1.5 text-xs font-semibold text-neutral-300"
+        class="lg:hidden rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-1.5 text-xs font-semibold text-(--chrome-text)"
       >
         {mobilePreviewOpen ? 'Editor' : 'Preview'}
       </button>
@@ -105,7 +105,7 @@
         <button
           type="button"
           onclick={() => (discardConfirmOpen = true)}
-          class="rounded-xl border border-neutral-800 bg-neutral-850 px-3 py-1.5 text-xs font-semibold text-neutral-300 hover:bg-neutral-800"
+          class="rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-1.5 text-xs font-semibold text-(--chrome-text) hover:bg-(--chrome-line)/40"
         >
           Discard
         </button>
@@ -115,7 +115,7 @@
         type="button"
         disabled={saving || draft.issues.length > 0}
         onclick={() => handleSave(false)}
-        class="inline-flex items-center gap-1.5 rounded-xl border border-neutral-700 bg-neutral-800 px-4 py-1.5 text-xs font-semibold text-neutral-200 hover:bg-neutral-750 disabled:opacity-50"
+        class="inline-flex items-center gap-1.5 rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-4 py-1.5 text-xs font-semibold text-(--chrome-text) hover:bg-(--chrome-line)/40 disabled:opacity-50"
       >
         {#if saving}
           <Spinner size={12} />
@@ -137,9 +137,9 @@
   <!-- Studio Workspace -->
   <div class="grid flex-1 grid-cols-1 lg:grid-cols-12 overflow-hidden">
     <!-- Left Rail: Tabs & Content (7 Cols) -->
-    <div class="{mobilePreviewOpen ? 'hidden lg:flex' : 'flex'} lg:col-span-7 flex-col border-r border-neutral-800 overflow-hidden">
+    <div class="{mobilePreviewOpen ? 'hidden lg:flex' : 'flex'} lg:col-span-7 flex-col border-r border-(--chrome-line) overflow-hidden">
       <!-- Tabs Bar -->
-      <nav class="flex h-11 items-center gap-1 border-b border-neutral-800/80 px-4 shrink-0 overflow-x-auto" aria-label="Studio sections">
+      <nav class="flex h-11 items-center gap-1 border-b border-(--chrome-line) px-4 shrink-0 overflow-x-auto" aria-label="Studio sections">
         {#each [
           { id: 'identity', label: 'Identity' },
           { id: 'voice', label: 'Voice' },
@@ -154,8 +154,8 @@
             type="button"
             onclick={() => (activeTab = tab.id as StudioTab)}
             class="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {activeTab === tab.id
-              ? 'bg-neutral-800 text-neutral-100 font-semibold'
-              : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-850'}"
+              ? 'bg-(--chrome-surface) text-(--chrome-text) font-semibold shadow-xs border border-(--chrome-line)'
+              : 'text-(--chrome-text)/60 hover:text-(--chrome-text) hover:bg-(--chrome-surface)/50'}"
           >
             {tab.label}
           </button>
@@ -185,7 +185,7 @@
     </div>
 
     <!-- Right Rail: Live Preview (5 Cols) -->
-    <div class="{mobilePreviewOpen ? 'flex' : 'hidden lg:flex'} lg:col-span-5 flex-col p-4 bg-neutral-950 overflow-hidden">
+    <div class="{mobilePreviewOpen ? 'flex' : 'hidden lg:flex'} lg:col-span-5 flex-col p-4 bg-(--chrome-bg) border-l border-(--chrome-line) overflow-hidden">
       <LivePreview {draft} activeStudioTab={activeTab} />
     </div>
   </div>

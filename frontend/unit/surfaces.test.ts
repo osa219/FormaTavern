@@ -161,4 +161,24 @@ describe('Surface Completeness & Dialog Scoping (Invariant C14)', () => {
       }
     }
   });
+
+  it('ensures studio editor components use semantic chrome tokens rather than hardcoded neutral-100 or neutral-900', () => {
+    const studioComponents = [
+      'StudioShell.svelte',
+      'IdentityPanel.svelte',
+      'VoicePanel.svelte',
+      'ShowcaseEditor.svelte',
+      'AestheticPanel.svelte',
+      'StatePanel.svelte',
+      'BindingsPanel.svelte',
+      'GalleryManager.svelte'
+    ];
+    for (const file of allSvelteFiles) {
+      const match = studioComponents.some((name) => file.endsWith(name));
+      if (!match) continue;
+      const content = readFileSync(file, 'utf-8');
+      expect(content).not.toContain('text-neutral-100');
+      expect(content).not.toContain('bg-neutral-900');
+    }
+  });
 });

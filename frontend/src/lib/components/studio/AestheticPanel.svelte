@@ -58,19 +58,19 @@
 </script>
 
 <div class="space-y-8 max-w-3xl">
-  <div class="flex items-center justify-between border-b border-neutral-800 pb-3">
+  <div class="flex items-center justify-between border-b border-(--chrome-line) pb-3">
     <div>
-      <h3 class="text-xs font-semibold uppercase tracking-wider text-neutral-200">
+      <h3 class="text-xs font-semibold uppercase tracking-wider text-(--chrome-text)">
         Companion Chameleon Styling
       </h3>
-      <p class="text-xs text-neutral-400 mt-0.5">
+      <p class="text-xs text-(--chrome-text)/70 mt-0.5">
         Configures the visual aesthetic and color palette applied to chat sessions.
       </p>
     </div>
     <button
       type="button"
       onclick={resetToDefaults}
-      class="text-xs text-neutral-400 hover:text-neutral-200"
+      class="text-xs text-(--chrome-text)/70 hover:text-(--chrome-text) transition-colors"
     >
       Reset to defaults
     </button>
@@ -81,7 +81,7 @@
     <h4 class="text-xs font-mono uppercase tracking-wider text-accent">1. Typography</h4>
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <div class="sm:col-span-2">
-        <label for="style-font-family" class="block text-[11px] font-mono text-neutral-400 mb-1">
+        <label for="style-font-family" class="block text-[11px] font-mono text-(--chrome-text)/70 mb-1">
           Font Family
         </label>
         <input
@@ -89,7 +89,7 @@
           type="text"
           list="fonts-list"
           bind:value={draft.card.style.font.family}
-          class="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs font-mono text-neutral-100 focus:border-accent focus:outline-none"
+          class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-xs font-mono text-(--chrome-text) focus:border-accent focus:outline-none"
         />
         <datalist id="fonts-list">
           {#each bundledFonts as f (f)}
@@ -99,7 +99,7 @@
       </div>
 
       <div>
-        <label for="style-font-size" class="block text-[11px] font-mono text-neutral-400 mb-1">
+        <label for="style-font-size" class="block text-[11px] font-mono text-(--chrome-text)/70 mb-1">
           Base Size
         </label>
         <input
@@ -107,7 +107,7 @@
           type="text"
           bind:value={draft.card.style.font.size}
           placeholder="1rem"
-          class="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs font-mono text-neutral-100 focus:border-accent focus:outline-none"
+          class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-xs font-mono text-(--chrome-text) focus:border-accent focus:outline-none"
         />
       </div>
     </div>
@@ -119,111 +119,111 @@
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
       <!-- Accent -->
       <div>
-        <label for="color-accent" class="block text-[11px] font-mono text-neutral-400 mb-1">Primary Accent</label>
+        <label for="color-accent" class="block text-[11px] font-mono text-(--chrome-text)/70 mb-1">Primary Accent</label>
         <div class="flex items-center gap-2">
           <input
             type="color"
             bind:value={draft.card.style.colors.accent}
-            class="h-8 w-9 cursor-pointer rounded border border-neutral-700 bg-transparent p-0"
+            class="h-8 w-9 cursor-pointer rounded border border-(--chrome-line) bg-transparent p-0"
           />
           <input
             id="color-accent"
             type="text"
             bind:value={draft.card.style.colors.accent}
-            class="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs font-mono text-neutral-200"
+            class="w-full rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2 py-1 text-xs font-mono text-(--chrome-text) focus:border-accent focus:outline-none"
           />
         </div>
       </div>
 
       <!-- Character Bubble Bg -->
       <div>
-        <label for="color-char-bg" class="block text-[11px] font-mono text-neutral-400 mb-1">Companion Bubble Bg</label>
+        <label for="color-char-bg" class="block text-[11px] font-mono text-(--chrome-text)/70 mb-1">Companion Bubble Bg</label>
         <div class="flex items-center gap-2">
           <input
             type="color"
             bind:value={draft.card.style.colors.charBubbleBg}
-            class="h-8 w-9 cursor-pointer rounded border border-neutral-700 bg-transparent p-0"
+            class="h-8 w-9 cursor-pointer rounded border border-(--chrome-line) bg-transparent p-0"
           />
           <input
             id="color-char-bg"
             type="text"
             bind:value={draft.card.style.colors.charBubbleBg}
-            class="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs font-mono text-neutral-200"
+            class="w-full rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2 py-1 text-xs font-mono text-(--chrome-text) focus:border-accent focus:outline-none"
           />
         </div>
       </div>
 
       <!-- Character Bubble Text -->
       <div>
-        <label for="color-char-text" class="block text-[11px] font-mono text-neutral-400 mb-1">Companion Text</label>
+        <label for="color-char-text" class="block text-[11px] font-mono text-(--chrome-text)/70 mb-1">Companion Text</label>
         <div class="flex items-center gap-2">
           <input
             type="color"
             bind:value={draft.card.style.colors.charBubbleText}
-            class="h-8 w-9 cursor-pointer rounded border border-neutral-700 bg-transparent p-0"
+            class="h-8 w-9 cursor-pointer rounded border border-(--chrome-line) bg-transparent p-0"
           />
           <input
             id="color-char-text"
             type="text"
             bind:value={draft.card.style.colors.charBubbleText}
-            class="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs font-mono text-neutral-200"
+            class="w-full rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2 py-1 text-xs font-mono text-(--chrome-text) focus:border-accent focus:outline-none"
           />
         </div>
       </div>
 
       <!-- Quote Color -->
       <div>
-        <label for="color-quote" class="block text-[11px] font-mono text-neutral-400 mb-1">Speech Quotes</label>
+        <label for="color-quote" class="block text-[11px] font-mono text-(--chrome-text)/70 mb-1">Speech Quotes</label>
         <div class="flex items-center gap-2">
           <input
             type="color"
             value={draft.card.style.colors.quote || '#fde047'}
             oninput={(e) => (draft.card.style.colors.quote = (e.target as HTMLInputElement).value)}
-            class="h-8 w-9 cursor-pointer rounded border border-neutral-700 bg-transparent p-0"
+            class="h-8 w-9 cursor-pointer rounded border border-(--chrome-line) bg-transparent p-0"
           />
           <input
             id="color-quote"
             type="text"
             bind:value={draft.card.style.colors.quote}
-            class="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs font-mono text-neutral-200"
+            class="w-full rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2 py-1 text-xs font-mono text-(--chrome-text) focus:border-accent focus:outline-none"
           />
         </div>
       </div>
 
       <!-- Action Color -->
       <div>
-        <label for="color-action" class="block text-[11px] font-mono text-neutral-400 mb-1">Action Asterisks</label>
+        <label for="color-action" class="block text-[11px] font-mono text-(--chrome-text)/70 mb-1">Action Asterisks</label>
         <div class="flex items-center gap-2">
           <input
             type="color"
             value={draft.card.style.colors.action || '#94a3b8'}
             oninput={(e) => (draft.card.style.colors.action = (e.target as HTMLInputElement).value)}
-            class="h-8 w-9 cursor-pointer rounded border border-neutral-700 bg-transparent p-0"
+            class="h-8 w-9 cursor-pointer rounded border border-(--chrome-line) bg-transparent p-0"
           />
           <input
             id="color-action"
             type="text"
             bind:value={draft.card.style.colors.action}
-            class="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs font-mono text-neutral-200"
+            class="w-full rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2 py-1 text-xs font-mono text-(--chrome-text) focus:border-accent focus:outline-none"
           />
         </div>
       </div>
 
       <!-- Narrator Text Color -->
       <div>
-        <label for="color-narrator" class="block text-[11px] font-mono text-neutral-400 mb-1">Narrator Blocks</label>
+        <label for="color-narrator" class="block text-[11px] font-mono text-(--chrome-text)/70 mb-1">Narrator Blocks</label>
         <div class="flex items-center gap-2">
           <input
             type="color"
             value={draft.card.style.colors.narratorText || '#cbd5e1'}
             oninput={(e) => (draft.card.style.colors.narratorText = (e.target as HTMLInputElement).value)}
-            class="h-8 w-9 cursor-pointer rounded border border-neutral-700 bg-transparent p-0"
+            class="h-8 w-9 cursor-pointer rounded border border-(--chrome-line) bg-transparent p-0"
           />
           <input
             id="color-narrator"
             type="text"
             bind:value={draft.card.style.colors.narratorText}
-            class="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs font-mono text-neutral-200"
+            class="w-full rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2 py-1 text-xs font-mono text-(--chrome-text) focus:border-accent focus:outline-none"
           />
         </div>
       </div>
@@ -235,22 +235,22 @@
     <h4 class="text-xs font-mono uppercase tracking-wider text-accent">3. Bubble Geometry</h4>
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <div>
-        <label for="bubble-radius" class="block text-[11px] font-mono text-neutral-400 mb-1">Corner Radius</label>
+        <label for="bubble-radius" class="block text-[11px] font-mono text-(--chrome-text)/70 mb-1">Corner Radius</label>
         <input
           id="bubble-radius"
           type="text"
           bind:value={draft.card.style.bubble.radius}
           placeholder="1rem"
-          class="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs font-mono text-neutral-100 focus:border-accent focus:outline-none"
+          class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-xs font-mono text-(--chrome-text) focus:border-accent focus:outline-none"
         />
       </div>
 
       <div>
-        <label for="char-tail" class="block text-[11px] font-mono text-neutral-400 mb-1">Companion Tail</label>
+        <label for="char-tail" class="block text-[11px] font-mono text-(--chrome-text)/70 mb-1">Companion Tail</label>
         <select
           id="char-tail"
           bind:value={draft.card.style.bubble.charTail}
-          class="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs font-mono text-neutral-100 focus:border-accent focus:outline-none"
+          class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-xs font-mono text-(--chrome-text) focus:border-accent focus:outline-none"
         >
           <option value="left">Left (standard)</option>
           <option value="none">None (minimal)</option>
@@ -258,13 +258,13 @@
       </div>
 
       <div>
-        <label for="bubble-padding" class="block text-[11px] font-mono text-neutral-400 mb-1">Internal Padding</label>
+        <label for="bubble-padding" class="block text-[11px] font-mono text-(--chrome-text)/70 mb-1">Internal Padding</label>
         <input
           id="bubble-padding"
           type="text"
           bind:value={draft.card.style.bubble.padding}
           placeholder="1rem 1.25rem"
-          class="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs font-mono text-neutral-100 focus:border-accent focus:outline-none"
+          class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-xs font-mono text-(--chrome-text) focus:border-accent focus:outline-none"
         />
       </div>
     </div>
@@ -275,24 +275,24 @@
     <h4 class="text-xs font-mono uppercase tracking-wider text-accent">4. Ambient Background</h4>
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <div class="sm:col-span-2">
-        <label for="bg-image" class="block text-[11px] font-mono text-neutral-400 mb-1">Background Image URL</label>
+        <label for="bg-image" class="block text-[11px] font-mono text-(--chrome-text)/70 mb-1">Background Image URL</label>
         <input
           id="bg-image"
           type="text"
           bind:value={draft.card.style.background.image}
           placeholder="/assets/backgrounds/observatory.jpg"
-          class="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs font-mono text-neutral-100 focus:border-accent focus:outline-none"
+          class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-xs font-mono text-(--chrome-text) focus:border-accent focus:outline-none"
         />
       </div>
 
       <div>
-        <label for="bg-blur" class="block text-[11px] font-mono text-neutral-400 mb-1">Blur Amount</label>
+        <label for="bg-blur" class="block text-[11px] font-mono text-(--chrome-text)/70 mb-1">Blur Amount</label>
         <input
           id="bg-blur"
           type="text"
           bind:value={draft.card.style.background.blur}
           placeholder="0px"
-          class="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs font-mono text-neutral-100 focus:border-accent focus:outline-none"
+          class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-xs font-mono text-(--chrome-text) focus:border-accent focus:outline-none"
         />
       </div>
     </div>
@@ -302,7 +302,7 @@
   <div class="space-y-4">
     <div class="flex items-center justify-between">
       <h4 class="text-xs font-mono uppercase tracking-wider text-accent">5. Motion Presets</h4>
-      <span class="text-[10px] text-neutral-500 font-mono">Compositor-only • Reduced-motion safe</span>
+      <span class="text-[10px] text-(--chrome-text)/50 font-mono">Compositor-only • Reduced-motion safe</span>
     </div>
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
       {#each [
@@ -318,11 +318,11 @@
             draft.card.style.fx.bubble = preset.id as any;
           }}
           class="flex flex-col items-start p-3 rounded-xl border text-left transition-colors {(draft.card.style.fx?.bubble ?? 'none') === preset.id
-            ? 'border-accent bg-accent/10 text-neutral-100'
-            : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200'}"
+            ? 'border-accent bg-accent/10 text-(--chrome-text)'
+            : 'border-(--chrome-line) bg-(--chrome-surface)/60 text-(--chrome-text)/70 hover:border-(--chrome-line) hover:text-(--chrome-text)'}"
         >
-          <span class="text-xs font-semibold text-neutral-200">{preset.label}</span>
-          <span class="text-[10px] text-neutral-500 mt-1 leading-tight">{preset.desc}</span>
+          <span class="text-xs font-semibold text-(--chrome-text)">{preset.label}</span>
+          <span class="text-[10px] text-(--chrome-text)/50 mt-1 leading-tight">{preset.desc}</span>
         </button>
       {/each}
     </div>
@@ -333,12 +333,12 @@
     <div class="flex items-center justify-between">
       <div>
         <h4 class="text-xs font-mono uppercase tracking-wider text-accent">6. Scenery Pins & Page-Dolls (Decor)</h4>
-        <p class="text-[11px] text-neutral-400 mt-0.5">
+        <p class="text-[11px] text-(--chrome-text)/70 mt-0.5">
           Fixed decorative graphics (transparent PNG/WebP scenery pins, corner emblems, stickers, or badges) placed on the companion surface (max 2 layers).
         </p>
       </div>
       <div class="flex items-center gap-2">
-        <span class="text-[11px] font-mono text-neutral-500">
+        <span class="text-[11px] font-mono text-(--chrome-text)/50">
           {(draft.card.style.decor?.length ?? 0)} / 2 layers
         </span>
         {#if (draft.card.style.decor?.length ?? 0) < 2}
@@ -360,7 +360,7 @@
             <span>Add Decor Layer</span>
           </button>
         {:else}
-          <span class="inline-flex items-center gap-1 rounded-lg border border-neutral-800 bg-neutral-900/90 px-2.5 py-1 text-[11px] font-medium text-neutral-400">
+          <span class="inline-flex items-center gap-1 rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1 text-[11px] font-medium text-(--chrome-text)/70">
             <Icon name="check" size={12} class="text-accent" />
             <span>Maximum 2 reached</span>
           </span>
@@ -369,15 +369,15 @@
     </div>
 
     {#if !draft.card.style.decor || draft.card.style.decor.length === 0}
-      <div class="flex h-20 items-center justify-center rounded-xl border border-dashed border-neutral-800 text-xs text-neutral-500">
+      <div class="flex h-20 items-center justify-center rounded-xl border border-dashed border-(--chrome-line) text-xs text-(--chrome-text)/50">
         No decorative layers configured. Add a character pin, corner sticker, or scenery emblem.
       </div>
     {:else}
       <div class="space-y-3">
         {#each draft.card.style.decor as layer, idx (idx)}
-          <div class="p-3.5 rounded-xl border border-neutral-800 bg-neutral-900/60 space-y-3">
+          <div class="p-3.5 rounded-xl border border-(--chrome-line) bg-(--chrome-surface)/60 space-y-3">
             <div class="flex items-center justify-between">
-              <span class="text-[11px] font-mono font-semibold text-neutral-300">
+              <span class="text-[11px] font-mono font-semibold text-(--chrome-text)">
                 Layer #{idx + 1}
               </span>
               <button
@@ -396,7 +396,7 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div class="sm:col-span-2">
-                <label for="decor-img-{idx}" class="block text-[10px] font-mono text-neutral-400 mb-1">
+                <label for="decor-img-{idx}" class="block text-[10px] font-mono text-(--chrome-text)/70 mb-1">
                   Image Asset (Sticker, Chibi, Pin, or Ornament)
                 </label>
                 <div class="flex items-center gap-2">
@@ -404,10 +404,10 @@
                     <img
                       src={layer.image}
                       alt="Decor preview"
-                      class="h-9 w-9 shrink-0 rounded-lg border border-neutral-800 bg-neutral-950 object-contain p-0.5"
+                      class="h-9 w-9 shrink-0 rounded-lg border border-(--chrome-line) bg-(--chrome-bg) object-contain p-0.5"
                     />
                   {:else}
-                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-dashed border-neutral-800 bg-neutral-950 text-neutral-600">
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-dashed border-(--chrome-line) bg-(--chrome-bg) text-(--chrome-text)/40">
                       <Icon name="upload" size={13} />
                     </div>
                   {/if}
@@ -416,7 +416,7 @@
                     type="text"
                     bind:value={layer.image}
                     placeholder="/assets/characters/... or data:image/..."
-                    class="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-2.5 py-1.5 text-xs font-mono text-neutral-100 focus:border-accent focus:outline-none"
+                    class="w-full rounded-lg border border-(--chrome-line) bg-(--chrome-bg) px-2.5 py-1.5 text-xs font-mono text-(--chrome-text) focus:border-accent focus:outline-none"
                   />
                   <input
                     type="file"
@@ -429,7 +429,7 @@
                     type="button"
                     disabled={uploadingDecorIdx === idx}
                     onclick={() => decorFileInputs[idx]?.click()}
-                    class="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-neutral-700 bg-neutral-800 px-2.5 py-1.5 text-xs font-semibold text-neutral-200 hover:bg-neutral-750 disabled:opacity-50 transition-colors"
+                    class="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1.5 text-xs font-semibold text-(--chrome-text) hover:bg-(--chrome-line)/40 disabled:opacity-50 transition-colors"
                   >
                     {#if uploadingDecorIdx === idx}
                       <Spinner size={12} />
@@ -443,7 +443,7 @@
                     <button
                       type="button"
                       onclick={() => (layer.image = draft.card.avatar!)}
-                      class="shrink-0 rounded-lg border border-neutral-800 bg-neutral-900 px-2.5 py-1.5 text-xs text-neutral-300 hover:bg-neutral-850 hover:text-white transition-colors"
+                      class="shrink-0 rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1.5 text-xs text-(--chrome-text)/70 hover:bg-(--chrome-line)/40 hover:text-(--chrome-text) transition-colors"
                       title="Use companion avatar as decor pin"
                     >
                       Avatar
@@ -453,13 +453,13 @@
               </div>
 
               <div>
-                <label for="decor-pos-{idx}" class="block text-[10px] font-mono text-neutral-400 mb-1">
+                <label for="decor-pos-{idx}" class="block text-[10px] font-mono text-(--chrome-text)/70 mb-1">
                   Anchor Position
                 </label>
                 <select
                   id="decor-pos-{idx}"
                   bind:value={layer.position}
-                  class="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-2.5 py-1.5 text-xs font-mono text-neutral-200 focus:border-accent focus:outline-none"
+                  class="w-full rounded-lg border border-(--chrome-line) bg-(--chrome-bg) px-2.5 py-1.5 text-xs font-mono text-(--chrome-text) focus:border-accent focus:outline-none"
                 >
                   <option value="bottom-right">Bottom-Right (Standard)</option>
                   <option value="bottom-left">Bottom-Left</option>
@@ -472,7 +472,7 @@
               </div>
 
               <div>
-                <label for="decor-opacity-{idx}" class="block text-[10px] font-mono text-neutral-400 mb-1">
+                <label for="decor-opacity-{idx}" class="block text-[10px] font-mono text-(--chrome-text)/70 mb-1">
                   Opacity ({layer.opacity ?? 1})
                 </label>
                 <input
@@ -489,7 +489,7 @@
               <!-- Size / Scaling (Dual-track: Quick presets + Freeform CSS) -->
               <div class="sm:col-span-2 space-y-1.5 pt-1">
                 <div class="flex items-center justify-between">
-                  <label for="decor-size-{idx}" class="block text-[10px] font-mono text-neutral-400">
+                  <label for="decor-size-{idx}" class="block text-[10px] font-mono text-(--chrome-text)/70">
                     Size / Scale
                   </label>
                   <div class="flex items-center gap-1 text-[10px] font-mono">
@@ -504,7 +504,7 @@
                         onclick={() => (layer.size = preset.val ? preset.val : undefined)}
                         class="rounded px-1.5 py-0.5 transition-colors {(layer.size || '') === preset.val
                           ? 'bg-accent/20 text-accent font-semibold'
-                          : 'bg-neutral-850 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800'}"
+                          : 'bg-(--chrome-bg) text-(--chrome-text)/70 hover:text-(--chrome-text) hover:bg-(--chrome-line)/40'}"
                       >
                         {preset.label}
                       </button>
@@ -516,23 +516,23 @@
                   type="text"
                   bind:value={layer.size}
                   placeholder="e.g. 240px, 30vw, 15rem (blank = default fit)"
-                  class="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-2.5 py-1.5 text-xs font-mono text-neutral-200 focus:border-accent focus:outline-none"
+                  class="w-full rounded-lg border border-(--chrome-line) bg-(--chrome-bg) px-2.5 py-1.5 text-xs font-mono text-(--chrome-text) focus:border-accent focus:outline-none"
                 />
               </div>
 
               <!-- Position Nudge (X / Y Offsets) -->
               <div class="sm:col-span-2 space-y-1.5 pt-1">
                 <div class="flex items-center justify-between">
-                  <span class="text-[10px] font-mono text-neutral-400">
+                  <span class="text-[10px] font-mono text-(--chrome-text)/70">
                     Position Nudge (Fine-tune coordinates)
                   </span>
-                  <span class="text-[9px] font-mono text-neutral-500">
+                  <span class="text-[9px] font-mono text-(--chrome-text)/50">
                     Offset from anchor point (e.g. 15px, -20px)
                   </span>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                   <div>
-                    <label for="decor-offset-x-{idx}" class="block text-[9px] font-mono text-neutral-500 mb-0.5">X Offset</label>
+                    <label for="decor-offset-x-{idx}" class="block text-[9px] font-mono text-(--chrome-text)/50 mb-0.5">X Offset</label>
                     <input
                       id="decor-offset-x-{idx}"
                       type="text"
@@ -543,11 +543,11 @@
                         layer.offset.x = val;
                       }}
                       placeholder="0px (e.g. 10px, -20px)"
-                      class="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-2.5 py-1 text-xs font-mono text-neutral-200 focus:border-accent focus:outline-none"
+                      class="w-full rounded-lg border border-(--chrome-line) bg-(--chrome-bg) px-2.5 py-1 text-xs font-mono text-(--chrome-text) focus:border-accent focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label for="decor-offset-y-{idx}" class="block text-[9px] font-mono text-neutral-500 mb-0.5">Y Offset</label>
+                    <label for="decor-offset-y-{idx}" class="block text-[9px] font-mono text-(--chrome-text)/50 mb-0.5">Y Offset</label>
                     <input
                       id="decor-offset-y-{idx}"
                       type="text"
@@ -558,7 +558,7 @@
                         layer.offset.y = val;
                       }}
                       placeholder="0px (e.g. 10px, -20px)"
-                      class="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-2.5 py-1 text-xs font-mono text-neutral-200 focus:border-accent focus:outline-none"
+                      class="w-full rounded-lg border border-(--chrome-line) bg-(--chrome-bg) px-2.5 py-1 text-xs font-mono text-(--chrome-text) focus:border-accent focus:outline-none"
                     />
                   </div>
                 </div>
@@ -574,12 +574,12 @@
   <div class="space-y-4">
     <div>
       <h4 class="text-xs font-mono uppercase tracking-wider text-accent">7. Call to Action & Labels</h4>
-      <p class="text-[11px] text-neutral-400 mt-0.5">
+      <p class="text-[11px] text-(--chrome-text)/70 mt-0.5">
         Customizes prominent interface button text for this companion.
       </p>
     </div>
     <div>
-      <label for="label-start-story" class="block text-[11px] font-mono text-neutral-400 mb-1">
+      <label for="label-start-story" class="block text-[11px] font-mono text-(--chrome-text)/70 mb-1">
         Primary Start Button Text (max 40 chars)
       </label>
       <input
@@ -593,7 +593,7 @@
           draft.card.labels.startStory = val ? val : undefined;
         }}
         placeholder="Start New Story (default)"
-        class="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs font-mono text-neutral-100 focus:border-accent focus:outline-none"
+        class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-xs font-mono text-(--chrome-text) focus:border-accent focus:outline-none"
       />
     </div>
   </div>

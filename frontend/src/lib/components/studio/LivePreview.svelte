@@ -52,22 +52,22 @@
   });
 </script>
 
-<div class="flex flex-col h-full rounded-2xl border border-neutral-800 bg-neutral-900/50 overflow-hidden">
+<div class="flex flex-col h-full rounded-2xl border border-(--chrome-line) bg-(--chrome-surface)/50 overflow-hidden">
   <!-- Header: Title + Tab Toggle -->
-  <div class="flex items-center justify-between border-b border-neutral-800 px-4 py-2.5 bg-neutral-900/80">
+  <div class="flex items-center justify-between border-b border-(--chrome-line) px-4 py-2.5 bg-(--chrome-surface)/80">
     <div class="flex items-center gap-2">
       <span class="text-xs font-semibold uppercase tracking-wider text-accent">
         Live Aesthetic Preview
       </span>
     </div>
 
-    <div class="flex items-center rounded-lg bg-neutral-950 p-0.5 border border-neutral-800">
+    <div class="flex items-center rounded-lg bg-(--chrome-bg) p-0.5 border border-(--chrome-line)">
       <button
         type="button"
         onclick={() => (activeTab = 'showcase')}
         class="rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors {activeTab === 'showcase'
-          ? 'bg-neutral-800 text-neutral-100 shadow-sm'
-          : 'text-neutral-400 hover:text-neutral-200'}"
+          ? 'bg-(--chrome-surface) text-(--chrome-text) shadow-sm'
+          : 'text-(--chrome-text)/60 hover:text-(--chrome-text)'}"
       >
         Showcase
       </button>
@@ -75,8 +75,8 @@
         type="button"
         onclick={() => (activeTab = 'greeting')}
         class="rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors {activeTab === 'greeting'
-          ? 'bg-neutral-800 text-neutral-100 shadow-sm'
-          : 'text-neutral-400 hover:text-neutral-200'}"
+          ? 'bg-(--chrome-surface) text-(--chrome-text) shadow-sm'
+          : 'text-(--chrome-text)/60 hover:text-(--chrome-text)'}"
       >
         Greeting
       </button>
@@ -84,8 +84,8 @@
         type="button"
         onclick={() => (activeTab = 'samples')}
         class="rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors {activeTab === 'samples'
-          ? 'bg-neutral-800 text-neutral-100 shadow-sm'
-          : 'text-neutral-400 hover:text-neutral-200'}"
+          ? 'bg-(--chrome-surface) text-(--chrome-text) shadow-sm'
+          : 'text-(--chrome-text)/60 hover:text-(--chrome-text)'}"
       >
         Turn Samples
       </button>
@@ -94,14 +94,14 @@
 
   <!-- Simulated State Pills (if schema has keys) -->
   {#if draft.card.stateSchema && Object.keys(draft.card.stateSchema).length > 0}
-    <div class="flex flex-wrap items-center gap-1.5 border-b border-neutral-800/80 bg-neutral-950/60 px-4 py-2 text-xs">
-      <span class="text-[10px] font-mono uppercase tracking-wider text-neutral-500 mr-1">
+    <div class="flex flex-wrap items-center gap-1.5 border-b border-(--chrome-line) bg-(--chrome-bg)/60 px-4 py-2 text-xs">
+      <span class="text-[10px] font-mono uppercase tracking-wider text-(--chrome-text)/50 mr-1">
         Simulate:
       </span>
       {#each Object.entries(draft.card.stateSchema) as [key, schema] (key)}
         {#if schema.type === 'enum' && schema.values}
-          <div class="flex items-center gap-1 rounded bg-neutral-900 px-2 py-1 text-[11px] border border-neutral-800">
-            <span class="text-neutral-400 font-mono">{key}:</span>
+          <div class="flex items-center gap-1 rounded bg-(--chrome-surface) px-2 py-1 text-[11px] border border-(--chrome-line)">
+            <span class="text-(--chrome-text)/70 font-mono">{key}:</span>
             <select
               value={draft.previewState[key] ?? schema.values[0]}
               onchange={(e) => {
@@ -110,13 +110,13 @@
               class="bg-transparent text-accent font-semibold focus:outline-none"
             >
               {#each schema.values as val (val)}
-                <option value={val} class="bg-neutral-900 text-neutral-200">{val}</option>
+                <option value={val} class="bg-(--chrome-surface) text-(--chrome-text)">{val}</option>
               {/each}
             </select>
           </div>
         {:else if schema.type === 'int'}
-          <div class="flex items-center gap-1.5 rounded bg-neutral-900 px-2 py-1 text-[11px] border border-neutral-800">
-            <span class="text-neutral-400 font-mono">{key}: {draft.previewState[key] ?? 0}</span>
+          <div class="flex items-center gap-1.5 rounded bg-(--chrome-surface) px-2 py-1 text-[11px] border border-(--chrome-line)">
+            <span class="text-(--chrome-text)/70 font-mono">{key}: {draft.previewState[key] ?? 0}</span>
             <input
               type="range"
               min={schema.min ?? 0}

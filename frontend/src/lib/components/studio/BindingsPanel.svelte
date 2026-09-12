@@ -37,12 +37,12 @@
 </script>
 
 <div class="space-y-6 max-w-3xl">
-  <div class="flex items-center justify-between border-b border-neutral-800 pb-3">
+  <div class="flex items-center justify-between border-b border-(--chrome-line) pb-3">
     <div>
-      <h3 class="text-xs font-semibold uppercase tracking-wider text-neutral-200">
+      <h3 class="text-xs font-semibold uppercase tracking-wider text-(--chrome-text)">
         Reactive State Bindings (Chameleon Overrides)
       </h3>
-      <p class="text-xs text-neutral-400 mt-0.5">
+      <p class="text-xs text-(--chrome-text)/70 mt-0.5">
         Automatically override typography, colors, or atmosphere when narrative state conditions are met. (Evaluated top-to-bottom).
       </p>
     </div>
@@ -58,16 +58,16 @@
   </div>
 
   {#if !draft.card.stateBindings || draft.card.stateBindings.length === 0}
-    <div class="flex h-36 flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-800 text-neutral-500 text-xs text-center p-4">
+    <div class="flex h-36 flex-col items-center justify-center rounded-2xl border border-dashed border-(--chrome-line) text-(--chrome-text)/50 text-xs text-center p-4">
       <p>No reactive theme bindings created yet.</p>
-      <p class="text-neutral-600 mt-1">Bind state conditions (like "mood: enraged") to red accent colors or background changes.</p>
+      <p class="text-(--chrome-text)/40 mt-1">Bind state conditions (like "mood: enraged") to red accent colors or background changes.</p>
     </div>
   {:else}
     <div class="space-y-3">
       {#each draft.card.stateBindings as binding, idx (idx)}
-        <div class="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-4 space-y-3">
+        <div class="rounded-2xl border border-(--chrome-line) bg-(--chrome-surface)/60 p-4 space-y-3">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-mono font-semibold text-neutral-400">
+            <span class="text-xs font-mono font-semibold text-(--chrome-text)/70">
               Rule #{idx + 1}
             </span>
 
@@ -76,7 +76,7 @@
                 type="button"
                 disabled={idx === 0}
                 onclick={() => moveBinding(idx, -1)}
-                class="rounded p-1 text-neutral-400 hover:text-white disabled:opacity-30"
+                class="rounded p-1 text-(--chrome-text)/70 hover:text-(--chrome-text) disabled:opacity-30 transition-colors"
                 title="Move up"
               >
                 ▲
@@ -85,7 +85,7 @@
                 type="button"
                 disabled={idx === draft.card.stateBindings.length - 1}
                 onclick={() => moveBinding(idx, 1)}
-                class="rounded p-1 text-neutral-400 hover:text-white disabled:opacity-30"
+                class="rounded p-1 text-(--chrome-text)/70 hover:text-(--chrome-text) disabled:opacity-30 transition-colors"
                 title="Move down"
               >
                 ▼
@@ -93,7 +93,7 @@
               <button
                 type="button"
                 onclick={() => removeBinding(idx)}
-                class="rounded p-1 text-neutral-500 hover:text-red-400 ml-2"
+                class="rounded p-1 text-(--chrome-text)/50 hover:text-red-400 ml-2 transition-colors"
                 title="Remove binding"
               >
                 <Icon name="trash" size={14} />
@@ -104,25 +104,25 @@
           <!-- When / Set Grid -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
             <!-- WHEN Condition -->
-            <div class="space-y-2 rounded-xl border border-neutral-850 bg-neutral-950/60 p-3">
+            <div class="space-y-2 rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/60 p-3">
               <span class="block text-[11px] uppercase tracking-wider text-accent">WHEN</span>
               {#each Object.entries(binding.when) as [stateKey, stateVal] (stateKey)}
                 <div class="flex items-center gap-2">
-                  <span class="text-neutral-300">{stateKey} ==</span>
+                  <span class="text-(--chrome-text)">{stateKey} ==</span>
                   <input
                     type="text"
                     value={stateVal}
                     oninput={(e) => {
                       binding.when[stateKey] = (e.target as HTMLInputElement).value;
                     }}
-                    class="flex-1 rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-neutral-100 focus:outline-none"
+                    class="flex-1 rounded border border-(--chrome-line) bg-(--chrome-surface) px-2 py-1 text-(--chrome-text) focus:outline-none"
                   />
                 </div>
               {/each}
             </div>
 
             <!-- SET Style Override -->
-            <div class="space-y-2 rounded-xl border border-neutral-850 bg-neutral-950/60 p-3">
+            <div class="space-y-2 rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/60 p-3">
               <span class="block text-[11px] uppercase tracking-wider text-accent">SET</span>
               {#each Object.entries(binding.set) as [themePath, tokenVal] (themePath)}
                 <div class="space-y-1.5">
@@ -134,7 +134,7 @@
                       delete binding.set[themePath];
                       binding.set[newPath] = val;
                     }}
-                    class="w-full rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs text-neutral-200"
+                    class="w-full rounded border border-(--chrome-line) bg-(--chrome-surface) px-2 py-1 text-xs text-(--chrome-text)"
                   >
                     {#each THEME_PATH_CATEGORIES as cat (cat.label)}
                       <optgroup label={cat.label}>
@@ -152,7 +152,7 @@
                       binding.set[themePath] = (e.target as HTMLInputElement).value;
                     }}
                     placeholder="Token value (e.g. #ef4444, 2rem)..."
-                    class="w-full rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs text-neutral-100 focus:outline-none"
+                    class="w-full rounded border border-(--chrome-line) bg-(--chrome-surface) px-2 py-1 text-xs text-(--chrome-text) focus:outline-none"
                   />
                 </div>
               {/each}

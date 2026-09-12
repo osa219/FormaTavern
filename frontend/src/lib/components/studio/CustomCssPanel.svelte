@@ -436,7 +436,7 @@
               <div class="rounded-lg border border-amber-500/30 bg-amber-950/20 p-2.5 space-y-1">
                 <div class="font-semibold text-amber-300 text-[11px]">Dropped Selectors ({droppedRules.length})</div>
                 {#each droppedRules as r}
-                  <div class="text-[11px] font-mono text-neutral-300">
+                  <div class="text-[11px] font-mono text-(--chrome-text)">
                     <span class="text-amber-400">{r.selector}</span>: {r.reason}
                   </div>
                 {/each}
@@ -447,7 +447,7 @@
               <div class="rounded-lg border border-amber-500/30 bg-amber-950/20 p-2.5 space-y-1">
                 <div class="font-semibold text-amber-300 text-[11px]">Dropped Declarations ({droppedDecls.length})</div>
                 {#each droppedDecls as d}
-                  <div class="text-[11px] font-mono text-neutral-300">
+                  <div class="text-[11px] font-mono text-(--chrome-text)">
                     <span class="text-amber-400">{d.property}</span> in {d.selector} ({d.reason})
                   </div>
                 {/each}
@@ -460,13 +460,13 @@
                 <div class="flex items-center gap-1.5 font-semibold text-amber-300 text-[11px]">
                   <span>Chat Surface Restrictions ({chatRestrictions.length})</span>
                 </div>
-                <p class="text-[10px] text-neutral-400">
+                <p class="text-[10px] text-(--chrome-text)/70">
                   Allowed on the Author Showcase, but stripped in chat to maintain reading stability:
                 </p>
                 {#each chatRestrictions as cr}
                   <div class="text-[11px] border-l-2 border-amber-500/50 pl-2 space-y-0.5">
                     <div class="font-mono text-[10px] text-amber-400 font-semibold">{cr.property} in {cr.selector}</div>
-                    <div class="text-neutral-300 text-[11px]">{cr.message}</div>
+                    <div class="text-(--chrome-text) text-[11px]">{cr.message}</div>
                   </div>
                 {/each}
               </div>
@@ -476,7 +476,7 @@
               <div class="rounded-lg border border-amber-500/30 bg-amber-950/20 p-2.5 space-y-1">
                 <div class="font-semibold text-amber-300 text-[11px]">Dropped At-Rules ({droppedAtRules.length})</div>
                 {#each droppedAtRules as a}
-                  <div class="text-[11px] font-mono text-neutral-300">
+                  <div class="text-[11px] font-mono text-(--chrome-text)">
                     <span class="text-amber-400">@{a.atRule}</span>: {a.reason}
                   </div>
                 {/each}
@@ -484,10 +484,10 @@
             {/if}
 
             {#if renamedKeyframes.length > 0}
-              <div class="rounded-lg border border-neutral-700/50 bg-neutral-850/50 p-2.5 space-y-1">
-                <div class="font-semibold text-neutral-300 text-[11px]">Scoped Keyframes ({renamedKeyframes.length})</div>
+              <div class="rounded-lg border border-(--chrome-line) bg-(--chrome-bg)/50 p-2.5 space-y-1">
+                <div class="font-semibold text-(--chrome-text) text-[11px]">Scoped Keyframes ({renamedKeyframes.length})</div>
                 {#each renamedKeyframes as k}
-                  <div class="text-[11px] font-mono text-neutral-400">
+                  <div class="text-[11px] font-mono text-(--chrome-text)/70">
                     {k.from} → <span class="text-accent">{k.to}</span>
                   </div>
                 {/each}
@@ -495,10 +495,10 @@
             {/if}
 
             {#if notes.length > 0}
-              <div class="rounded-lg border border-neutral-700/50 bg-neutral-850/50 p-2.5 space-y-1">
-                <div class="font-semibold text-neutral-300 text-[11px]">Notes ({notes.length})</div>
+              <div class="rounded-lg border border-(--chrome-line) bg-(--chrome-bg)/50 p-2.5 space-y-1">
+                <div class="font-semibold text-(--chrome-text) text-[11px]">Notes ({notes.length})</div>
                 {#each notes as n}
-                  <div class="text-[11px] text-neutral-400">{n.detail}</div>
+                  <div class="text-[11px] text-(--chrome-text)/70">{n.detail}</div>
                 {/each}
               </div>
             {/if}
@@ -510,7 +510,7 @@
                 {#each lints as lint}
                   <div class="text-[11px] border-l-2 border-sky-500/50 pl-2">
                     <div class="font-mono text-[10px] text-sky-400 font-semibold">{lint.code}</div>
-                    <div class="text-neutral-300">{lint.message}</div>
+                    <div class="text-(--chrome-text)">{lint.message}</div>
                   </div>
                 {/each}
               </div>

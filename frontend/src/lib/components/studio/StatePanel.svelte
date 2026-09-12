@@ -49,12 +49,12 @@
 </script>
 
 <div class="space-y-6 max-w-3xl">
-  <div class="flex items-center justify-between border-b border-neutral-800 pb-3">
+  <div class="flex items-center justify-between border-b border-(--chrome-line) pb-3">
     <div>
-      <h3 class="text-xs font-semibold uppercase tracking-wider text-neutral-200">
+      <h3 class="text-xs font-semibold uppercase tracking-wider text-(--chrome-text)">
         Narrative State Schema
       </h3>
-      <p class="text-xs text-neutral-400 mt-0.5">
+      <p class="text-xs text-(--chrome-text)/70 mt-0.5">
         Define persistent state variables that the companion model can track and mutate in the narrative envelope.
       </p>
     </div>
@@ -69,7 +69,7 @@
       bind:value={newKey}
       placeholder="Variable name (e.g. mood, location, sanity)..."
       onkeydown={(e) => { if (e.key === 'Enter') addField(); }}
-      class="flex-1 rounded-xl border border-neutral-800 bg-neutral-900 px-3.5 py-2 text-xs font-mono text-neutral-100 placeholder-neutral-500 focus:border-accent focus:outline-none"
+      class="flex-1 rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3.5 py-2 text-xs font-mono text-(--chrome-text) placeholder:text-(--chrome-text)/40 focus:border-accent focus:outline-none"
     />
     <button
       type="button"
@@ -84,22 +84,22 @@
 
   <!-- Variable Schema List -->
   {#if !draft.card.stateSchema || Object.keys(draft.card.stateSchema).length === 0}
-    <div class="flex h-36 flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-800 text-neutral-500 text-xs text-center p-4">
+    <div class="flex h-36 flex-col items-center justify-center rounded-2xl border border-dashed border-(--chrome-line) text-(--chrome-text)/50 text-xs text-center p-4">
       <p>No state variables defined yet.</p>
-      <p class="text-neutral-600 mt-1">Add variables like "mood" or "affiliation" to enable dynamic state bindings.</p>
+      <p class="text-(--chrome-text)/40 mt-1">Add variables like "mood" or "affiliation" to enable dynamic state bindings.</p>
     </div>
   {:else}
     <div class="space-y-4">
       {#each Object.entries(draft.card.stateSchema) as [key, field] (key)}
-        <div class="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-4 space-y-3">
+        <div class="rounded-2xl border border-(--chrome-line) bg-(--chrome-surface)/60 p-4 space-y-3">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
               <span class="font-mono text-sm font-semibold text-accent">{key}</span>
-              <span class="text-neutral-700">|</span>
+              <span class="text-(--chrome-text)/30">|</span>
               <select
                 value={field.type}
                 onchange={(e) => updateFieldType(key, (e.target as HTMLSelectElement).value as any)}
-                class="rounded-lg border border-neutral-800 bg-neutral-850 px-2 py-1 text-xs font-mono text-neutral-200"
+                class="rounded-lg border border-(--chrome-line) bg-(--chrome-bg) px-2 py-1 text-xs font-mono text-(--chrome-text)"
               >
                 <option value="enum">Enum (discrete choices)</option>
                 <option value="int">Integer (number range)</option>
@@ -110,7 +110,7 @@
             <button
               type="button"
               onclick={() => removeField(key)}
-              class="rounded p-1 text-neutral-500 hover:text-red-400"
+              class="rounded p-1 text-(--chrome-text)/50 hover:text-red-400 transition-colors"
               title="Delete variable"
             >
               <Icon name="trash" size={14} />
@@ -120,7 +120,7 @@
           <!-- Type-Specific Controls -->
           {#if field.type === 'enum'}
             <div class="space-y-2 text-xs">
-              <label for="enum-values-{key}" class="block text-[11px] font-mono text-neutral-400">
+              <label for="enum-values-{key}" class="block text-[11px] font-mono text-(--chrome-text)/70">
                 Allowed Values (comma separated)
               </label>
               <input
@@ -134,18 +134,18 @@
                     .filter(Boolean);
                   (field as any).values = vals;
                 }}
-                class="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-1.5 text-xs font-mono text-neutral-100 focus:outline-none"
+                class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-bg) px-3 py-1.5 text-xs font-mono text-(--chrome-text) focus:outline-none"
               />
 
               <div class="flex items-center gap-2 pt-1">
-                <span class="text-[11px] font-mono text-neutral-400">Initial State:</span>
+                <span class="text-[11px] font-mono text-(--chrome-text)/70">Initial State:</span>
                 <select
                   value={draft.card.initialState?.[key] ?? ''}
                   onchange={(e) => {
                     if (!draft.card.initialState) draft.card.initialState = {};
                     draft.card.initialState[key] = (e.target as HTMLSelectElement).value;
                   }}
-                  class="rounded border border-neutral-800 bg-neutral-950 px-2 py-1 text-xs font-mono text-neutral-200"
+                  class="rounded border border-(--chrome-line) bg-(--chrome-bg) px-2 py-1 text-xs font-mono text-(--chrome-text)"
                 >
                   {#each field.values ?? [] as opt (opt)}
                     <option value={opt}>{opt}</option>
@@ -156,25 +156,25 @@
           {:else if field.type === 'int'}
             <div class="grid grid-cols-3 gap-3 text-xs">
               <div>
-                <label for="int-min-{key}" class="block text-[11px] font-mono text-neutral-400 mb-1">Min</label>
+                <label for="int-min-{key}" class="block text-[11px] font-mono text-(--chrome-text)/70 mb-1">Min</label>
                 <input
                   id="int-min-{key}"
                   type="number"
                   bind:value={field.min}
-                  class="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-2 py-1 text-xs font-mono text-neutral-100"
+                  class="w-full rounded-lg border border-(--chrome-line) bg-(--chrome-bg) px-2 py-1 text-xs font-mono text-(--chrome-text)"
                 />
               </div>
               <div>
-                <label for="int-max-{key}" class="block text-[11px] font-mono text-neutral-400 mb-1">Max</label>
+                <label for="int-max-{key}" class="block text-[11px] font-mono text-(--chrome-text)/70 mb-1">Max</label>
                 <input
                   id="int-max-{key}"
                   type="number"
                   bind:value={field.max}
-                  class="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-2 py-1 text-xs font-mono text-neutral-100"
+                  class="w-full rounded-lg border border-(--chrome-line) bg-(--chrome-bg) px-2 py-1 text-xs font-mono text-(--chrome-text)"
                 />
               </div>
               <div>
-                <label for="int-init-{key}" class="block text-[11px] font-mono text-neutral-400 mb-1">Initial Value</label>
+                <label for="int-init-{key}" class="block text-[11px] font-mono text-(--chrome-text)/70 mb-1">Initial Value</label>
                 <input
                   id="int-init-{key}"
                   type="number"
@@ -183,13 +183,13 @@
                     if (!draft.card.initialState) draft.card.initialState = {};
                     draft.card.initialState[key] = Number((e.target as HTMLInputElement).value);
                   }}
-                  class="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-2 py-1 text-xs font-mono text-neutral-100"
+                  class="w-full rounded-lg border border-(--chrome-line) bg-(--chrome-bg) px-2 py-1 text-xs font-mono text-(--chrome-text)"
                 />
               </div>
             </div>
           {:else}
             <div>
-              <label for="str-init-{key}" class="block text-[11px] font-mono text-neutral-400 mb-1">Initial String Value</label>
+              <label for="str-init-{key}" class="block text-[11px] font-mono text-(--chrome-text)/70 mb-1">Initial String Value</label>
               <input
                 id="str-init-{key}"
                 type="text"
@@ -198,7 +198,7 @@
                   if (!draft.card.initialState) draft.card.initialState = {};
                   draft.card.initialState[key] = (e.target as HTMLInputElement).value;
                 }}
-                class="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-1.5 text-xs font-mono text-neutral-100"
+                class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-bg) px-3 py-1.5 text-xs font-mono text-(--chrome-text)"
               />
             </div>
           {/if}
