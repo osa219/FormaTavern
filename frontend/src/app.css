@@ -54,6 +54,11 @@
   --chrome-card-padding: 1rem;
   --chrome-card-gap: 1rem;
 
+  /* Themable Scrollbar Tokens */
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: color-mix(in oklab, var(--theme-accent) 25%, var(--chrome-text) 25%);
+  --scrollbar-thumb-hover: color-mix(in oklab, var(--theme-accent) 60%, var(--chrome-text) 40%);
+
   /* Motion tokens */
   --motion-theme: 600ms;
   --motion-ui: 180ms;
@@ -109,6 +114,33 @@
   background-color: var(--chrome-surface);
   border-color: var(--chrome-line);
   color: var(--chrome-text);
+}
+
+/* Themable Modern Scrollbars */
+* {
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 150ms ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
 }
 
 @media (prefers-reduced-motion: reduce) {

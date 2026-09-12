@@ -24,7 +24,7 @@
   );
 </script>
 
-<div class="rounded-xl border border-neutral-800 bg-neutral-900/60 p-4">
+<div class="rounded-xl border border-(--chrome-line) bg-(--chrome-bg) p-4">
   <div class="flex items-end justify-end gap-2.5">
     <div
       class="bubble-tail relative max-w-[85%] px-4 py-3 shadow-md"
@@ -41,13 +41,13 @@
       <img
         src={avatar}
         alt={name}
-        class="h-8 w-8 rounded-full object-cover border border-neutral-700 select-none shrink-0"
+        class="h-8 w-8 rounded-full object-cover border border-(--chrome-line) select-none shrink-0"
         loading="lazy"
         decoding="async"
       />
     {:else}
       <div
-        class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-neutral-800 text-xs font-semibold text-neutral-300 border border-neutral-700 select-none"
+        class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--chrome-surface) text-xs font-semibold text-(--chrome-text) border border-(--chrome-line) select-none"
       >
         {name.slice(0, 1).toUpperCase()}
       </div>

@@ -125,4 +125,30 @@ describe('Surface Completeness & Dialog Scoping (Invariant C14)', () => {
       expect(content).not.toContain('text-neutral-100');
     }
   });
+
+  it('ensures persona components and confirm dialog use semantic chrome tokens rather than hardcoded neutral-100 or neutral-900', () => {
+    const harmonizedComponents = [
+      'PersonaCard.svelte',
+      'PersonaEditor.svelte',
+      'ConfirmDialog.svelte',
+      'BubblePreview.svelte'
+    ];
+    for (const file of allSvelteFiles) {
+      const match = harmonizedComponents.some((name) => file.endsWith(name));
+      if (!match) continue;
+      const content = readFileSync(file, 'utf-8');
+      expect(content).not.toContain('text-neutral-100');
+      expect(content).not.toContain('bg-neutral-900');
+    }
+  });
+
+  it('ensures themable scrollbar custom properties and rules are configured in app.css', () => {
+    const appCssPath = resolve(SRC_DIR, 'app.css');
+    const css = readFileSync(appCssPath, 'utf-8');
+    expect(css).toContain('--scrollbar-track');
+    expect(css).toContain('--scrollbar-thumb');
+    expect(css).toContain('--scrollbar-thumb-hover');
+    expect(css).toContain('scrollbar-color:');
+    expect(css).toContain('::-webkit-scrollbar');
+  });
 });

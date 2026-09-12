@@ -53,17 +53,17 @@
 
 <ShellSurface class={HOOKS.shell.personas}>
   <!-- Header -->
-  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/80 chrome-bar px-6">
+  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-(--chrome-line) chrome-bar px-6">
     <div class="flex items-center gap-3">
       <a
         href="/"
-        class="flex items-center gap-1.5 text-xs text-neutral-400 hover:text-neutral-200"
+        class="flex items-center gap-1.5 text-xs text-(--chrome-text)/60 hover:text-(--chrome-text)"
       >
         <Icon name="arrow-left" size={14} />
         <span>Foyer</span>
       </a>
-      <span class="text-neutral-700">/</span>
-      <h1 class="text-sm font-bold tracking-wide text-neutral-100 uppercase">
+      <span class="text-(--chrome-text)/40">/</span>
+      <h1 class="text-sm font-bold tracking-wide text-(--chrome-text) uppercase">
         Personas & Aliases
       </h1>
     </div>
@@ -79,16 +79,16 @@
 
   <main class="mx-auto max-w-5xl px-6 py-8">
     <div class="mb-8">
-      <h2 class="text-2xl font-bold tracking-tight text-neutral-100 sm:text-3xl">
+      <h2 class="text-2xl font-bold tracking-tight text-(--chrome-text) sm:text-3xl">
         Your User Personas
       </h2>
-      <p class="mt-1 text-sm text-neutral-400">
+      <p class="mt-1 text-sm text-(--chrome-text)/70">
         Personas define your role, description, and speech bubble appearance across stories. The default persona is automatically used when starting new stories.
       </p>
     </div>
 
     {#if personasStore.loading && personasStore.items.length === 0}
-      <div class="flex h-48 items-center justify-center rounded-2xl border border-neutral-800 bg-neutral-900/50 text-xs text-neutral-400">
+      <div class="flex h-48 items-center justify-center rounded-2xl border border-(--chrome-line) bg-(--chrome-surface) text-xs text-(--chrome-text)/60">
         <Spinner size={16} class="mr-2" />
         <span>Loading personas…</span>
       </div>
@@ -123,23 +123,23 @@
   <!-- Reassign In-Use Stories Modal -->
   {#if reassignModalOpen && deleteTarget}
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-      <div class="w-full max-w-md rounded-2xl border border-neutral-800 bg-neutral-900 p-6 shadow-2xl">
-        <h3 class="text-base font-semibold text-neutral-100">
+      <div class="w-full max-w-md rounded-2xl border border-(--chrome-line) bg-(--chrome-surface) p-6 shadow-2xl text-(--chrome-text)">
+        <h3 class="text-base font-semibold text-(--chrome-text)">
           Persona In Use
         </h3>
-        <p class="mt-2 text-xs leading-relaxed text-neutral-400">
-          "{deleteTarget.name}" is currently used by <span class="font-semibold text-neutral-200">{conflictChatsCount} {conflictChatsCount === 1 ? 'story' : 'stories'}</span>.
+        <p class="mt-2 text-xs leading-relaxed text-(--chrome-text)/70">
+          "{deleteTarget.name}" is currently used by <span class="font-semibold text-(--chrome-text)">{conflictChatsCount} {conflictChatsCount === 1 ? 'story' : 'stories'}</span>.
           Please choose another persona to reassign them to before deleting:
         </p>
 
         <div class="mt-4">
-          <label for="reassign-select" class="block text-[11px] font-mono text-neutral-400 uppercase tracking-wider mb-1.5">
+          <label for="reassign-select" class="block text-[11px] font-mono text-(--chrome-text)/60 uppercase tracking-wider mb-1.5">
             Reassign Stories To
           </label>
           <select
             id="reassign-select"
             bind:value={reassignToId}
-            class="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3.5 py-2.5 text-xs text-neutral-100 focus:border-accent focus:outline-none"
+            class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3.5 py-2.5 text-xs text-(--chrome-text) focus:border-accent focus:outline-none"
           >
             {#each personasStore.items.filter((p) => p.id !== deleteTarget?.id) as opt (opt.id)}
               <option value={opt.id}>{opt.name} {opt.isDefault ? '(Default)' : ''}</option>
@@ -154,7 +154,7 @@
               reassignModalOpen = false;
               deleteTarget = null;
             }}
-            class="rounded-xl border border-neutral-800 bg-neutral-850 px-4 py-2 text-xs font-semibold text-neutral-300 hover:bg-neutral-800"
+            class="rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-4 py-2 text-xs font-semibold text-(--chrome-text) hover:bg-(--chrome-line)/40"
           >
             Cancel
           </button>

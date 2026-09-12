@@ -150,7 +150,7 @@
     <div class="space-y-5">
       <!-- Name -->
       <div>
-        <label for="persona-name" class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+        <label for="persona-name" class="block text-xs font-semibold text-(--chrome-text)/80 uppercase tracking-wider mb-1.5">
           Persona Name
         </label>
         <input
@@ -160,13 +160,13 @@
           placeholder="e.g. Detective, Wanderer, Yourself"
           maxlength={120}
           required
-          class="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3.5 py-2.5 text-sm text-neutral-100 placeholder-neutral-500 focus:border-accent focus:outline-none"
+          class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3.5 py-2.5 text-sm text-(--chrome-text) placeholder:text-(--chrome-text)/40 focus:border-accent focus:outline-none"
         />
       </div>
 
       <!-- Avatar Upload -->
       <div>
-        <span class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+        <span class="block text-xs font-semibold text-(--chrome-text)/80 uppercase tracking-wider mb-1.5">
           Avatar
         </span>
         <div class="flex items-center gap-4">
@@ -174,10 +174,10 @@
             <img
               src={avatar}
               alt="Avatar preview"
-              class="h-16 w-16 rounded-full object-cover border border-neutral-700 select-none shrink-0"
+              class="h-16 w-16 rounded-full object-cover border border-(--chrome-line) select-none shrink-0"
             />
           {:else}
-            <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-neutral-800 text-lg font-bold text-neutral-400 border border-neutral-700 select-none">
+            <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-(--chrome-line)/30 text-lg font-bold text-(--chrome-text)/60 border border-(--chrome-line) select-none">
               {name ? name.slice(0, 1).toUpperCase() : '?'}
             </div>
           {/if}
@@ -194,7 +194,7 @@
               type="button"
               disabled={uploading}
               onclick={() => fileInput?.click()}
-              class="inline-flex items-center gap-1.5 rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-1.5 text-xs font-medium text-neutral-200 hover:bg-neutral-750 disabled:opacity-50"
+              class="inline-flex items-center gap-1.5 rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-3 py-1.5 text-xs font-medium text-(--chrome-text) hover:bg-(--chrome-line)/40 disabled:opacity-50"
             >
               {#if uploading}
                 <Spinner size={12} class="mr-1" />
@@ -219,7 +219,7 @@
 
       <!-- Bio / Description -->
       <div>
-        <label for="persona-desc" class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+        <label for="persona-desc" class="block text-xs font-semibold text-(--chrome-text)/80 uppercase tracking-wider mb-1.5">
           Description / Persona Bio
         </label>
         <textarea
@@ -227,9 +227,9 @@
           bind:value={description}
           rows={4}
           placeholder="Describe your role, backstory, tone, or personality for the AI companion..."
-          class="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3.5 py-2.5 text-sm text-neutral-100 placeholder-neutral-500 focus:border-accent focus:outline-none"
+          class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3.5 py-2.5 text-sm text-(--chrome-text) placeholder:text-(--chrome-text)/40 focus:border-accent focus:outline-none"
         ></textarea>
-        <p class="mt-1 text-xs text-neutral-500">
+        <p class="mt-1 text-xs text-(--chrome-text)/60">
           This is included in the model's system prompt to identify who you are playing.
         </p>
       </div>
@@ -240,23 +240,23 @@
           <input
             type="checkbox"
             bind:checked={isDefault}
-            class="h-4 w-4 rounded border-neutral-700 bg-neutral-900 text-accent focus:ring-0"
+            class="h-4 w-4 rounded border-(--chrome-line) bg-(--chrome-surface) text-accent focus:ring-0"
           />
-          <span class="text-sm text-neutral-200">Set as default persona for new stories</span>
+          <span class="text-sm text-(--chrome-text)">Set as default persona for new stories</span>
         </label>
       {/if}
     </div>
 
     <!-- Right Column: Speech Bubble Aesthetics & Live Preview -->
-    <div class="space-y-5 rounded-2xl border border-neutral-800/80 bg-neutral-900/40 p-5">
+    <div class="space-y-5 rounded-2xl border border-(--chrome-line) bg-(--chrome-bg)/50 p-5">
       <div class="flex items-center justify-between">
-        <h4 class="text-xs font-semibold uppercase tracking-wider text-neutral-300">
+        <h4 class="text-xs font-semibold uppercase tracking-wider text-(--chrome-text)">
           Speech Bubble Styling
         </h4>
         <button
           type="button"
           onclick={resetStyles}
-          class="text-xs text-neutral-400 hover:text-neutral-200"
+          class="text-xs text-(--chrome-text)/60 hover:text-(--chrome-text)"
         >
           Reset to default
         </button>
@@ -265,63 +265,63 @@
       <!-- Controls -->
       <div class="grid grid-cols-2 gap-3">
         <div>
-          <label for="bg-color" class="block text-[11px] font-mono text-neutral-400 mb-1">Background</label>
+          <label for="bg-color" class="block text-[11px] font-mono text-(--chrome-text)/60 mb-1">Background</label>
           <div class="flex items-center gap-2">
             <input
               type="color"
               bind:value={userBubbleBg}
-              class="h-8 w-10 cursor-pointer rounded border border-neutral-700 bg-transparent p-0"
+              class="h-8 w-10 cursor-pointer rounded border border-(--chrome-line) bg-transparent p-0"
             />
             <input
               id="bg-color"
               type="text"
               bind:value={userBubbleBg}
-              class="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs font-mono text-neutral-200"
+              class="w-full rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2 py-1 text-xs font-mono text-(--chrome-text)"
             />
           </div>
         </div>
 
         <div>
-          <label for="text-color" class="block text-[11px] font-mono text-neutral-400 mb-1">Text Color</label>
+          <label for="text-color" class="block text-[11px] font-mono text-(--chrome-text)/60 mb-1">Text Color</label>
           <div class="flex items-center gap-2">
             <input
               type="color"
               bind:value={userBubbleText}
-              class="h-8 w-10 cursor-pointer rounded border border-neutral-700 bg-transparent p-0"
+              class="h-8 w-10 cursor-pointer rounded border border-(--chrome-line) bg-transparent p-0"
             />
             <input
               id="text-color"
               type="text"
               bind:value={userBubbleText}
-              class="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs font-mono text-neutral-200"
+              class="w-full rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2 py-1 text-xs font-mono text-(--chrome-text)"
             />
           </div>
         </div>
 
         <div>
-          <label for="border-color" class="block text-[11px] font-mono text-neutral-400 mb-1">Border Color</label>
+          <label for="border-color" class="block text-[11px] font-mono text-(--chrome-text)/60 mb-1">Border Color</label>
           <div class="flex items-center gap-2">
             <input
               type="color"
               value={userBubbleBorder === 'transparent' ? '#334155' : userBubbleBorder}
               oninput={(e) => (userBubbleBorder = (e.target as HTMLInputElement).value)}
-              class="h-8 w-10 cursor-pointer rounded border border-neutral-700 bg-transparent p-0"
+              class="h-8 w-10 cursor-pointer rounded border border-(--chrome-line) bg-transparent p-0"
             />
             <input
               id="border-color"
               type="text"
               bind:value={userBubbleBorder}
-              class="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs font-mono text-neutral-200"
+              class="w-full rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2 py-1 text-xs font-mono text-(--chrome-text)"
             />
           </div>
         </div>
 
         <div>
-          <label for="tail-select" class="block text-[11px] font-mono text-neutral-400 mb-1">Tail Side</label>
+          <label for="tail-select" class="block text-[11px] font-mono text-(--chrome-text)/60 mb-1">Tail Side</label>
           <select
             id="tail-select"
             bind:value={userTail}
-            class="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-2 py-1.5 text-xs text-neutral-200 focus:outline-none"
+            class="w-full rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2 py-1.5 text-xs text-(--chrome-text) focus:outline-none"
           >
             <option value="right">Right (standard)</option>
             <option value="none">None (minimalist)</option>
@@ -331,7 +331,7 @@
 
       <!-- Bubble Radius -->
       <div>
-        <div class="flex justify-between text-[11px] font-mono text-neutral-400 mb-1">
+        <div class="flex justify-between text-[11px] font-mono text-(--chrome-text)/60 mb-1">
           <span>Corner Radius</span>
           <span>{bubbleRadius}</span>
         </div>
@@ -348,7 +348,7 @@
 
       <!-- Live Preview Area -->
       <div class="pt-2">
-        <span class="block text-[11px] font-mono uppercase tracking-wider text-neutral-400 mb-2">
+        <span class="block text-[11px] font-mono uppercase tracking-wider text-(--chrome-text)/60 mb-2">
           Live Chat Appearance
         </span>
         <BubblePreview
@@ -361,12 +361,12 @@
   </div>
 
   <!-- Footer Actions -->
-  <div class="flex items-center justify-end gap-3 border-t border-neutral-800 pt-5">
+  <div class="flex items-center justify-end gap-3 border-t border-(--chrome-line) pt-5">
     {#if onCancel}
       <button
         type="button"
         onclick={onCancel}
-        class="rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-2 text-xs font-semibold text-neutral-300 hover:bg-neutral-800"
+        class="rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-4 py-2 text-xs font-semibold text-(--chrome-text) hover:bg-(--chrome-line)/40"
       >
         Cancel
       </button>

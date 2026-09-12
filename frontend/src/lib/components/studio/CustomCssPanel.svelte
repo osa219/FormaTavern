@@ -238,27 +238,27 @@
 
 <div class="flex flex-col h-full space-y-4">
   <!-- Toolbar: Quick Snippets & Size Meter -->
-  <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-neutral-800 bg-neutral-900/80 p-2.5 shrink-0">
+  <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 p-2.5 shrink-0">
     <div class="flex flex-wrap items-center gap-1.5">
       {#if targetScope === 'shell'}
         <button
           type="button"
           onclick={() => insertSnippet('.ft-foyer-header {\n  /* Header styling */\n}\n')}
-          class="rounded-lg border border-neutral-800 bg-neutral-850 px-2.5 py-1 text-xs font-mono text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
+          class="rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1 text-xs font-mono text-(--chrome-text) hover:bg-(--chrome-line)/40 transition-colors"
         >
           .ft-foyer-header
         </button>
         <button
           type="button"
           onclick={() => insertSnippet('.ft-foyer-grid {\n  /* Companion grid styling */\n}\n')}
-          class="rounded-lg border border-neutral-800 bg-neutral-850 px-2.5 py-1 text-xs font-mono text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
+          class="rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1 text-xs font-mono text-(--chrome-text) hover:bg-(--chrome-line)/40 transition-colors"
         >
           .ft-foyer-grid
         </button>
         <button
           type="button"
           onclick={() => insertSnippet('.ft-char-card {\n  /* Card styling */\n}\n')}
-          class="rounded-lg border border-neutral-800 bg-neutral-850 px-2.5 py-1 text-xs font-mono text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
+          class="rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1 text-xs font-mono text-(--chrome-text) hover:bg-(--chrome-line)/40 transition-colors"
         >
           .ft-char-card
         </button>
@@ -266,35 +266,35 @@
         <button
           type="button"
           onclick={() => insertSnippet('.ft-hero {\n  border: 1px solid var(--theme-accent);\n}\n')}
-          class="rounded-lg border border-neutral-800 bg-neutral-850 px-2.5 py-1 text-xs font-mono text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
+          class="rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1 text-xs font-mono text-(--chrome-text) hover:bg-(--chrome-line)/40 transition-colors"
         >
           .ft-hero
         </button>
         <button
           type="button"
           onclick={() => insertSnippet('.ft-showcase-body {\n  /* Custom showcase styling */\n}\n')}
-          class="rounded-lg border border-neutral-800 bg-neutral-850 px-2.5 py-1 text-xs font-mono text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
+          class="rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1 text-xs font-mono text-(--chrome-text) hover:bg-(--chrome-line)/40 transition-colors"
         >
           .ft-showcase-body
         </button>
         <button
           type="button"
           onclick={() => insertSnippet('.ft-action-hub {\n  /* Custom action buttons */\n}\n')}
-          class="rounded-lg border border-neutral-800 bg-neutral-850 px-2.5 py-1 text-xs font-mono text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
+          class="rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1 text-xs font-mono text-(--chrome-text) hover:bg-(--chrome-line)/40 transition-colors"
         >
           .ft-action-hub
         </button>
         <button
           type="button"
           onclick={() => insertSnippet('.ft-decor-layer[data-slot="1"] {\n  /* Custom decor sticker styling */\n}\n')}
-          class="rounded-lg border border-neutral-800 bg-neutral-850 px-2.5 py-1 text-xs font-mono text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
+          class="rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1 text-xs font-mono text-(--chrome-text) hover:bg-(--chrome-line)/40 transition-colors"
         >
           .ft-decor-layer
         </button>
         <button
           type="button"
           onclick={() => insertSnippet('.ft-bubble-char {\n  /* Companion speech bubble styling */\n}\n')}
-          class="rounded-lg border border-neutral-800 bg-neutral-850 px-2.5 py-1 text-xs font-mono text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
+          class="rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1 text-xs font-mono text-(--chrome-text) hover:bg-(--chrome-line)/40 transition-colors"
         >
           .ft-bubble-char
         </button>
@@ -302,7 +302,7 @@
       <button
         type="button"
         onclick={() => insertSnippet('@keyframes float {\n  0%, 100% { transform: translateY(0); }\n  50% { transform: translateY(-6px); }\n}\n')}
-        class="rounded-lg border border-neutral-800 bg-neutral-850 px-2.5 py-1 text-xs font-mono text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
+        class="rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1 text-xs font-mono text-(--chrome-text) hover:bg-(--chrome-line)/40 transition-colors"
       >
         @keyframes
       </button>
@@ -311,10 +311,10 @@
     <!-- Size Meter & Status -->
     <div class="flex items-center gap-3 text-xs font-mono">
       <div class="flex items-center gap-2">
-        <span class="text-neutral-400">
+        <span class="text-(--chrome-text)/60">
           {charCount.toLocaleString()} / {MAX_CHARS.toLocaleString()}
         </span>
-        <div class="h-2 w-20 rounded-full bg-neutral-800 overflow-hidden">
+        <div class="h-2 w-20 rounded-full bg-(--chrome-line) overflow-hidden">
           <div
             class="h-full transition-colors {percentUsed > 95
               ? 'bg-red-500'
@@ -331,7 +331,7 @@
           Parse Error
         </span>
       {:else if isAnalyzing}
-        <span class="text-neutral-500 text-[11px]">Validating...</span>
+        <span class="text-(--chrome-text)/50 text-[11px]">Validating...</span>
       {:else if code.trim()}
         <span class="inline-flex items-center gap-1 rounded bg-accent/15 px-2 py-0.5 text-[11px] font-semibold text-accent border border-accent/30">
           Valid
@@ -341,17 +341,17 @@
   </div>
 
   <!-- Presets Row (Slice 7) -->
-  <div class="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-neutral-800/80 bg-neutral-900/50 px-3 py-2 text-xs">
-    <div class="flex items-center gap-2 text-neutral-400">
-      <span class="font-semibold text-neutral-300">Start from a preset:</span>
-      <span class="text-[11px] text-neutral-500 hidden sm:inline">Curated starter sheets (under 8 KB, lint-clean)</span>
+  <div class="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 px-3 py-2 text-xs">
+    <div class="flex items-center gap-2 text-(--chrome-text)/70">
+      <span class="font-semibold text-(--chrome-text)">Start from a preset:</span>
+      <span class="text-[11px] text-(--chrome-text)/50 hidden sm:inline">Curated starter sheets (under 8 KB, lint-clean)</span>
     </div>
     <div class="flex flex-wrap items-center gap-1.5">
       {#each CUSTOM_CSS_PRESETS as preset (preset.id)}
         <button
           type="button"
           onclick={() => applyPreset(preset)}
-          class="rounded-lg border border-neutral-800 bg-neutral-850 px-2.5 py-1 text-xs font-medium text-neutral-200 hover:bg-neutral-800 hover:text-white hover:border-neutral-700 transition-colors"
+          class="rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1 text-xs font-medium text-(--chrome-text) hover:bg-(--chrome-line)/40 hover:text-(--chrome-text) hover:border-accent/40 transition-colors"
           title={preset.description}
         >
           {preset.name}
@@ -374,10 +374,10 @@
   <!-- Main Grid: Editor on Left, Diagnostics/Hooks on Right -->
   <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 flex-1 min-h-0">
     <!-- Code Editor Area -->
-    <div class="xl:col-span-2 flex flex-col min-h-[350px] h-full rounded-xl border border-neutral-800 bg-neutral-950 overflow-hidden">
-      <div class="flex items-center justify-between border-b border-neutral-800/80 bg-neutral-900/60 px-3 py-1.5 text-xs text-neutral-400">
+    <div class="xl:col-span-2 flex flex-col min-h-[350px] h-full rounded-xl border border-(--chrome-line) bg-(--chrome-bg) overflow-hidden">
+      <div class="flex items-center justify-between border-b border-(--chrome-line) bg-(--chrome-surface) px-3 py-1.5 text-xs text-(--chrome-text)/70">
         <span class="font-mono text-[11px]">custom.css</span>
-        <span class="text-[11px] text-neutral-500">Pure CSS • Scoped to {targetScope === 'shell' ? 'Shell Surface' : 'Character Page'}</span>
+        <span class="text-[11px] text-(--chrome-text)/50">Pure CSS • Scoped to {targetScope === 'shell' ? 'Shell Surface' : 'Character Page'}</span>
       </div>
       <textarea
         bind:this={textarea}
@@ -385,20 +385,20 @@
         oninput={(e) => updateCode(e.currentTarget.value)}
         placeholder={placeholderText}
         spellcheck="false"
-        class="flex-1 w-full resize-none bg-transparent p-4 font-mono text-xs text-neutral-200 placeholder:text-neutral-600 focus:outline-none leading-relaxed"
+        class="flex-1 w-full resize-none bg-transparent p-4 font-mono text-xs text-(--chrome-text) placeholder:text-(--chrome-text)/40 focus:outline-none leading-relaxed"
       ></textarea>
     </div>
 
     <!-- Inspector / Hooks Reference Sidebar -->
-    <div class="flex flex-col min-h-[300px] h-full rounded-xl border border-neutral-800 bg-neutral-900/40 overflow-hidden">
+    <div class="flex flex-col min-h-[300px] h-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) overflow-hidden">
       <!-- Tabs -->
-      <div class="flex border-b border-neutral-800 bg-neutral-900/80 px-2 pt-1 gap-1 text-xs">
+      <div class="flex border-b border-(--chrome-line) bg-(--chrome-bg)/50 px-2 pt-1 gap-1 text-xs">
         <button
           type="button"
           onclick={() => (activeTab = 'editor')}
           class="rounded-t-lg px-3 py-1.5 transition-colors {activeTab === 'editor'
-            ? 'bg-neutral-850 text-white font-semibold border-b-2 border-accent'
-            : 'text-neutral-400 hover:text-neutral-200'}"
+            ? 'bg-(--chrome-surface) text-(--chrome-text) font-semibold border-b-2 border-accent'
+            : 'text-(--chrome-text)/60 hover:text-(--chrome-text)'}"
         >
           Diagnostics ({reports.length + lints.length + chatRestrictions.length})
         </button>
@@ -406,8 +406,8 @@
           type="button"
           onclick={() => (activeTab = 'hooks')}
           class="rounded-t-lg px-3 py-1.5 transition-colors {activeTab === 'hooks'
-            ? 'bg-neutral-850 text-white font-semibold border-b-2 border-accent'
-            : 'text-neutral-400 hover:text-neutral-200'}"
+            ? 'bg-(--chrome-surface) text-(--chrome-text) font-semibold border-b-2 border-accent'
+            : 'text-(--chrome-text)/60 hover:text-(--chrome-text)'}"
         >
           Hooks Reference
         </button>
@@ -415,8 +415,8 @@
           type="button"
           onclick={() => (activeTab = 'fonts')}
           class="rounded-t-lg px-3 py-1.5 transition-colors {activeTab === 'fonts'
-            ? 'bg-neutral-850 text-white font-semibold border-b-2 border-accent'
-            : 'text-neutral-400 hover:text-neutral-200'}"
+            ? 'bg-(--chrome-surface) text-(--chrome-text) font-semibold border-b-2 border-accent'
+            : 'text-(--chrome-text)/60 hover:text-(--chrome-text)'}"
         >
           Fonts ({availableFonts.length})
         </button>
@@ -426,9 +426,9 @@
       <div class="flex-1 overflow-y-auto p-3 text-xs space-y-3">
         {#if activeTab === 'editor'}
           {#if reports.length === 0 && lints.length === 0 && chatRestrictions.length === 0}
-            <div class="flex flex-col items-center justify-center h-48 text-center text-neutral-500">
+            <div class="flex flex-col items-center justify-center h-48 text-center text-(--chrome-text)/50">
               <p class="text-[11px]">No issues detected.</p>
-              <p class="text-[10px] text-neutral-600 mt-1">Raw CSS is preserved in storage. Policy-sanitized styles render in preview.</p>
+              <p class="text-[10px] text-(--chrome-text)/40 mt-1">Raw CSS is preserved in storage. Policy-sanitized styles render in preview.</p>
             </div>
           {:else}
             <!-- Sanitizer Reports -->
@@ -519,23 +519,23 @@
         {:else if activeTab === 'hooks'}
           <!-- Hooks Reference List -->
           <div class="space-y-4">
-            <p class="text-[11px] text-neutral-400">
+            <p class="text-[11px] text-(--chrome-text)/60">
               Click any hook to copy its selector. Use these stable contract classes in your CSS.
             </p>
 
             {#if targetScope === 'shell'}
               <!-- Shell Surface Hooks -->
               <div class="space-y-1.5">
-                <div class="text-[10px] font-mono uppercase tracking-wider text-neutral-500">Shell Surface</div>
+                <div class="text-[10px] font-mono uppercase tracking-wider text-(--chrome-text)/50">Shell Surface</div>
                 <div class="grid grid-cols-1 gap-1">
                   {#each Object.entries(HOOKS.shell) as [name, hook]}
                     <button
                       type="button"
                       onclick={() => copyHook(hook)}
-                      class="flex items-center justify-between rounded-lg border border-neutral-800 bg-neutral-850/60 px-2.5 py-1.5 text-left font-mono text-[11px] text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
+                      class="flex items-center justify-between rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1.5 text-left font-mono text-[11px] text-(--chrome-text) hover:bg-(--chrome-line)/40 hover:text-(--chrome-text) transition-colors"
                     >
                       <span>.{hook}</span>
-                      <span class="text-[10px] text-neutral-500">
+                      <span class="text-[10px] text-(--chrome-text)/50">
                         {copiedHook === hook ? '✓ Copied' : name}
                       </span>
                     </button>
@@ -545,16 +545,16 @@
 
               <!-- Chrome Components Hooks -->
               <div class="space-y-1.5">
-                <div class="text-[10px] font-mono uppercase tracking-wider text-neutral-500">Chrome Components</div>
+                <div class="text-[10px] font-mono uppercase tracking-wider text-(--chrome-text)/50">Chrome Components</div>
                 <div class="grid grid-cols-1 gap-1">
                   {#each Object.entries(HOOKS.chrome) as [name, hook]}
                     <button
                       type="button"
                       onclick={() => copyHook(hook)}
-                      class="flex items-center justify-between rounded-lg border border-neutral-800 bg-neutral-850/60 px-2.5 py-1.5 text-left font-mono text-[11px] text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
+                      class="flex items-center justify-between rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1.5 text-left font-mono text-[11px] text-(--chrome-text) hover:bg-(--chrome-line)/40 hover:text-(--chrome-text) transition-colors"
                     >
                       <span>.{hook}</span>
-                      <span class="text-[10px] text-neutral-500">
+                      <span class="text-[10px] text-(--chrome-text)/50">
                         {copiedHook === hook ? '✓ Copied' : name}
                       </span>
                     </button>
@@ -564,16 +564,16 @@
             {:else}
               <!-- Character Surface Hooks -->
               <div class="space-y-1.5">
-                <div class="text-[10px] font-mono uppercase tracking-wider text-neutral-500">Character Surface</div>
+                <div class="text-[10px] font-mono uppercase tracking-wider text-(--chrome-text)/50">Character Surface</div>
                 <div class="grid grid-cols-1 gap-1">
                   {#each Object.entries(HOOKS.character) as [name, hook]}
                     <button
                       type="button"
                       onclick={() => copyHook(hook)}
-                      class="flex items-center justify-between rounded-lg border border-neutral-800 bg-neutral-850/60 px-2.5 py-1.5 text-left font-mono text-[11px] text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
+                      class="flex items-center justify-between rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1.5 text-left font-mono text-[11px] text-(--chrome-text) hover:bg-(--chrome-line)/40 hover:text-(--chrome-text) transition-colors"
                     >
                       <span>.{hook}</span>
-                      <span class="text-[10px] text-neutral-500">
+                      <span class="text-[10px] text-(--chrome-text)/50">
                         {copiedHook === hook ? '✓ Copied' : name}
                       </span>
                     </button>
@@ -583,16 +583,16 @@
 
               <!-- Chat & Speech Hooks -->
               <div class="space-y-1.5">
-                <div class="text-[10px] font-mono uppercase tracking-wider text-neutral-500">Speech & Turns</div>
+                <div class="text-[10px] font-mono uppercase tracking-wider text-(--chrome-text)/50">Speech & Turns</div>
                 <div class="grid grid-cols-1 gap-1">
                   {#each Object.entries(HOOKS.chat) as [name, hook]}
                     <button
                       type="button"
                       onclick={() => copyHook(hook)}
-                      class="flex items-center justify-between rounded-lg border border-neutral-800 bg-neutral-850/60 px-2.5 py-1.5 text-left font-mono text-[11px] text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
+                      class="flex items-center justify-between rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1.5 text-left font-mono text-[11px] text-(--chrome-text) hover:bg-(--chrome-line)/40 hover:text-(--chrome-text) transition-colors"
                     >
                       <span>.{hook}</span>
-                      <span class="text-[10px] text-neutral-500">
+                      <span class="text-[10px] text-(--chrome-text)/50">
                         {copiedHook === hook ? '✓ Copied' : name}
                       </span>
                     </button>
@@ -605,7 +605,7 @@
           <!-- Fonts Manager (Slice 5) -->
           <div class="space-y-3">
             <div class="flex items-center justify-between">
-              <span class="text-[11px] font-semibold text-neutral-300">Companion Fonts</span>
+              <span class="text-[11px] font-semibold text-(--chrome-text)">Companion Fonts</span>
               <input
                 type="file"
                 accept=".woff2,.woff,.ttf,.otf"
@@ -617,7 +617,7 @@
                 type="button"
                 disabled={uploadingFont}
                 onclick={() => fontFileInput?.click()}
-                class="inline-flex items-center gap-1.5 rounded-lg bg-neutral-800 px-2.5 py-1 text-xs font-semibold text-neutral-200 hover:bg-neutral-750 disabled:opacity-50 border border-neutral-700"
+                class="inline-flex items-center gap-1.5 rounded-lg bg-(--chrome-surface) px-2.5 py-1 text-xs font-semibold text-(--chrome-text) hover:bg-(--chrome-line)/40 disabled:opacity-50 border border-(--chrome-line)"
               >
                 {#if uploadingFont}
                   <Spinner size={12} class="mr-1" />
@@ -629,28 +629,28 @@
               </button>
             </div>
 
-            <p class="text-[10px] text-neutral-400 leading-relaxed">
-              Upload local font files (.woff2, .woff, .ttf, .otf, max 4 MiB). Declaring <code class="font-mono text-neutral-300">@font-face</code> registers the font with the browser; use <strong>Apply Rule</strong> or set <code class="font-mono text-neutral-300">font-family: '{availableFonts[0]?.name || 'YourFont'}'</code> on selectors like <code class="font-mono text-neutral-300">.ft-hero</code> to style your companion.
+            <p class="text-[10px] text-(--chrome-text)/60 leading-relaxed">
+              Upload local font files (.woff2, .woff, .ttf, .otf, max 4 MiB). Declaring <code class="font-mono text-(--chrome-text)">@font-face</code> registers the font with the browser; use <strong>Apply Rule</strong> or set <code class="font-mono text-(--chrome-text)">font-family: '{availableFonts[0]?.name || 'YourFont'}'</code> on selectors like <code class="font-mono text-(--chrome-text)">.ft-hero</code> to style your companion.
             </p>
 
             {#if availableFonts.length === 0}
-              <div class="flex h-36 flex-col items-center justify-center rounded-xl border border-dashed border-neutral-800 p-4 text-center text-xs text-neutral-500">
+              <div class="flex h-36 flex-col items-center justify-center rounded-xl border border-dashed border-(--chrome-line) p-4 text-center text-xs text-(--chrome-text)/50">
                 <p>No fonts uploaded or declared yet.</p>
-                <p class="text-[10px] text-neutral-600 mt-1">Upload a font above to generate safe @font-face rules.</p>
+                <p class="text-[10px] text-(--chrome-text)/40 mt-1">Upload a font above to generate safe @font-face rules.</p>
               </div>
             {:else}
               <div class="space-y-2">
                 {#each availableFonts as font (font.path)}
-                  <div class="p-2.5 rounded-lg border border-neutral-800 bg-neutral-850/60 space-y-2">
+                  <div class="p-2.5 rounded-lg border border-(--chrome-line) bg-(--chrome-bg)/50 space-y-2">
                     <div class="flex items-center justify-between">
                       <div class="flex items-center gap-2">
-                        <span class="text-xs font-semibold text-neutral-200">{font.name}</span>
-                        <span class="rounded bg-neutral-800 px-1.5 py-0.5 text-[9px] font-mono uppercase text-accent border border-neutral-700">
+                        <span class="text-xs font-semibold text-(--chrome-text)">{font.name}</span>
+                        <span class="rounded bg-accent/15 px-1.5 py-0.5 text-[9px] font-mono uppercase text-accent border border-accent/30">
                           {font.format}
                         </span>
                       </div>
                     </div>
-                    <div class="font-mono text-[10px] text-neutral-500 truncate" title={font.path}>
+                    <div class="font-mono text-[10px] text-(--chrome-text)/50 truncate" title={font.path}>
                       {font.path}
                     </div>
                     <div class="flex flex-wrap items-center gap-2 pt-1">
@@ -665,7 +665,7 @@
                       <button
                         type="button"
                         onclick={() => insertFontRuleOnly(font)}
-                        class="rounded bg-neutral-800 border border-neutral-700 px-2 py-1 text-[11px] text-neutral-200 hover:bg-neutral-750 transition-colors"
+                        class="rounded bg-(--chrome-surface) border border-(--chrome-line) px-2 py-1 text-[11px] text-(--chrome-text) hover:bg-(--chrome-line)/40 transition-colors"
                         title="Insert CSS rule applying this font family to .ft-hero and .ft-showcase-body"
                       >
                         Apply Rule (.ft-hero)
@@ -677,7 +677,7 @@
                           await navigator.clipboard.writeText(snippet);
                           toasts.success('Copied @font-face snippet');
                         }}
-                        class="rounded bg-neutral-800 border border-neutral-700 px-2 py-1 text-[11px] text-neutral-400 hover:text-neutral-200 hover:bg-neutral-750 transition-colors"
+                        class="rounded bg-(--chrome-surface) border border-(--chrome-line) px-2 py-1 text-[11px] text-(--chrome-text)/70 hover:text-(--chrome-text) hover:bg-(--chrome-line)/40 transition-colors"
                       >
                         Copy Snippet
                       </button>

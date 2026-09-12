@@ -37,6 +37,11 @@
     if (c?.font) vars.push(`--chrome-font: ${c.font}`);
     if (t.font?.family) vars.push(`--theme-font-family: ${t.font.family}`);
 
+    if (c?.surface || c?.text) {
+      const isLightBg = c.surface ? isLightColor(c.surface) : !isLightColor(c.text!);
+      vars.push(`color-scheme: ${isLightBg ? 'light' : 'dark'}`);
+    }
+
     if (card?.radius) vars.push(`--chrome-card-radius: ${card.radius}`);
     if (card?.density && DENSITY_MAP[card.density]) {
       vars.push(`--chrome-card-padding: ${DENSITY_MAP[card.density].padding}`);
