@@ -112,6 +112,7 @@ The per-phase blueprints list **required tests by name**; a PR that removes or w
 | C11 (Import/export symmetry) | `backend/test/repositories/characters.test.ts` (duplicate / raw storage) |
 | C12 (SPA style lifecycle) | `frontend/unit/customStyleOutlet.test.ts`, `frontend/unit/chatViewportStyle.test.ts` |
 | C13 (Performance budgets) | `packages/shared/test/schemas.test.ts` (decor maxItems: 2), `frontend/unit/boundaries.test.ts` (dynamic `css-tree`) |
+| C14 (Surface completeness & dialog scoping) | `frontend/unit/surfaces.test.ts` |
 
 ### 6.4 Writing tests
 - Prefer table-driven cases over prose-heavy ones; assert on codes/paths (`/style/colors/accent`, `state_unclosed`), not message text.
