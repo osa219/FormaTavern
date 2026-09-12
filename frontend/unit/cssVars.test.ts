@@ -15,6 +15,7 @@ describe('themeToCssVars & serializeVars', () => {
       '--theme-user-text',
       '--theme-user-border',
       '--theme-accent',
+      '--theme-accent-contrast',
       '--theme-quote-color',
       '--theme-action-color',
       '--theme-narrator-color',

@@ -68,7 +68,7 @@
                     type="button"
                     onclick={() => (draft[key] = val)}
                     class="rounded px-2 py-1 text-[11px] font-medium transition-colors {draft[key] === val
-                      ? 'bg-accent text-neutral-950 font-semibold'
+                      ? 'bg-accent text-accent-contrast font-semibold'
                       : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'}"
                   >
                     {val}
@@ -132,7 +132,7 @@
         </button>
         <button
           type="submit"
-          class="rounded bg-accent px-3 py-1.5 text-xs font-semibold text-neutral-950 hover:opacity-90 active:scale-95"
+          class="rounded bg-accent px-3 py-1.5 text-xs font-semibold text-accent-contrast hover:opacity-90 active:scale-95"
         >
           Apply Override
         </button>

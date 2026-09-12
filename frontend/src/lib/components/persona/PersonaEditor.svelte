@@ -375,7 +375,7 @@
     <button
       type="submit"
       disabled={saving || !name.trim()}
-      class="inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2 text-xs font-semibold text-neutral-950 hover:bg-accent/90 disabled:opacity-50"
+      class="inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2 text-xs font-semibold text-accent-contrast hover:bg-accent/90 disabled:opacity-50"
     >
       {#if saving}
         <Spinner size={14} />

@@ -151,7 +151,7 @@
             type="button"
             disabled={!selectedId}
             onclick={handleConfirm}
-            class="rounded-xl bg-accent px-4 py-1.5 text-xs font-semibold text-neutral-950 hover:bg-accent/90 disabled:opacity-50"
+            class="rounded-xl bg-accent px-4 py-1.5 text-xs font-semibold text-accent-contrast hover:bg-accent/90 disabled:opacity-50"
           >
             Start Story
           </button>

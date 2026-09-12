@@ -103,7 +103,7 @@
               <button
                 type="button"
                 onclick={() => onSelectImage(imgPath)}
-                class="rounded bg-accent px-2 py-1 text-[11px] font-semibold text-neutral-950"
+                class="rounded bg-accent px-2 py-1 text-[11px] font-semibold text-accent-contrast"
               >
                 Insert
               </button>

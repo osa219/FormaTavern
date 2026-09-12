@@ -2,6 +2,7 @@
   import type { Snippet } from 'svelte';
   import { shellTheme } from '$lib/state/shellTheme.svelte';
   import { prefs } from '$lib/state/prefs.svelte';
+  import { isLightColor } from '$lib/theme/cssVars';
   import CustomStyleOutlet from './CustomStyleOutlet.svelte';
 
   interface Props {
@@ -24,7 +25,11 @@
     const c = t.chrome;
     const card = t.card;
 
-    if (c?.accent) vars.push(`--theme-accent: ${c.accent}`);
+    if (c?.accent) {
+      vars.push(`--theme-accent: ${c.accent}`);
+      const isLight = isLightColor(c.accent);
+      vars.push(`--theme-accent-contrast: ${isLight ? '#0a0a0c' : '#ffffff'}`);
+    }
     if (c?.surface) vars.push(`--chrome-bg: ${c.surface}`);
     if (c?.surfaceRaised) vars.push(`--chrome-surface: ${c.surfaceRaised}`);
     if (c?.border) vars.push(`--chrome-line: ${c.border}`);

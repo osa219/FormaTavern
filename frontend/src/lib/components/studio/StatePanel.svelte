@@ -75,7 +75,7 @@
       type="button"
       onclick={addField}
       disabled={!newKey.trim()}
-      class="inline-flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-xs font-semibold text-neutral-950 hover:bg-accent/90 disabled:opacity-50"
+      class="inline-flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-xs font-semibold text-accent-contrast hover:bg-accent/90 disabled:opacity-50"
     >
       <Icon name="plus" size={13} />
       <span>Add Variable</span>

@@ -33,7 +33,7 @@
     <button
       type="button"
       onclick={handleRestore}
-      class="rounded-lg bg-accent px-3 py-1 font-semibold text-neutral-950 hover:bg-accent/90"
+      class="rounded-lg bg-accent px-3 py-1 font-semibold text-accent-contrast hover:bg-accent/90"
     >
       Restore
     </button>

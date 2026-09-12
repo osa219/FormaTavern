@@ -158,7 +158,7 @@
             type="button"
             onclick={submit}
             disabled={!canSend}
-            class="flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-neutral-950 shadow hover:opacity-90 disabled:opacity-30 disabled:hover:opacity-30 active:scale-95 transition-colors"
+            class="flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-accent-contrast shadow hover:opacity-90 disabled:opacity-30 disabled:hover:opacity-30 active:scale-95 transition-colors"
             title="Send turn (Enter)"
             aria-label="Send turn"
           >

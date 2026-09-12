@@ -2,9 +2,11 @@
   import { goto } from '$app/navigation';
   import type { PageData } from './$types';
   import type { Persona, PersonaPatch } from '@formatavern/shared';
+  import { HOOKS } from '@formatavern/shared';
   import { personasStore } from '$lib/state/personas.svelte';
   import PersonaEditor from '$lib/components/persona/PersonaEditor.svelte';
   import Icon from '$lib/components/ui/Icon.svelte';
+  import ShellSurface from '$lib/components/custom/ShellSurface.svelte';
 
   let { data }: { data: PageData } = $props();
   const persona = $derived(data.persona as Persona);
@@ -17,8 +19,8 @@
   }
 </script>
 
-<div class="min-h-screen bg-neutral-950 text-neutral-100 font-sans">
-  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/80 bg-neutral-900/80 px-6 backdrop-blur-md">
+<ShellSurface class={HOOKS.shell.personas}>
+  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/80 chrome-bar px-6">
     <div class="flex items-center gap-3">
       <a
         href="/personas"
@@ -50,4 +52,4 @@
       onCancel={() => goto('/personas')}
     />
   </main>
-</div>
+</ShellSurface>

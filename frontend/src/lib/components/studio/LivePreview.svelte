@@ -155,7 +155,7 @@
           <div class="flex items-center gap-2">
             <button
               type="button"
-              class="rounded-xl px-3.5 py-1.5 text-xs font-medium bg-accent text-neutral-950 font-semibold shadow-sm hover:opacity-90 transition-opacity"
+              class="rounded-xl px-3.5 py-1.5 text-xs font-medium bg-accent text-accent-contrast font-semibold shadow-sm hover:opacity-90 transition-opacity"
             >
               {draft.card.labels?.startStory || 'Start New Story'}
             </button>

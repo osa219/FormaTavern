@@ -1,9 +1,11 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import type { PersonaCreate } from '@formatavern/shared';
+  import { HOOKS } from '@formatavern/shared';
   import { personasStore } from '$lib/state/personas.svelte';
   import PersonaEditor from '$lib/components/persona/PersonaEditor.svelte';
   import Icon from '$lib/components/ui/Icon.svelte';
+  import ShellSurface from '$lib/components/custom/ShellSurface.svelte';
 
   async function handleSave(data: any) {
     const created = await personasStore.create(data as PersonaCreate);
@@ -13,9 +15,9 @@
   }
 </script>
 
-<div class="min-h-screen bg-neutral-950 text-neutral-100 font-sans">
+<ShellSurface class={HOOKS.shell.personas}>
   <!-- Header -->
-  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/80 bg-neutral-900/80 px-6 backdrop-blur-md">
+  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/80 chrome-bar px-6">
     <div class="flex items-center gap-3">
       <a
         href="/personas"
@@ -46,4 +48,4 @@
       onCancel={() => goto('/personas')}
     />
   </main>
-</div>
+</ShellSurface>

@@ -50,7 +50,7 @@
     <button
       type="button"
       onclick={addBinding}
-      class="inline-flex items-center gap-1.5 rounded-xl bg-accent px-3 py-1.5 text-xs font-semibold text-neutral-950 hover:bg-accent/90"
+      class="inline-flex items-center gap-1.5 rounded-xl bg-accent px-3 py-1.5 text-xs font-semibold text-accent-contrast hover:bg-accent/90"
     >
       <Icon name="plus" size={13} />
       <span>New Binding</span>

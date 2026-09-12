@@ -127,7 +127,7 @@
         type="button"
         disabled={saving || draft.issues.length > 0}
         onclick={() => handleSave(true)}
-        class="inline-flex items-center gap-1.5 rounded-xl bg-accent px-4 py-1.5 text-xs font-semibold text-neutral-950 hover:bg-accent/90 disabled:opacity-50 shadow-md"
+        class="inline-flex items-center gap-1.5 rounded-xl bg-accent px-4 py-1.5 text-xs font-semibold text-accent-contrast hover:bg-accent/90 disabled:opacity-50 shadow-md"
       >
         <span>Save & Open</span>
       </button>
@@ -138,31 +138,31 @@
   <div class="grid flex-1 grid-cols-1 lg:grid-cols-12 overflow-hidden">
     <!-- Left Rail: Tabs & Content (7 Cols) -->
     <div class="{mobilePreviewOpen ? 'hidden lg:flex' : 'flex'} lg:col-span-7 flex-col border-r border-neutral-800 overflow-hidden">
-      <!-- Tabs Navigation -->
-      <nav aria-label="Studio sections" class="flex overflow-x-auto border-b border-neutral-800/80 bg-neutral-900/60 px-4 py-2 gap-1 text-xs font-medium shrink-0">
+      <!-- Tabs Bar -->
+      <nav class="flex h-11 items-center gap-1 border-b border-neutral-800/80 px-4 shrink-0 overflow-x-auto" aria-label="Studio sections">
         {#each [
           { id: 'identity', label: 'Identity' },
           { id: 'voice', label: 'Voice' },
           { id: 'showcase', label: 'Showcase' },
           { id: 'aesthetic', label: 'Aesthetic' },
-          { id: 'css', label: 'CSS' },
+          { id: 'css', label: 'Custom CSS' },
           { id: 'state', label: 'State' },
           { id: 'bindings', label: 'Bindings' },
           { id: 'gallery', label: 'Gallery' }
-        ] as tab (tab.id)}
+        ] as tab}
           <button
             type="button"
             onclick={() => (activeTab = tab.id as StudioTab)}
-            class="rounded-lg px-3 py-1.5 transition-colors whitespace-nowrap {activeTab === tab.id
-              ? 'bg-neutral-800 text-white shadow-sm font-semibold'
-              : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-850/50'}"
+            class="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {activeTab === tab.id
+              ? 'bg-neutral-800 text-neutral-100 font-semibold'
+              : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-850'}"
           >
             {tab.label}
           </button>
         {/each}
       </nav>
 
-      <!-- Active Panel Area -->
+      <!-- Active Tab Panel -->
       <div class="flex-1 overflow-y-auto p-6">
         {#if activeTab === 'identity'}
           <IdentityPanel {draft} />
@@ -189,20 +189,20 @@
       <LivePreview {draft} activeStudioTab={activeTab} />
     </div>
   </div>
-</ShellSurface>
 
-<!-- Discard Confirm Dialog -->
-<ConfirmDialog
-  open={discardConfirmOpen}
-  title="Discard Unsaved Changes"
-  message="Are you sure you want to discard all changes since the last save? This cannot be undone."
-  confirmLabel="Discard"
-  danger={true}
-  onConfirm={() => {
-    draft.discard();
-    discardConfirmOpen = false;
-  }}
-  onCancel={() => {
-    discardConfirmOpen = false;
-  }}
-/>
+  <!-- Discard Confirm Dialog -->
+  <ConfirmDialog
+    open={discardConfirmOpen}
+    title="Discard Unsaved Changes"
+    message="Are you sure you want to discard all changes since the last save? This cannot be undone."
+    confirmLabel="Discard"
+    danger={true}
+    onConfirm={() => {
+      draft.discard();
+      discardConfirmOpen = false;
+    }}
+    onCancel={() => {
+      discardConfirmOpen = false;
+    }}
+  />
+</ShellSurface>

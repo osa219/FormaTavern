@@ -104,7 +104,7 @@
               e.stopPropagation();
               onStartStory(companion.id);
             }}
-            class="rounded-lg bg-accent px-2 py-1 text-[11px] font-semibold text-neutral-950 hover:bg-accent/90"
+            class="rounded-lg bg-accent px-2 py-1 text-[11px] font-semibold text-accent-contrast hover:bg-accent/90"
             title="Start new story with default persona"
           >
             Start

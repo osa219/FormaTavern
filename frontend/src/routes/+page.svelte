@@ -142,7 +142,7 @@
       <!-- Create New Companion -->
       <a
         href="/character/new"
-        class="inline-flex items-center gap-1.5 rounded-xl bg-accent px-3.5 py-1.5 text-xs font-semibold text-neutral-950 hover:bg-accent/90 shadow-sm"
+        class="inline-flex items-center gap-1.5 rounded-xl bg-accent px-3.5 py-1.5 text-xs font-semibold text-accent-contrast hover:bg-accent/90 shadow-sm"
       >
         <Icon name="plus" size={13} />
         <span>New Companion</span>
@@ -291,26 +291,26 @@
       {/if}
     </section>
   </main>
+
+  <!-- Settings Sheet -->
+  <SettingsSheet
+    open={settingsOpen}
+    onClose={() => {
+      settingsOpen = false;
+    }}
+  />
+
+  <!-- Confirm Delete Dialog -->
+  <ConfirmDialog
+    open={confirmDeleteOpen}
+    title="Delete Story"
+    message="Are you sure you want to delete this story? All branches and messages will be permanently lost."
+    confirmLabel="Delete"
+    danger={true}
+    onConfirm={handleConfirmDelete}
+    onCancel={() => {
+      confirmDeleteOpen = false;
+      deleteChatId = null;
+    }}
+  />
 </ShellSurface>
-
-<!-- Settings Sheet -->
-<SettingsSheet
-  open={settingsOpen}
-  onClose={() => {
-    settingsOpen = false;
-  }}
-/>
-
-<!-- Confirm Delete Dialog -->
-<ConfirmDialog
-  open={confirmDeleteOpen}
-  title="Delete Story"
-  message="Are you sure you want to delete this story? All branches and messages will be permanently lost."
-  confirmLabel="Delete"
-  danger={true}
-  onConfirm={handleConfirmDelete}
-  onCancel={() => {
-    confirmDeleteOpen = false;
-    deleteChatId = null;
-  }}
-/>

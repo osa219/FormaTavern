@@ -204,18 +204,18 @@
       <ResumeMenu {chats} onDeleteChat={promptDeleteChat} />
     {/if}
   </main>
-</div>
 
-<!-- Confirm Delete Chat Dialog -->
-<ConfirmDialog
-  open={confirmDeleteChatOpen}
-  title="Delete Story"
-  message="Are you sure you want to delete this story? All messages will be permanently lost."
-  confirmLabel="Delete"
-  danger={true}
-  onConfirm={handleConfirmDeleteChat}
-  onCancel={() => {
-    confirmDeleteChatOpen = false;
-    deleteChatId = null;
-  }}
-/>
+  <!-- Confirm Delete Chat Dialog -->
+  <ConfirmDialog
+    open={confirmDeleteChatOpen}
+    title="Delete Story"
+    message="Are you sure you want to delete this story? All messages will be permanently lost."
+    confirmLabel="Delete"
+    danger={true}
+    onConfirm={handleConfirmDeleteChat}
+    onCancel={() => {
+      confirmDeleteChatOpen = false;
+      deleteChatId = null;
+    }}
+  />
+</div>

@@ -70,7 +70,7 @@
 
     <a
       href="/personas/new"
-      class="inline-flex items-center gap-1.5 rounded-xl bg-accent px-3.5 py-1.5 text-xs font-semibold text-neutral-950 hover:bg-accent/90"
+      class="inline-flex items-center gap-1.5 rounded-xl bg-accent px-3.5 py-1.5 text-xs font-semibold text-accent-contrast hover:bg-accent/90"
     >
       <Icon name="plus" size={14} />
       <span>New Persona</span>
@@ -105,70 +105,70 @@
       </div>
     {/if}
   </main>
-</ShellSurface>
 
-<!-- Confirm Delete Dialog -->
-<ConfirmDialog
-  open={confirmDeleteOpen}
-  title="Delete Persona"
-  message={`Are you sure you want to delete "${deleteTarget?.name}"?`}
-  confirmLabel="Delete"
-  danger={true}
-  onConfirm={() => executeDelete()}
-  onCancel={() => {
-    confirmDeleteOpen = false;
-    deleteTarget = null;
-  }}
-/>
+  <!-- Confirm Delete Dialog -->
+  <ConfirmDialog
+    open={confirmDeleteOpen}
+    title="Delete Persona"
+    message={`Are you sure you want to delete "${deleteTarget?.name}"?`}
+    confirmLabel="Delete"
+    danger={true}
+    onConfirm={() => executeDelete()}
+    onCancel={() => {
+      confirmDeleteOpen = false;
+      deleteTarget = null;
+    }}
+  />
 
-<!-- Reassign In-Use Stories Modal -->
-{#if reassignModalOpen && deleteTarget}
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-    <div class="w-full max-w-md rounded-2xl border border-neutral-800 bg-neutral-900 p-6 shadow-2xl">
-      <h3 class="text-base font-semibold text-neutral-100">
-        Persona In Use
-      </h3>
-      <p class="mt-2 text-xs leading-relaxed text-neutral-400">
-        "{deleteTarget.name}" is currently used by <span class="font-semibold text-neutral-200">{conflictChatsCount} {conflictChatsCount === 1 ? 'story' : 'stories'}</span>.
-        Please choose another persona to reassign them to before deleting:
-      </p>
+  <!-- Reassign In-Use Stories Modal -->
+  {#if reassignModalOpen && deleteTarget}
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+      <div class="w-full max-w-md rounded-2xl border border-neutral-800 bg-neutral-900 p-6 shadow-2xl">
+        <h3 class="text-base font-semibold text-neutral-100">
+          Persona In Use
+        </h3>
+        <p class="mt-2 text-xs leading-relaxed text-neutral-400">
+          "{deleteTarget.name}" is currently used by <span class="font-semibold text-neutral-200">{conflictChatsCount} {conflictChatsCount === 1 ? 'story' : 'stories'}</span>.
+          Please choose another persona to reassign them to before deleting:
+        </p>
 
-      <div class="mt-4">
-        <label for="reassign-select" class="block text-[11px] font-mono text-neutral-400 uppercase tracking-wider mb-1.5">
-          Reassign Stories To
-        </label>
-        <select
-          id="reassign-select"
-          bind:value={reassignToId}
-          class="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3.5 py-2.5 text-xs text-neutral-100 focus:border-accent focus:outline-none"
-        >
-          {#each personasStore.items.filter((p) => p.id !== deleteTarget?.id) as opt (opt.id)}
-            <option value={opt.id}>{opt.name} {opt.isDefault ? '(Default)' : ''}</option>
-          {/each}
-        </select>
-      </div>
+        <div class="mt-4">
+          <label for="reassign-select" class="block text-[11px] font-mono text-neutral-400 uppercase tracking-wider mb-1.5">
+            Reassign Stories To
+          </label>
+          <select
+            id="reassign-select"
+            bind:value={reassignToId}
+            class="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3.5 py-2.5 text-xs text-neutral-100 focus:border-accent focus:outline-none"
+          >
+            {#each personasStore.items.filter((p) => p.id !== deleteTarget?.id) as opt (opt.id)}
+              <option value={opt.id}>{opt.name} {opt.isDefault ? '(Default)' : ''}</option>
+            {/each}
+          </select>
+        </div>
 
-      <div class="mt-6 flex items-center justify-end gap-3">
-        <button
-          type="button"
-          onclick={() => {
-            reassignModalOpen = false;
-            deleteTarget = null;
-          }}
-          class="rounded-xl border border-neutral-800 bg-neutral-850 px-4 py-2 text-xs font-semibold text-neutral-300 hover:bg-neutral-800"
-        >
-          Cancel
-        </button>
+        <div class="mt-6 flex items-center justify-end gap-3">
+          <button
+            type="button"
+            onclick={() => {
+              reassignModalOpen = false;
+              deleteTarget = null;
+            }}
+            class="rounded-xl border border-neutral-800 bg-neutral-850 px-4 py-2 text-xs font-semibold text-neutral-300 hover:bg-neutral-800"
+          >
+            Cancel
+          </button>
 
-        <button
-          type="button"
-          disabled={!reassignToId}
-          onclick={() => executeDelete(reassignToId)}
-          class="rounded-xl bg-red-500 px-4 py-2 text-xs font-semibold text-white hover:bg-red-600 disabled:opacity-50"
-        >
-          Reassign & Delete
-        </button>
+          <button
+            type="button"
+            disabled={!reassignToId}
+            onclick={() => executeDelete(reassignToId)}
+            class="rounded-xl bg-red-500 px-4 py-2 text-xs font-semibold text-white hover:bg-red-600 disabled:opacity-50"
+          >
+            Reassign & Delete
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-{/if}
+  {/if}
+</ShellSurface>

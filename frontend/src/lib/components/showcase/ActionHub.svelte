@@ -134,7 +134,7 @@
       type="button"
       disabled={startingStory}
       onclick={() => (pickerOpen = true)}
-      class="inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-xs font-semibold text-neutral-950 transition-colors hover:bg-accent/90 disabled:opacity-50 shadow-md"
+      class="inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-xs font-semibold text-accent-contrast transition-colors hover:bg-accent/90 disabled:opacity-50 shadow-md"
     >
       {#if startingStory}
         <Spinner size={14} />

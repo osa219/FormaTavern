@@ -11,6 +11,7 @@ export const CSS_VAR_NAMES = [
   '--theme-user-text',
   '--theme-user-border',
   '--theme-accent',
+  '--theme-accent-contrast',
   '--theme-quote-color',
   '--theme-action-color',
   '--theme-narrator-color',
@@ -26,7 +27,7 @@ export const CSS_VAR_NAMES = [
 
 export type CssVarName = (typeof CSS_VAR_NAMES)[number];
 
-function isLightColor(colorStr: string): boolean {
+export function isLightColor(colorStr: string): boolean {
   const hexMatch = colorStr.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
   if (hexMatch) {
     let hex = hexMatch[1];
@@ -74,6 +75,7 @@ export function themeToCssVars(theme: CharacterTheme): Record<CssVarName, string
     '--theme-user-text': theme.colors.userBubbleText,
     '--theme-user-border': theme.colors.userBubbleBorder || 'transparent',
     '--theme-accent': theme.colors.accent,
+    '--theme-accent-contrast': isLightColor(theme.colors.accent) ? '#0a0a0c' : '#ffffff',
     '--theme-quote-color': theme.colors.quote || 'inherit',
     '--theme-action-color': theme.colors.action || 'rgb(148, 163, 184)',
     '--theme-narrator-color': theme.colors.narratorText || 'rgb(203, 213, 225)',
