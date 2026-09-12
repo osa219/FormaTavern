@@ -182,6 +182,29 @@ export class CharacterDraft {
   }
 
   async save(): Promise<'saved' | 'stale' | 'invalid' | 'error'> {
+    // Clean up empty decor layers, empty sizes, and empty offsets before validating and persisting
+    if (this.card.style?.decor) {
+      const activeDecor = this.card.style.decor
+        .filter((d) => d.image && d.image.trim().length > 0)
+        .map((d) => {
+          const cleaned = { ...d };
+          if (!cleaned.size?.trim()) {
+            delete cleaned.size;
+          }
+          if (cleaned.offset) {
+            const x = cleaned.offset.x?.trim() || undefined;
+            const y = cleaned.offset.y?.trim() || undefined;
+            if (x || y) {
+              cleaned.offset = { x, y };
+            } else {
+              delete cleaned.offset;
+            }
+          }
+          return cleaned;
+        });
+      this.card.style.decor = activeDecor.length > 0 ? activeDecor : undefined;
+    }
+
     if (this.issues.length > 0) {
       toasts.error(`Cannot save: ${this.issues.length} validation issue(s) remain`);
       return 'invalid';

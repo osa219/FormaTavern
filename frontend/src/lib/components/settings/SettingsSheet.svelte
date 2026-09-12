@@ -859,7 +859,7 @@
           <div class="h-[420px]">
             <CustomCssPanel
               value={shellTheme.theme.customCss ?? ''}
-              onchange={(val) => {
+              onchange={(val: string) => {
                 queueShellPatch({ customCss: val || undefined });
               }}
               scope="shell"

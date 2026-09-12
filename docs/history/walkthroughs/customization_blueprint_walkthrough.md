@@ -12,7 +12,7 @@ This living document tracks the progressive implementation and verification of t
 | **Slice 2** | CSS sanitizer & policy tables | **Complete** | C3 (pure/deterministic), C4 (scope containment), C5 (keyframes), C6 (URLs), C7 (profiles) |
 | **Slice 3** | Character sheet end-to-end | **Complete** | C2 (single outlet), C8 (viewer supremacy), C10 (cap), C11 (import/export), C12 (SPA lifecycle), A-U2b |
 | **Slice 4** | Global shell & theme cascade | **Complete** | A-U1 (unified cascade), C13 (performance budget) |
-| **Slice 5** | Graduation batch 1 (tokens, decor, fx, fonts) | *Queued* | D7 (sanctioned replacements), C13 (decor layers) |
+| **Slice 5** | Graduation batch 1 (tokens, decor, fx, fonts) | **Complete** | D7 (sanctioned replacements), C13 (decor layers), C6 (zero remote font assets), C9 (reduced motion fx) |
 | **Slice 6** | Chat scope & conservative profile | *Queued* | C7 (chat profile), C9 (reduced motion), U4–U7 (runtime stability) |
 | **Slice 7** | Presets & the Alice showpiece | *Queued* | Curated starter sheets & showpiece |
 
@@ -159,13 +159,65 @@ Unify the global shell theme with the character theme cascade under Amendment A-
 
 ---
 
+## Slice 5: Graduation Batch 1 (Tokens, Decor, FX, Fonts)
+
+### Objective
+Deliver structured, sanctioned first-party schema features for styling needs identified in the blueprint (decor layers, speech bubble fx, companion font uploads, call-to-action labels) per Decision D7, eliminating raw CSS hacks while maintaining strict performance budgets and security invariants.
+
+### Implementation Summary
+- **Shared Schemas & Cascade** ([`schemas/theme.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/packages/shared/src/schemas/theme.ts), [`schemas/character.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/packages/shared/src/schemas/character.ts), [`cascade.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/packages/shared/src/theme/cascade.ts)):
+  - Defined `ThemeDecorPositionSchema` (`'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center'`).
+  - Defined `ThemeDecorLayerSchema` with image path, position, opacity (0–1), and blur (0–40px), capped at `maxItems: 2` (Invariant C13).
+  - Defined `ThemeFxBubbleSchema` (`'none' | 'breathe' | 'float' | 'glow'`) and `ThemeFxSchema`.
+  - Added optional `decor` and `fx` properties to `CharacterThemeSchema` and `ThemeOverridesSchema`.
+  - Added optional `labels?: { startStory?: string ≤ 40 }` to `CharacterCardSchema` and `CharacterMetadataSchema`.
+  - Extended `cloneTheme` and `deepMergeTheme` to merge `decor` and `fx` across character and global layers, with `NEUTRAL_A11Y_THEME` resetting them.
+- **Backend Font Engine & Asset Store** ([`contracts.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/assets/contracts.ts), [`sniff.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/assets/sniff.ts), [`store.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/assets/store.ts), [`routes/assets.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/routes/assets.ts)):
+  - Added `'fonts'` to `AssetScope` in backend contracts and asset upload body schema.
+  - Implemented `sniffFontMimeType` validating binary magic bytes for WOFF2 (`wOF2`), WOFF (`wOFF`), TTF (`0x00010000`, `true`), and OTF (`OTTO`).
+  - Enforced 4 MiB upload limit (`MAX_FONT_FILE_SIZE`) and monotonic ULID naming in `assets/store.ts`, stored under `/assets/fonts/<targetId>/<ulid>.<ext>`.
+  - Normalized asset web paths with forward slashes for cross-platform URL safety.
+  - Maintained Invariants C6 & P3: strictly local assets, zero remote font fetches (`google-fonts` or CDNs).
+  - Serialized and deserialized `card.labels` in `SQLiteCharacterRepository` via existing `metadata` JSON column (no SQLite migration required, `user_version = 5`).
+- **Frontend Presentation & Components** ([`DecorLayers.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/custom/DecorLayers.svelte), [`app.css`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/app.css), [`SpeechBubble.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/chat/SpeechBubble.svelte), [`ActionHub.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/showcase/ActionHub.svelte)):
+  - Created `DecorLayers.svelte`: pure presentation layer (`fixed`, `pointer-events-none`, `aria-hidden="true"`, `z-0`) supporting 5 anchor positions with opacity and blur, capped at $\le 2$ layers (Invariant C13).
+  - Mounted `DecorLayers` across character showcase (`/character/[id]`), `ChatViewport.svelte`, and studio `LivePreview.svelte`.
+  - Implemented static compositor keyframes (`ft-fx-breathe`, `ft-fx-float`, `ft-fx-glow`) in `app.css` with reduced-motion neutralizer overrides (`[data-ft-motion="reduce"]`, Invariant C9).
+  - Wired `fx` prop to companion speech bubbles in `SpeechBubble.svelte` via `data-fx={fx}`.
+  - Wired custom Call-to-Action label override in `ActionHub.svelte` (`character.labels?.startStory || 'Start New Story'`).
+  - Added **AestheticPanel** controls for Motion Presets radio buttons, Decor Layers image slot editor (max 2 slots), and Call-to-Action button text.
+  - Added **Fonts** manager tab in `CustomCssPanel.svelte` with upload button, local font list, and one-click "Insert @font-face" snippet generator.
+  - Enhanced `DecorLayers.svelte` with `fixed={false}` mode for `LivePreview.svelte` to strictly contain decor layers within the studio preview box without window breakout, and bounded sticker size to `max-h-[40%] max-w-[40%]`.
+  - Added empty string tolerance in `ThemeDecorLayerSchema` and draft prune-on-save in `draft.svelte.ts` to prevent schema validation errors during in-progress draft editing.
+  - Added direct image upload, preview thumbnails, and status counter (`0/2`, `1/2`, `Maximum 2 reached`) in `AestheticPanel.svelte`.
+  - **Dual-Track Decor Layers Expansion**:
+    - **Track 1 (Studio GUI in `AestheticPanel.svelte`)**:
+      - Expanded anchor positions from 5 to 7 (`bottom-right`, `bottom-left`, `bottom-center`, `top-left`, `top-right`, `top-center`, `center`).
+      - Added dual-track **Size / Scale** controls: quick presets (`Default`, `Small: 120px`, `Medium: 220px`, `Large: 340px`) plus freeform CSS input (`placeholder="e.g. 240px, 30vw, 15rem"`).
+      - Added **Position Nudge (Offset)** inputs for fine-tuning coordinates (`X Offset`, `Y Offset`) via modern CSS `translate: <x> <y>` without interfering with Tailwind center transforms.
+    - **Track 2 (CSS Hook Contract & Manifest in `manifest.ts`)**:
+      - Added `decorLayers: 'ft-decor-layers'` and `decorLayer: 'ft-decor-layer'` to `HOOKS.character`.
+      - Added `decorLayers: 'ft-chat-decor-layers'` and `decorLayer: 'ft-chat-decor-layer'` to `HOOKS.chat`.
+      - Added `data-slot="1"` and `data-slot="2"` attributes to individual layers in `DecorLayers.svelte`, enabling precise creator CSS targeting (e.g. `.ft-decor-layer[data-slot="1"] { transform: rotate(5deg); }`).
+      - Added `.ft-decor-layer` quick snippet button and dynamic hook documentation listing in `CustomCssPanel.svelte`.
+    - **Schema & Persistence**:
+      - Added `top-center` and `bottom-center` to `ThemeDecorPositionSchema`.
+      - Added `size` and `offset` (`x`, `y`) to `ThemeDecorLayerSchema` in `packages/shared/src/schemas/theme.ts`.
+      - Extended `cloneTheme` and `deepMergeTheme` in `cascade.ts` to deep-clone `offset`.
+      - Extended `draft.svelte.ts` to auto-prune empty sizes and offsets on save.
+- **Verification**:
+  - `packages/shared/test/theme/cascade.test.ts` & `schemas.test.ts`: tested decor capping, fx enums, label character constraints, expanded positions, custom size, offset, and cascade merging (186 green).
+  - `backend/test/assets/fonts.test.ts`: tested font format sniffing, 4 MiB rejection, ULID generation, and local asset retrieval (171 green).
+  - `frontend/unit/decorLayers.test.ts`, `hooksManifest.test.ts`, and `motionPresets.test.ts`: tested 7 anchor positions, size and offset styling, slot tracking, manifest uniqueness (34 hooks), and reduced motion safety overrides (157 green).
+
+---
+
 ## Test Suite Status
 
 - **`bun run typecheck`**: 0 errors, 0 warnings across monorepo (`shared`, `backend`, `frontend`).
 - **`bun run test`**: 100% green across all packages:
-  - `packages/shared`: 180 passed, 0 failed.
-  - `backend`: 161 passed, 0 failed.
-  - `frontend`: 145 passed, 0 failed.
-  - Total: 486 passed, 0 failed.
+  - `packages/shared`: 186 passed, 0 failed.
+  - `backend`: 171 passed, 0 failed.
+  - `frontend`: 157 passed, 0 failed.
+  - Total: 514 passed, 0 failed.
 - **`bun run db:check`**: Clean integrity (`wal`, `foreign_keys=1`, `user_version=5`, `fts_parity=ok (2/2)`).
-

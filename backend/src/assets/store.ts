@@ -10,11 +10,13 @@ import {
 } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import type { AssetStore, AssetUploadOptions, AssetMeta, AssetScope } from './contracts';
-import { sniffMimeType, type SupportedMime } from './sniff';
+import { sniffMimeType, sniffFontMimeType, type SupportedMime, type SupportedFontMime } from './sniff';
 import { getImageDimensions, MAX_DIMENSION } from './dimensions';
+import { newId } from '../db/ids';
 import { ApiError } from '../engine/errors';
 
 export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MiB
+export const MAX_FONT_FILE_SIZE = 4 * 1024 * 1024; // 4 MiB (Slice 5)
 export const MAX_DIRECTORY_QUOTA = 64 * 1024 * 1024; // 64 MiB
 
 const EXT_FOR_MIME: Record<SupportedMime, string> = {
@@ -22,6 +24,13 @@ const EXT_FOR_MIME: Record<SupportedMime, string> = {
   'image/jpeg': '.jpg',
   'image/webp': '.webp',
   'image/gif': '.gif'
+};
+
+const EXT_FOR_FONT_MIME: Record<SupportedFontMime, string> = {
+  'font/woff2': '.woff2',
+  'font/woff': '.woff',
+  'font/ttf': '.ttf',
+  'font/otf': '.otf'
 };
 
 export class FsAssetStore implements AssetStore {
@@ -71,11 +80,63 @@ export class FsAssetStore implements AssetStore {
       if (!targetId) throw new ApiError('validation_failed', 400, 'Character scope requires targetId');
       return targetId;
     }
+    if (scope === 'fonts') {
+      const owner = targetId || 'global';
+      return join('fonts', owner);
+    }
     throw new ApiError('validation_failed', 400, `Unknown scope: ${scope}`);
   }
 
   async save(opts: AssetUploadOptions): Promise<AssetMeta> {
     const { file, scope, targetId } = opts;
+
+    if (scope === 'fonts') {
+      // 1. Size check (4 MiB)
+      if (file.length > MAX_FONT_FILE_SIZE) {
+        throw new ApiError('asset_too_large', 413, `Font asset exceeds maximum size of 4 MiB (${file.length} bytes)`);
+      }
+
+      // 2. Sniff magic bytes
+      const fontMime = sniffFontMimeType(file);
+      if (!fontMime) {
+        throw new ApiError('asset_type_rejected', 415, 'Invalid or unsupported font format. Only WOFF2, WOFF, TTF, and OTF are allowed.');
+      }
+
+      // 3. Resolve directory and enforce directory quota
+      const subdir = this.getTargetSubdir(scope, targetId);
+      const destDir = this.assertContained(join(this.rootDir, subdir));
+      await mkdir(destDir, { recursive: true });
+
+      const currentDirSize = await this.getDirSize(destDir);
+      if (currentDirSize + file.length > MAX_DIRECTORY_QUOTA) {
+        throw new ApiError(
+          'asset_quota',
+          400,
+          `Asset upload would exceed 64 MiB quota for ${subdir} (current: ${currentDirSize}, file: ${file.length})`
+        );
+      }
+
+      // 4. File naming via ULID
+      const ext = EXT_FOR_FONT_MIME[fontMime];
+      const fileName = `${newId()}${ext}`;
+      const targetFilePath = this.assertContained(join(destDir, fileName));
+
+      // 5. Atomic write
+      const tempFilePath = this.assertContained(join(destDir, `.${fileName}.${Date.now()}.tmp`));
+      await writeFile(tempFilePath, file);
+      await rename(tempFilePath, targetFilePath);
+
+      // 6. Return web-relative path
+      const webSubdir = subdir.split('\\').join('/');
+      const webPath = `/assets/${webSubdir}/${fileName}`;
+      return {
+        path: webPath,
+        width: 0,
+        height: 0,
+        size: file.length,
+        mime: fontMime
+      };
+    }
 
     // 1. Size check
     if (file.length > MAX_FILE_SIZE) {

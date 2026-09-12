@@ -16,7 +16,8 @@
     streaming = false,
     isLast = false,
     toolbar,
-    onRetry
+    onRetry,
+    fx = 'none'
   }: {
     segments?: Segment[];
     status?: MessageStatus;
@@ -27,6 +28,7 @@
     isLast?: boolean;
     toolbar?: Snippet;
     onRetry?: () => void;
+    fx?: 'none' | 'breathe' | 'float' | 'glow' | null;
   } = $props();
 
   const lastIdx = $derived(segments.length - 1);
@@ -50,12 +52,13 @@
         hue={seg.kind === 'npc' ? npcHue(seg.name ?? 'NPC', npcs) : null}
         text={seg.text}
         live={streaming && i === lastIdx}
+        {fx}
       />
     {/if}
   {/each}
 
   {#if streaming && segments.length === 0}
-    <SpeechBubble variant="character" name={primaryName} {primaryName} text="" live />
+    <SpeechBubble variant="character" name={primaryName} {primaryName} text="" live {fx} />
   {/if}
 
   {#if status === 'error'}

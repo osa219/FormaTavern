@@ -23,6 +23,9 @@ export const CharacterCardSchema = Type.Object({
   initialState: Type.Optional(StateVectorSchema),
   tags: Type.Optional(Type.Array(TagSchema, { default: [], maxItems: 12, uniqueItems: true })),
   creator: Type.Optional(Type.String({ maxLength: 80 })),
+  labels: Type.Optional(Type.Object({
+    startStory: Type.Optional(Type.String({ maxLength: 40 }))
+  })),
   showcase: Type.Optional(Type.String({ maxLength: 65_536 })), // Display only (P4)
   customCss: Type.Optional(Type.String({ maxLength: 131_072 })), // raw authored CSS; sanitized at render (C10)
   version: Type.Optional(Type.String()),
@@ -91,6 +94,9 @@ export const CharacterMetadataSchema = Type.Object({
   initialState: Type.Optional(StateVectorSchema),
   tags: Type.Optional(Type.Array(Type.String())),
   creator: Type.Optional(Type.String()),
+  labels: Type.Optional(Type.Object({
+    startStory: Type.Optional(Type.String({ maxLength: 40 }))
+  })),
   version: Type.Optional(Type.String())
 });
 export type CharacterMetadata = Static<typeof CharacterMetadataSchema>;

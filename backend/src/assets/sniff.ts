@@ -55,3 +55,36 @@ export function sniffMimeType(buf: Uint8Array): SupportedMime | null {
   // SVG, executable, HTML, etc. explicitly rejected
   return null;
 }
+
+export type SupportedFontMime = 'font/woff2' | 'font/woff' | 'font/ttf' | 'font/otf';
+
+export function sniffFontMimeType(buf: Uint8Array): SupportedFontMime | null {
+  if (!buf || buf.length < 4) {
+    return null;
+  }
+
+  // 1. WOFF2: 'wOF2' (0x77, 0x4F, 0x46, 0x32)
+  if (buf[0] === 0x77 && buf[1] === 0x4f && buf[2] === 0x46 && buf[3] === 0x32) {
+    return 'font/woff2';
+  }
+
+  // 2. WOFF: 'wOFF' (0x77, 0x4F, 0x46, 0x46)
+  if (buf[0] === 0x77 && buf[1] === 0x4f && buf[2] === 0x46 && buf[3] === 0x46) {
+    return 'font/woff';
+  }
+
+  // 3. TrueType: 0x00 0x01 0x00 0x00 or 'true' (0x74, 0x72, 0x75, 0x65)
+  if (
+    (buf[0] === 0x00 && buf[1] === 0x01 && buf[2] === 0x00 && buf[3] === 0x00) ||
+    (buf[0] === 0x74 && buf[1] === 0x72 && buf[2] === 0x75 && buf[3] === 0x65)
+  ) {
+    return 'font/ttf';
+  }
+
+  // 4. OpenType: 'OTTO' (0x4F, 0x54, 0x54, 0x4F)
+  if (buf[0] === 0x4f && buf[1] === 0x54 && buf[2] === 0x54 && buf[3] === 0x4f) {
+    return 'font/otf';
+  }
+
+  return null;
+}

@@ -23,4 +23,6 @@ export class ThemeEngine {
   readonly styleAttr = $derived.by(() => serializeVars(themeToCssVars(this.resolved.theme)));
   readonly backgroundImage = $derived.by(() => this.resolved.theme.background.image ?? null);
   readonly themeScheme = $derived.by(() => themeToCssVars(this.resolved.theme)['--theme-scheme'] as 'light' | 'dark');
+  readonly decor = $derived.by(() => this.resolved.theme.decor ?? []);
+  readonly fx = $derived.by(() => this.resolved.theme.fx);
 }

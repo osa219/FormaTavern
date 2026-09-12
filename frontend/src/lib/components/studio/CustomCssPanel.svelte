@@ -5,6 +5,8 @@
   import { loadCustomCss } from '@formatavern/shared/customCss/loader';
   import type { SanitizeIssue, LintIssue } from '@formatavern/shared/customCss';
   import { toasts } from '$lib/state/toasts.svelte';
+  import Icon from '$lib/components/ui/Icon.svelte';
+  import Spinner from '$lib/components/ui/Spinner.svelte';
 
   interface Props {
     draft?: CharacterDraft;
@@ -16,8 +18,39 @@
   let { draft, value, onchange, scope = 'character' }: Props = $props();
 
   let textarea = $state<HTMLTextAreaElement>();
-  let activeTab = $state<'editor' | 'hooks'>('editor');
+  let activeTab = $state<'editor' | 'hooks' | 'fonts'>('editor');
   let copiedHook = $state<string | null>(null);
+
+  // Font Manager State (Slice 5)
+  let uploadedFonts = $state<Array<{ name: string; path: string; mime: string; format: string }>>([]);
+  let uploadingFont = $state(false);
+  let fontFileInput = $state<HTMLInputElement>();
+
+  // Combine session-uploaded fonts with any @font-face rules authored in the sheet
+  const parsedSheetFonts = $derived.by(() => {
+    const list: Array<{ name: string; path: string; format: string }> = [];
+    const regex = /@font-face\s*\{[^}]*font-family:\s*['"]([^'"]+)['"][^}]*src:\s*url\(['"]([^'"]+)['"]\)(?:\s*format\(['"]([^'"]+)['"]\))?/gi;
+    let match: RegExpExecArray | null;
+    while ((match = regex.exec(code)) !== null) {
+      const name = match[1];
+      const path = match[2];
+      const format = match[3] || 'font';
+      if (name && path && !list.some((f) => f.path === path)) {
+        list.push({ name, path, format });
+      }
+    }
+    return list;
+  });
+
+  const availableFonts = $derived.by(() => {
+    const combined = [...uploadedFonts];
+    for (const f of parsedSheetFonts) {
+      if (!combined.some((c) => c.path === f.path)) {
+        combined.push({ name: f.name, path: f.path, mime: 'font', format: f.format });
+      }
+    }
+    return combined;
+  });
 
   const targetScope = $derived(draft ? 'character' : scope);
   const code = $derived(draft ? (draft.card.customCss ?? '') : (value ?? ''));
@@ -86,13 +119,21 @@
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const current = code;
-    const updated = current.slice(0, start) + snippet + current.slice(end);
+    const before = current.slice(0, start);
+    let prefix = '';
+    if (before.length > 0 && !before.endsWith('\n')) {
+      prefix = '\n\n';
+    } else if (before.endsWith('\n') && !before.endsWith('\n\n')) {
+      prefix = '\n';
+    }
+    const fullSnippet = prefix + snippet;
+    const updated = before + fullSnippet + current.slice(end);
     updateCode(updated);
 
     setTimeout(() => {
       if (!textarea) return;
       textarea.focus();
-      textarea.setSelectionRange(start + snippet.length, start + snippet.length);
+      textarea.setSelectionRange(start + fullSnippet.length, start + fullSnippet.length);
     }, 0);
   }
 
@@ -108,6 +149,73 @@
     } catch {
       toasts.error(`Failed to copy ${selector}`);
     }
+  }
+
+  async function handleFontUpload(e: Event) {
+    const files = (e.target as HTMLInputElement).files;
+    if (!files || files.length === 0) return;
+    const file = files[0];
+
+    if (file.size > 4 * 1024 * 1024) {
+      toasts.error('Font file exceeds maximum allowed size of 4 MiB');
+      return;
+    }
+
+    uploadingFont = true;
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('scope', 'fonts');
+      formData.append('targetId', draft ? draft.ownerId : 'global');
+
+      const res = await fetch('/api/assets/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || 'Font upload failed');
+      }
+
+      const meta = await res.json();
+      const format =
+        meta.mime === 'font/woff2'
+          ? 'woff2'
+          : meta.mime === 'font/woff'
+            ? 'woff'
+            : meta.mime === 'font/otf'
+              ? 'opentype'
+              : 'truetype';
+      const baseName =
+        file.name
+          .replace(/\.[^/.]+$/, '')
+          .replace(/[^a-zA-Z0-9_-]/g, ' ')
+          .trim() || 'CustomFont';
+
+      uploadedFonts = [
+        ...uploadedFonts,
+        { name: baseName, path: meta.path, mime: meta.mime, format }
+      ];
+      toasts.success(`Uploaded font ${file.name}`);
+    } catch (err: any) {
+      toasts.error(err.message || 'Failed to upload font');
+    } finally {
+      uploadingFont = false;
+      if (fontFileInput) fontFileInput.value = '';
+    }
+  }
+
+  function insertFontFaceSnippet(font: { name: string; path: string; format: string }) {
+    const snippet = `@font-face {\n  font-family: '${font.name}';\n  src: url('${font.path}') format('${font.format}');\n  font-display: swap;\n}\n\n.ft-hero, .ft-showcase-body {\n  font-family: '${font.name}', sans-serif;\n}\n`;
+    insertSnippet(snippet);
+    toasts.success(`Inserted @font-face & showcase style rule for ${font.name}`);
+  }
+
+  function insertFontRuleOnly(font: { name: string }) {
+    const snippet = `.ft-hero, .ft-showcase-body {\n  font-family: '${font.name}', sans-serif;\n}\n`;
+    insertSnippet(snippet);
+    toasts.success(`Inserted showcase rule for ${font.name}`);
   }
 </script>
 
@@ -158,6 +266,13 @@
           class="rounded-lg border border-neutral-800 bg-neutral-850 px-2.5 py-1 text-xs font-mono text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
         >
           .ft-action-hub
+        </button>
+        <button
+          type="button"
+          onclick={() => insertSnippet('.ft-decor-layer[data-slot="1"] {\n  /* Custom decor sticker styling */\n}\n')}
+          class="rounded-lg border border-neutral-800 bg-neutral-850 px-2.5 py-1 text-xs font-mono text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
+        >
+          .ft-decor-layer
         </button>
       {/if}
       <button
@@ -252,6 +367,15 @@
         >
           Hooks Reference
         </button>
+        <button
+          type="button"
+          onclick={() => (activeTab = 'fonts')}
+          class="rounded-t-lg px-3 py-1.5 transition-colors {activeTab === 'fonts'
+            ? 'bg-neutral-850 text-white font-semibold border-b-2 border-accent'
+            : 'text-neutral-400 hover:text-neutral-200'}"
+        >
+          Fonts ({availableFonts.length})
+        </button>
       </div>
 
       <!-- Tab Content -->
@@ -330,7 +454,7 @@
               </div>
             {/if}
           {/if}
-        {:else}
+        {:else if activeTab === 'hooks'}
           <!-- Hooks Reference List -->
           <div class="space-y-4">
             <p class="text-[11px] text-neutral-400">
@@ -412,6 +536,92 @@
                     </button>
                   {/each}
                 </div>
+              </div>
+            {/if}
+          </div>
+        {:else if activeTab === 'fonts'}
+          <!-- Fonts Manager (Slice 5) -->
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-semibold text-neutral-300">Companion Fonts</span>
+              <input
+                type="file"
+                accept=".woff2,.woff,.ttf,.otf"
+                class="hidden"
+                bind:this={fontFileInput}
+                onchange={handleFontUpload}
+              />
+              <button
+                type="button"
+                disabled={uploadingFont}
+                onclick={() => fontFileInput?.click()}
+                class="inline-flex items-center gap-1.5 rounded-lg bg-neutral-800 px-2.5 py-1 text-xs font-semibold text-neutral-200 hover:bg-neutral-750 disabled:opacity-50 border border-neutral-700"
+              >
+                {#if uploadingFont}
+                  <Spinner size={12} class="mr-1" />
+                  <span>Uploading…</span>
+                {:else}
+                  <Icon name="upload" size={12} />
+                  <span>Upload Font</span>
+                {/if}
+              </button>
+            </div>
+
+            <p class="text-[10px] text-neutral-400 leading-relaxed">
+              Upload local font files (.woff2, .woff, .ttf, .otf, max 4 MiB). Declaring <code class="font-mono text-neutral-300">@font-face</code> registers the font with the browser; use <strong>Apply Rule</strong> or set <code class="font-mono text-neutral-300">font-family: '{availableFonts[0]?.name || 'YourFont'}'</code> on selectors like <code class="font-mono text-neutral-300">.ft-hero</code> to style your companion.
+            </p>
+
+            {#if availableFonts.length === 0}
+              <div class="flex h-36 flex-col items-center justify-center rounded-xl border border-dashed border-neutral-800 p-4 text-center text-xs text-neutral-500">
+                <p>No fonts uploaded or declared yet.</p>
+                <p class="text-[10px] text-neutral-600 mt-1">Upload a font above to generate safe @font-face rules.</p>
+              </div>
+            {:else}
+              <div class="space-y-2">
+                {#each availableFonts as font (font.path)}
+                  <div class="p-2.5 rounded-lg border border-neutral-800 bg-neutral-850/60 space-y-2">
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <span class="text-xs font-semibold text-neutral-200">{font.name}</span>
+                        <span class="rounded bg-neutral-800 px-1.5 py-0.5 text-[9px] font-mono uppercase text-accent border border-neutral-700">
+                          {font.format}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="font-mono text-[10px] text-neutral-500 truncate" title={font.path}>
+                      {font.path}
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2 pt-1">
+                      <button
+                        type="button"
+                        onclick={() => insertFontFaceSnippet(font)}
+                        class="rounded bg-accent/20 border border-accent/40 px-2 py-1 text-[11px] font-semibold text-accent hover:bg-accent/30 transition-colors"
+                        title="Insert @font-face definition AND style rule for showcase"
+                      >
+                        Insert @font-face + Rule
+                      </button>
+                      <button
+                        type="button"
+                        onclick={() => insertFontRuleOnly(font)}
+                        class="rounded bg-neutral-800 border border-neutral-700 px-2 py-1 text-[11px] text-neutral-200 hover:bg-neutral-750 transition-colors"
+                        title="Insert CSS rule applying this font family to .ft-hero and .ft-showcase-body"
+                      >
+                        Apply Rule (.ft-hero)
+                      </button>
+                      <button
+                        type="button"
+                        onclick={async () => {
+                          const snippet = `@font-face {\n  font-family: '${font.name}';\n  src: url('${font.path}') format('${font.format}');\n  font-display: swap;\n}`;
+                          await navigator.clipboard.writeText(snippet);
+                          toasts.success('Copied @font-face snippet');
+                        }}
+                        class="rounded bg-neutral-800 border border-neutral-700 px-2 py-1 text-[11px] text-neutral-400 hover:text-neutral-200 hover:bg-neutral-750 transition-colors"
+                      >
+                        Copy Snippet
+                      </button>
+                    </div>
+                  </div>
+                {/each}
               </div>
             {/if}
           </div>

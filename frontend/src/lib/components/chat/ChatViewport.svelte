@@ -12,6 +12,7 @@ import { HOOKS } from '@formatavern/shared';
 
   import { handleGlobalKeydown } from '$lib/actions/shortcuts';
   import Backdrop from './Backdrop.svelte';
+  import DecorLayers from '../custom/DecorLayers.svelte';
   import TopBar from '../nav/TopBar.svelte';
   import MessageLog from './MessageLog.svelte';
   import Composer from '../composer/Composer.svelte';
@@ -288,6 +289,9 @@ import { HOOKS } from '@formatavern/shared';
 >
   <!-- Backdrop image / ambient gradient layer -->
   <Backdrop image={themeEngine.backgroundImage} />
+
+  <!-- Fixed decor layers (scenery pins / page dolls) -->
+  <DecorLayers layers={themeEngine.decor} variant="chat" />
 
   <!-- Top Bar -->
   <TopBar

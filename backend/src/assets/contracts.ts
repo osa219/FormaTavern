@@ -1,4 +1,4 @@
-export type AssetScope = 'persona' | 'draft' | 'character';
+export type AssetScope = 'persona' | 'draft' | 'character' | 'fonts';
 
 export interface AssetUploadOptions {
   file: Uint8Array;

@@ -74,6 +74,7 @@ function cardToRow(card: CharacterCard, now: number) {
   if (card.initialState !== undefined) metadataObj.initialState = card.initialState;
   if (card.tags !== undefined) metadataObj.tags = card.tags;
   if (card.creator !== undefined) metadataObj.creator = card.creator;
+  if (card.labels !== undefined) metadataObj.labels = card.labels;
   if (card.version !== undefined) metadataObj.version = card.version;
 
   const metadata = Object.keys(metadataObj).length > 0 ? JSON.stringify(metadataObj) : null;
@@ -125,6 +126,7 @@ function rowToCard(row: CharacterRow, tags: string[] = []): CharacterCard {
     if (meta.initialState !== undefined) card.initialState = meta.initialState;
     if ((card.tags?.length ?? 0) === 0 && meta.tags !== undefined) card.tags = meta.tags;
     if (!card.creator && meta.creator !== undefined) card.creator = meta.creator;
+    if (meta.labels !== undefined) card.labels = meta.labels;
     if (meta.version !== undefined) card.version = meta.version;
   }
 

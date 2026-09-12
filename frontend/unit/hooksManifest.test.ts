@@ -33,6 +33,7 @@ import StreamCaret from '../src/lib/components/chat/StreamCaret.svelte';
 import JumpToLatest from '../src/lib/components/chat/JumpToLatest.svelte';
 import ChatViewport from '../src/lib/components/chat/ChatViewport.svelte';
 import StudioShell from '../src/lib/components/studio/StudioShell.svelte';
+import DecorLayers from '../src/lib/components/custom/DecorLayers.svelte';
 import { CharacterDraft } from '../src/lib/studio/draft.svelte';
 
 function walkDir(dir: string, fileList: string[] = []): string[] {
@@ -67,7 +68,7 @@ describe('Hook Contract & Manifest Invariants (Invariant C1)', () => {
 
     const uniqueHooks = new Set(allHooks);
     expect(uniqueHooks.size).toBe(allHooks.length);
-    expect(allHooks.length).toBe(30);
+    expect(allHooks.length).toBe(34);
   });
 
   it('prohibits hardcoded ft- class literal strings in frontend/src outside manifest', () => {
@@ -253,6 +254,30 @@ describe('Hook Contract & Manifest Invariants (Invariant C1)', () => {
       const { html } = render(StudioShell, { props: { draft } });
       expect(html).toContain(HOOKS.shell.studio);
       expect(html).toContain('data-ft-surface="shell"');
+    });
+
+    it('renders DecorLayers with ft-decor-layers and ft-decor-layer for character variant', () => {
+      const { html } = render(DecorLayers, {
+        props: {
+          variant: 'character',
+          layers: [{ image: '/assets/test.png' }]
+        }
+      });
+      expect(html).toContain(HOOKS.character.decorLayers);
+      expect(html).toContain(HOOKS.character.decorLayer);
+      expect(html).toContain('data-slot="1"');
+    });
+
+    it('renders DecorLayers with ft-chat-decor-layers and ft-chat-decor-layer for chat variant', () => {
+      const { html } = render(DecorLayers, {
+        props: {
+          variant: 'chat',
+          layers: [{ image: '/assets/test.png' }]
+        }
+      });
+      expect(html).toContain(HOOKS.chat.decorLayers);
+      expect(html).toContain(HOOKS.chat.decorLayer);
+      expect(html).toContain('data-slot="1"');
     });
 
     it('verifies surface roots and hooks in route source files', () => {

@@ -9,7 +9,8 @@
     primaryName,
     hue = null,
     text = '',
-    live = false
+    live = false,
+    fx = 'none'
   }: {
     variant: 'character' | 'npc' | 'persona';
     name?: string;
@@ -17,6 +18,7 @@
     hue?: number | null;
     text?: string;
     live?: boolean;
+    fx?: 'none' | 'breathe' | 'float' | 'glow' | null;
   } = $props();
 
   const isUser = $derived(variant === 'persona');
@@ -44,6 +46,7 @@
         ? 'text-char-text border border-char-border/60 rounded-bubble p-(--theme-bubble-padding)'
         : 'bg-char-bg text-char-text border border-char-border rounded-bubble p-(--theme-bubble-padding)'}"
     data-tail={tailSide}
+    data-fx={!isUser && fx && fx !== 'none' ? fx : undefined}
     style={npcStyle}
   >
     {#if showLabel}

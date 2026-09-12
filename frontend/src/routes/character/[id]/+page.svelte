@@ -10,6 +10,7 @@
 
   import Icon from '$lib/components/ui/Icon.svelte';
   import Backdrop from '$lib/components/chat/Backdrop.svelte';
+  import DecorLayers from '$lib/components/custom/DecorLayers.svelte';
   import ShowcaseHero from '$lib/components/showcase/ShowcaseHero.svelte';
   import ActionHub from '$lib/components/showcase/ActionHub.svelte';
   import ResumeMenu from '$lib/components/showcase/ResumeMenu.svelte';
@@ -39,6 +40,7 @@
   );
   const showcaseStyle = $derived(serializeVars(themeToCssVars(showcaseTheme.theme)));
   const showcaseBg = $derived(showcaseTheme.theme.background.image ?? null);
+  const showcaseDecor = $derived(showcaseTheme.theme.decor ?? []);
 
   $effect(() => {
     chats = data.chats ?? [];
@@ -86,6 +88,9 @@
 
   <!-- Ambient character backdrop (image + overlay, or accent gradient fallback) -->
   <Backdrop image={showcaseBg} />
+
+  <!-- Fixed decor layers (scenery pins / page dolls) -->
+  <DecorLayers layers={showcaseDecor} />
 
   <!-- Top Bar -->
   <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/40 chrome-bar px-6">

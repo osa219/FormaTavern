@@ -23,7 +23,9 @@ export const HOOKS = {
     actionHub: 'ft-action-hub',
     tagChips: 'ft-tag-chips',
     creatorCredit: 'ft-creator-credit',
-    resumeMenu: 'ft-resume-menu'
+    resumeMenu: 'ft-resume-menu',
+    decorLayers: 'ft-decor-layers',
+    decorLayer: 'ft-decor-layer'
   },
   chat: {
     viewport: 'ft-viewport',
@@ -39,6 +41,8 @@ export const HOOKS = {
     swipeCarousel: 'ft-swipe-carousel',
     turnToolbar: 'ft-turn-toolbar',
     streamCaret: 'ft-stream-caret',
-    jumpToLatest: 'ft-jump-to-latest'
+    jumpToLatest: 'ft-jump-to-latest',
+    decorLayers: 'ft-chat-decor-layers',
+    decorLayer: 'ft-chat-decor-layer'
   }
 } as const satisfies Record<string, Record<string, `ft-${string}`>>;

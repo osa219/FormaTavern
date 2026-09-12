@@ -103,12 +103,20 @@ export function matchesWhen(when: Record<string, unknown>, state: StateVector): 
 }
 
 function cloneTheme(theme: CharacterTheme): CharacterTheme {
-  return {
+  const res: CharacterTheme = {
     font: { ...theme.font },
     colors: { ...theme.colors },
     bubble: { ...theme.bubble },
     background: { ...theme.background }
   };
+  if (theme.decor) {
+    res.decor = theme.decor.map((d) => ({
+      ...d,
+      offset: d.offset ? { ...d.offset } : undefined
+    }));
+  }
+  if (theme.fx) res.fx = { ...theme.fx };
+  return res;
 }
 
 function deepMergeTheme(target: CharacterTheme, source?: Partial<CharacterTheme> | ThemeOverrides): void {
@@ -117,6 +125,21 @@ function deepMergeTheme(target: CharacterTheme, source?: Partial<CharacterTheme>
   if (source.colors) Object.assign(target.colors, source.colors);
   if (source.bubble) Object.assign(target.bubble, source.bubble);
   if (source.background) Object.assign(target.background, source.background);
+  if (source.decor !== undefined) {
+    target.decor = source.decor
+      ? source.decor.map((d) => ({
+          ...d,
+          offset: d.offset ? { ...d.offset } : undefined
+        }))
+      : undefined;
+  }
+  if (source.fx !== undefined) {
+    if (source.fx) {
+      target.fx = { ...target.fx, ...source.fx };
+    } else {
+      target.fx = undefined;
+    }
+  }
 }
 
 function isValidCssToken(val: unknown): boolean {

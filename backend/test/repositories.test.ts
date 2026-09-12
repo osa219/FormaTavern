@@ -156,4 +156,28 @@ describe('SQLite Repositories', () => {
     expect(def?.id).toBe('persona-default');
     expect(def?.isDefault).toBe(true);
   });
+
+  it('persists and round-trips card.labels and decor/fx styling', () => {
+    inst = openTestDb(':memory:');
+    runMigrations(inst.db);
+    const repos = createRepositories(inst.db);
+
+    const richCard: CharacterCard = {
+      ...testEldrin,
+      labels: { startStory: 'Begin Astral Journey' },
+      style: {
+        ...testEldrin.style,
+        decor: [{ image: '/assets/characters/gem.png', position: 'top-left', opacity: 0.8 }],
+        fx: { bubble: 'float' }
+      }
+    };
+
+    repos.characters.upsert(richCard);
+    const retrieved = repos.characters.get('eldrin-the-mage');
+    expect(retrieved?.labels?.startStory).toBe('Begin Astral Journey');
+    expect(retrieved?.style.decor).toEqual([
+      { image: '/assets/characters/gem.png', position: 'top-left', opacity: 0.8 }
+    ]);
+    expect(retrieved?.style.fx?.bubble).toBe('float');
+  });
 });

@@ -33,11 +33,53 @@ export const ThemeBackgroundSchema = Type.Object({
   blur: Type.Optional(CssToken)
 });
 
+export const ThemeDecorPositionSchema = Type.Union([
+  Type.Literal('top-left'),
+  Type.Literal('top-right'),
+  Type.Literal('bottom-left'),
+  Type.Literal('bottom-right'),
+  Type.Literal('center'),
+  Type.Literal('top-center'),
+  Type.Literal('bottom-center')
+]);
+export type ThemeDecorPosition = Static<typeof ThemeDecorPositionSchema>;
+
+export const ThemeDecorOffsetSchema = Type.Object({
+  x: Type.Optional(Type.Union([CssToken, Type.Literal('')])),
+  y: Type.Optional(Type.Union([CssToken, Type.Literal('')]))
+});
+export type ThemeDecorOffset = Static<typeof ThemeDecorOffsetSchema>;
+
+export const ThemeDecorLayerSchema = Type.Object({
+  image: Type.Union([AssetPath, Type.Literal('')]),
+  position: Type.Optional(ThemeDecorPositionSchema),
+  size: Type.Optional(Type.Union([CssToken, Type.Literal('')])),
+  offset: Type.Optional(ThemeDecorOffsetSchema),
+  opacity: Type.Optional(Type.Number({ minimum: 0, maximum: 1, default: 1 })),
+  blur: Type.Optional(CssToken)
+});
+export type ThemeDecorLayer = Static<typeof ThemeDecorLayerSchema>;
+
+export const ThemeFxBubbleSchema = Type.Union([
+  Type.Literal('none'),
+  Type.Literal('breathe'),
+  Type.Literal('float'),
+  Type.Literal('glow')
+], { default: 'none' });
+export type ThemeFxBubble = Static<typeof ThemeFxBubbleSchema>;
+
+export const ThemeFxSchema = Type.Object({
+  bubble: Type.Optional(ThemeFxBubbleSchema)
+});
+export type ThemeFx = Static<typeof ThemeFxSchema>;
+
 export const CharacterThemeSchema = Type.Object({
   font: ThemeFontSchema,
   colors: ThemeColorsSchema,
   bubble: ThemeBubbleSchema,
-  background: ThemeBackgroundSchema
+  background: ThemeBackgroundSchema,
+  decor: Type.Optional(Type.Array(ThemeDecorLayerSchema, { maxItems: 2 })), // C13
+  fx: Type.Optional(ThemeFxSchema)
 });
 export type CharacterTheme = Static<typeof CharacterThemeSchema>;
 
@@ -46,7 +88,9 @@ export const ThemeOverridesSchema = Type.Object({
   font: Type.Optional(Type.Partial(ThemeFontSchema)),
   colors: Type.Optional(Type.Partial(ThemeColorsSchema)),
   bubble: Type.Optional(Type.Partial(ThemeBubbleSchema)),
-  background: Type.Optional(Type.Partial(ThemeBackgroundSchema))
+  background: Type.Optional(Type.Partial(ThemeBackgroundSchema)),
+  decor: Type.Optional(Type.Array(ThemeDecorLayerSchema, { maxItems: 2 })),
+  fx: Type.Optional(Type.Partial(ThemeFxSchema))
 });
 export type ThemeOverrides = Static<typeof ThemeOverridesSchema>;
 

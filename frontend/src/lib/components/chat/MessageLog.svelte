@@ -69,6 +69,7 @@
   const npcs = $derived(session.chat?.metadata.npcs ?? {});
   const activeLeafId = $derived(session.activeLeafId);
   const lastIndex = $derived(session.messages.length - 1);
+  const fx = $derived(session.character?.style?.fx?.bubble ?? 'none');
 </script>
 
 <div class="relative flex-1 min-h-0 w-full">
@@ -97,6 +98,7 @@
         narrativeRole={msg.narrativeRole}
         {primaryName}
         {npcs}
+        {fx}
         isLast={i === lastIndex && !session.live}
         onRetry={() => session.regenerate(msg.id)}
       >
@@ -127,6 +129,7 @@
         narrativeRole="character"
         {primaryName}
         {npcs}
+        {fx}
         streaming={true}
         isLast={true}
       />

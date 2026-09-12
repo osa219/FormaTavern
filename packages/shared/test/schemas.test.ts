@@ -10,6 +10,7 @@ import {
   ShellThemeSchema,
   DEFAULT_SHELL_THEME,
   shellToThemeOverrides,
+  CharacterThemeSchema,
   validate,
   type CharacterCard
 } from '../src/index';
@@ -348,6 +349,105 @@ describe('Shared Schema Validation', () => {
       it('shellToThemeOverrides returns empty object on null/undefined', () => {
         expect(shellToThemeOverrides(null)).toEqual({});
         expect(shellToThemeOverrides(undefined)).toEqual({});
+      });
+    });
+
+    describe('Graduation Batch 1 schemas (Slice 5: decor, fx, labels)', () => {
+      it('validates CharacterTheme with decor layers (≤ 2 layers) and fx motion presets', () => {
+        const theme = {
+          font: { family: 'Cinzel', size: '1rem', lineHeight: '1.7' },
+          colors: {
+            charBubbleBg: '#111',
+            charBubbleText: '#eee',
+            userBubbleBg: '#222',
+            userBubbleText: '#fff',
+            accent: '#38bdf8'
+          },
+          bubble: { radius: '1rem' },
+          background: {},
+          decor: [
+            {
+              image: '/assets/characters/eldrin/crystal.webp',
+              position: 'top-right' as const,
+              opacity: 0.85,
+              blur: '2px'
+            },
+            {
+              image: '/assets/backgrounds/runes.png',
+              position: 'bottom-left' as const,
+              opacity: 0.5
+            }
+          ],
+          fx: {
+            bubble: 'breathe' as const
+          }
+        };
+        expect(validate(CharacterThemeSchema, theme).ok).toBe(true);
+      });
+
+      it('validates decor layers with expanded positions, custom size, and offset', () => {
+        const theme = {
+          font: { family: 'Cinzel' },
+          colors: {
+            charBubbleBg: '#111',
+            charBubbleText: '#eee',
+            userBubbleBg: '#222',
+            userBubbleText: '#fff',
+            accent: '#38bdf8'
+          },
+          bubble: { radius: '1rem' },
+          background: {},
+          decor: [
+            {
+              image: '/assets/decor/pin1.png',
+              position: 'top-center' as const,
+              size: '220px',
+              offset: { x: '10px', y: '-5px' }
+            },
+            {
+              image: '/assets/decor/pin2.png',
+              position: 'bottom-center' as const,
+              size: '30vw',
+              offset: { x: '-20px' }
+            }
+          ]
+        };
+        expect(validate(CharacterThemeSchema, theme).ok).toBe(true);
+      });
+
+      it('rejects CharacterTheme with > 2 decor layers per Invariant C13', () => {
+        const theme = {
+          font: { family: 'Cinzel' },
+          colors: {
+            charBubbleBg: '#111',
+            charBubbleText: '#eee',
+            userBubbleBg: '#222',
+            userBubbleText: '#fff',
+            accent: '#38bdf8'
+          },
+          bubble: { radius: '1rem' },
+          background: {},
+          decor: [
+            { image: '/assets/a.png' },
+            { image: '/assets/b.png' },
+            { image: '/assets/c.png' } // 3rd layer violates maxItems: 2
+          ]
+        };
+        expect(validate(CharacterThemeSchema, theme).ok).toBe(false);
+      });
+
+      it('validates and bounds CharacterCard.labels.startStory (max 40 chars)', () => {
+        const cardWithLabel = {
+          ...eldrinFixture,
+          labels: { startStory: 'Enter the Leyline Spire' }
+        };
+        expect(validate(CharacterCardSchema, cardWithLabel).ok).toBe(true);
+
+        const cardOverLimit = {
+          ...eldrinFixture,
+          labels: { startStory: 'A'.repeat(41) }
+        };
+        expect(validate(CharacterCardSchema, cardOverLimit).ok).toBe(false);
       });
     });
   });

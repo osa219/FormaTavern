@@ -141,7 +141,7 @@
         <span>Starting…</span>
       {:else}
         <Icon name="sparkles" size={14} />
-        <span>Start New Story</span>
+        <span>{character.labels?.startStory || 'Start New Story'}</span>
         <kbd class="ml-1.5 rounded bg-black/20 px-1.5 py-0.5 text-[10px] font-mono text-neutral-800">
           N
         </kbd>

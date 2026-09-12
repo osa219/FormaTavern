@@ -360,3 +360,61 @@ dialog:not([open]) {
   background: transparent;
   padding: 0;
 }
+
+/* Motion Presets (Slice 5 — Invariant U2 & C13) */
+@keyframes ft-fx-breathe {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.01);
+  }
+}
+
+@keyframes ft-fx-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes ft-fx-glow {
+  0%, 100% {
+    opacity: 0.9;
+    box-shadow: 0 0 6px var(--theme-accent);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 16px var(--theme-accent);
+  }
+}
+
+[data-fx="breathe"] {
+  animation: ft-fx-breathe 6s ease-in-out infinite;
+  will-change: transform;
+}
+
+[data-fx="float"] {
+  animation: ft-fx-float 8s ease-in-out infinite;
+  will-change: transform;
+}
+
+[data-fx="glow"] {
+  animation: ft-fx-glow 4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-fx] {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+[data-ft-motion="reduced"] [data-fx],
+[data-ft-motion="reduce"] [data-fx] {
+  animation: none !important;
+  transform: none !important;
+}
+

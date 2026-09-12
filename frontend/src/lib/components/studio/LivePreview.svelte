@@ -9,6 +9,7 @@
   import CustomStyleOutlet from '$lib/components/custom/CustomStyleOutlet.svelte';
   import ShowcaseHero from '$lib/components/showcase/ShowcaseHero.svelte';
   import ShowcaseBody from '$lib/components/showcase/ShowcaseBody.svelte';
+  import DecorLayers from '$lib/components/custom/DecorLayers.svelte';
 
   let {
     draft,
@@ -19,6 +20,8 @@
   } = $props();
 
   const themeVars = $derived(serializeVars(themeToCssVars(draft.previewTheme.theme)));
+  const fx = $derived(draft.card.style?.fx?.bubble ?? 'none');
+  const decor = $derived(draft.card.style?.decor ?? []);
   const greetingResult = $derived(parseGreeting(draft.card.firstMessage, draft.card.name || 'Companion'));
   const segments = $derived(greetingResult.segments);
 
@@ -134,9 +137,10 @@
   <div
     style="{themeVars};"
     data-ft-surface="character"
-    class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-neutral-950 font-(--theme-font-family) text-neutral-100"
+    class="relative flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-neutral-950 font-(--theme-font-family) text-neutral-100"
   >
     <CustomStyleOutlet scope="character" css={draft.card.customCss} />
+    <DecorLayers layers={decor} fixed={false} />
     {#if activeTab === 'showcase'}
       <!-- Showcase Mode: Hero + Action Hub + Showcase Body + Dialogue Sample -->
       <div class="space-y-6">
@@ -153,7 +157,7 @@
               type="button"
               class="rounded-xl px-3.5 py-1.5 text-xs font-medium bg-accent text-neutral-950 font-semibold shadow-sm hover:opacity-90 transition-opacity"
             >
-              Start New Story
+              {draft.card.labels?.startStory || 'Start New Story'}
             </button>
           </div>
         </div>
@@ -176,6 +180,7 @@
             primaryName={draft.card.name || 'Companion'}
             name={draft.card.name || 'Companion'}
             text="The celestial alignments are shifting. We must begin before the eclipse reaches totality."
+            {fx}
           />
         </div>
       </div>
@@ -194,6 +199,7 @@
               name={seg.name}
               primaryName={draft.card.name || 'Companion'}
               text={seg.text}
+              fx={seg.kind === 'character' ? fx : 'none'}
             />
           {/if}
         {/each}
@@ -208,6 +214,7 @@
           primaryName={draft.card.name || 'Companion'}
           name={draft.card.name || 'Companion'}
           text="The celestial alignments are shifting. We must begin before the eclipse reaches totality."
+          {fx}
         />
 
         <SpeechBubble

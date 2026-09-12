@@ -33,7 +33,7 @@ export function createAssetsRouter(assets?: AssetStore) {
       {
         body: t.Object({
           file: t.File(),
-          scope: t.Union([t.Literal('persona'), t.Literal('draft'), t.Literal('character')]),
+          scope: t.Union([t.Literal('persona'), t.Literal('draft'), t.Literal('character'), t.Literal('fonts')]),
           targetId: t.Optional(t.String())
         })
       }

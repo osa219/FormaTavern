@@ -367,6 +367,73 @@ describe('Shared Theme Cascade & matchesWhen', () => {
 
         expect(resolved.theme).toEqual(NEUTRAL_A11Y_THEME);
       });
+
+      it('cascades decor layers and fx motion presets', () => {
+        const charTheme: CharacterTheme = {
+          ...DEFAULT_CHARACTER_THEME,
+          decor: [
+            { image: '/assets/characters/doll.png', position: 'bottom-right', opacity: 0.9 }
+          ],
+          fx: { bubble: 'float' }
+        };
+
+        const personaOverrides = {
+          fx: { bubble: 'glow' as const }
+        };
+
+        const resolved = resolveTheme({
+          character: charTheme,
+          persona: personaOverrides,
+          a11y: { disableCharacterThemes: false, disableReactiveTheming: false }
+        });
+
+        // Persona overrode fx
+        expect(resolved.theme.fx?.bubble).toBe('glow');
+        // Character decor persisted
+        expect(resolved.theme.decor).toEqual([
+          { image: '/assets/characters/doll.png', position: 'bottom-right', opacity: 0.9 }
+        ]);
+
+        // When a11y disables themes, decor and fx are wiped
+        const a11yResolved = resolveTheme({
+          character: charTheme,
+          persona: personaOverrides,
+          a11y: { disableCharacterThemes: true, disableReactiveTheming: false }
+        });
+        expect(a11yResolved.theme.decor).toBeUndefined();
+        expect(a11yResolved.theme.fx).toBeUndefined();
+      });
+
+      it('deep-clones decor layer size and offset without sharing object mutations', () => {
+        const charTheme: CharacterTheme = {
+          ...DEFAULT_CHARACTER_THEME,
+          decor: [
+            {
+              image: '/assets/decor.png',
+              position: 'top-center',
+              size: '200px',
+              offset: { x: '10px', y: '20px' }
+            }
+          ]
+        };
+
+        const resolved = resolveTheme({
+          character: charTheme,
+          a11y: { disableCharacterThemes: false, disableReactiveTheming: false }
+        });
+
+        expect(resolved.theme.decor).toEqual([
+          {
+            image: '/assets/decor.png',
+            position: 'top-center',
+            size: '200px',
+            offset: { x: '10px', y: '20px' }
+          }
+        ]);
+
+        // Verify independent object reference
+        expect(resolved.theme.decor![0].offset).not.toBe(charTheme.decor![0].offset);
+      });
     });
   });
 });
