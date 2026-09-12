@@ -151,4 +151,14 @@ describe('Surface Completeness & Dialog Scoping (Invariant C14)', () => {
     expect(css).toContain('scrollbar-color:');
     expect(css).toContain('::-webkit-scrollbar');
   });
+
+  it('ensures checkboxes use accent-accent rather than text-accent for theme coloring', () => {
+    for (const file of allSvelteFiles) {
+      const content = readFileSync(file, 'utf-8');
+      if (content.includes('type="checkbox"')) {
+        expect(content).not.toMatch(/type="checkbox"[^>]*text-accent/);
+        expect(content).not.toMatch(/text-accent[^>]*type="checkbox"/);
+      }
+    }
+  });
 });

@@ -214,7 +214,7 @@
               prefs.disableCharacterThemes = e.currentTarget.checked;
               prefs.save();
             }}
-            class="h-4 w-4 rounded border-(--chrome-line) bg-(--chrome-surface) text-accent focus:ring-accent"
+            class="h-4 w-4 rounded border-(--chrome-line) bg-(--chrome-surface) accent-accent focus:ring-accent"
           />
         </label>
 
@@ -231,7 +231,7 @@
               prefs.hideCustomStyling = e.currentTarget.checked;
               prefs.save();
             }}
-            class="h-4 w-4 rounded border-(--chrome-line) bg-(--chrome-surface) text-accent focus:ring-accent"
+            class="h-4 w-4 rounded border-(--chrome-line) bg-(--chrome-surface) accent-accent focus:ring-accent"
           />
         </label>
 
@@ -248,7 +248,7 @@
               prefs.disableReactiveTheming = e.currentTarget.checked;
               prefs.save();
             }}
-            class="h-4 w-4 rounded border-(--chrome-line) bg-(--chrome-surface) text-accent focus:ring-accent"
+            class="h-4 w-4 rounded border-(--chrome-line) bg-(--chrome-surface) accent-accent focus:ring-accent"
           />
         </label>
 
@@ -265,7 +265,7 @@
               prefs.enterToSend = e.currentTarget.checked;
               prefs.save();
             }}
-            class="h-4 w-4 rounded border-(--chrome-line) bg-(--chrome-surface) text-accent focus:ring-accent"
+            class="h-4 w-4 rounded border-(--chrome-line) bg-(--chrome-surface) accent-accent focus:ring-accent"
           />
         </label>
 
@@ -302,7 +302,7 @@
               prefs.devMode = e.currentTarget.checked;
               prefs.save();
             }}
-            class="h-4 w-4 rounded border-(--chrome-line) bg-(--chrome-surface) text-accent focus:ring-accent"
+            class="h-4 w-4 rounded border-(--chrome-line) bg-(--chrome-surface) accent-accent focus:ring-accent"
           />
         </label>
       </div>
@@ -667,7 +667,7 @@
               prefs.forceSolidChrome = e.currentTarget.checked;
               prefs.save();
             }}
-            class="h-4 w-4 rounded border-(--chrome-line) bg-(--chrome-surface) text-accent focus:ring-accent"
+            class="h-4 w-4 rounded border-(--chrome-line) bg-(--chrome-surface) accent-accent focus:ring-accent"
           />
         </label>
 
