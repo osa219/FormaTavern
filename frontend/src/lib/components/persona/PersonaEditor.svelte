@@ -47,13 +47,14 @@
   let fileInput: HTMLInputElement;
 
   const styleOverrides = $derived<ThemeOverrides>({
+    ...(persona?.styleOverrides?.font ? { font: persona.styleOverrides.font } : {}),
+    ...(persona?.styleOverrides?.background ? { background: persona.styleOverrides.background } : {}),
+    ...(persona?.styleOverrides?.decor ? { decor: persona.styleOverrides.decor } : {}),
+    ...(persona?.styleOverrides?.fx ? { fx: persona.styleOverrides.fx } : {}),
     colors: {
-      charBubbleBg: '#1e293b',
-      charBubbleText: '#f1f5f9',
       userBubbleBg,
       userBubbleText,
-      userBubbleBorder,
-      accent: '#38bdf8'
+      userBubbleBorder
     },
     bubble: {
       radius: bubbleRadius,
