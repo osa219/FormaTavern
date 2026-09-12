@@ -21,6 +21,7 @@ import { HOOKS } from '@formatavern/shared';
   import SettingsSheet from '../settings/SettingsSheet.svelte';
   import EditTurnDialog from '../dialogs/EditTurnDialog.svelte';
   import ConfirmDialog from '../dialogs/ConfirmDialog.svelte';
+  import CustomStyleOutlet from '../custom/CustomStyleOutlet.svelte';
 
   let {
     session,
@@ -287,6 +288,8 @@ import { HOOKS } from '@formatavern/shared';
   data-ft-surface="chat"
   class="relative isolate grid h-[100dvh] w-full grid-rows-[auto_1fr_auto] overflow-hidden bg-neutral-950 font-sans text-neutral-100 select-text {HOOKS.chat.viewport}"
 >
+  <CustomStyleOutlet scope="chat" css={session.character?.customCss} />
+
   <!-- Backdrop image / ambient gradient layer -->
   <Backdrop image={themeEngine.backgroundImage} />
 

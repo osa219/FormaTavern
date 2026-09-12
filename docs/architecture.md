@@ -287,32 +287,34 @@ Errors: `{ error: { code: ApiErrorCode, message, details? } }` — 404 `not_foun
 - **`ScrollController`** + pure `scroll/policy.ts` — `stuck` ownership (48 px), gesture vs. program scroll attribution, instant pin while streaming, `prependAdjust` anchoring on `loadOlder`, `ResizeObserver`/`visualViewport` re-pin (U5).
 - `settings.svelte.ts` (server settings + `BroadcastChannel('formatavern_sync')`, in-flight sequencing), `prefs.svelte.ts` (device-local a11y/behaviour prefs), `media.svelte.ts` (reduced motion/transparency, coarse pointer), `toasts.svelte.ts`.
 
-### 11.2 Chameleon design-token pipeline
+### 11.2 Chameleon design-token & custom CSS pipeline
 ```
-CharacterCard.style ─┐
-stateBindings + currentState ─┤ resolveTheme() (shared, pure; order: NEUTRAL → character → bindings → persona → a11y)  [U1]
-Persona.styleOverrides ─┤          │
-prefs.disableCharacterThemes/ReactiveTheming ─┘          ▼
-                          themeToCssVars() (frontend, pure; CSS_VAR_NAMES, fixed order, url() escaping, font fallbacks, --theme-scheme)
-                                                         ▼
-                          <div class="theme-root" style="--theme-…:…" data-transitions="on|off" data-theme-scheme="dark|light">
-                                                         ▼
-                          app.css: @property registrations (<color>/<length>) → the custom properties themselves interpolate
-                                   over --motion-theme (600 ms, 0 under reduced motion);  @theme inline bridges them to
-                                   Tailwind utilities (bg-char-bg, text-narrator, rounded-bubble, font-narrative …)  [U2, U6]
+ShellTheme (global) ──┐
+CharacterCard.style ──┤
+stateBindings + currentState ─┼─ resolveTheme() (shared, pure; order: NEUTRAL → global → character → bindings → persona → a11y) [A-U1, U1]
+Persona.styleOverrides ───────┤   │
+prefs.disableCharacterThemes ──┘   ▼
+                               themeToCssVars() (frontend, pure; CSS_VAR_NAMES, fixed order, url() escaping, font fallbacks, --theme-scheme)
+                                   ▼
+                               <div class="theme-root" style="--theme-…:…" data-transitions="on|off" data-theme-scheme="dark|light">
+                                   ▼
+                               app.css: @property registrations (<color>/<length>) → the custom properties themselves interpolate
+                                        over --motion-theme (600 ms, 0 under reduced motion);  @theme inline bridges them to
+                                        Tailwind utilities (bg-char-bg, text-narrator, rounded-bubble, font-narrative …)  [U2, U6]
 ```
+- **Unified Cascade (Amendment A-U1):** `NEUTRAL → global(shell) → character → bindings → persona → a11y`. Shell theme provides base typography and background below companion styles; `disableCharacterThemes` forces `NEUTRAL_A11Y_THEME`.
+- **Token ↔ CSS Bridge:** Sheets read every `--theme-*` and `--chrome-*` variable; author custom CSS cannot dethrone root cascade values because inline style mechanics win over stylesheets.
+- **Single Style Outlet (Amendment A-U2b, Invariants C2, C8, C9):** `CustomStyleOutlet.svelte` is the only component permitted to inject `<style>` tags at runtime. It runs client-side `sanitizeCss` with cached dynamic loading of `css-tree` (C13), appends the reduced-motion guard (C9), and unmounts completely when `prefs.hideCustomStyling = true` (C8).
 - Bindings evaluate against the **committed** `currentState` (updated at terminal events), not the live patch, to avoid flapping.
 - First paint is themed with transitions off (`data-transitions="off"` until after the first frame), so route entry never strobes.
-- Chrome (drawers, composer shell, toolbars, focus rings, toasts) uses a fixed neutral OKLCH palette and may borrow ≤ 8 % accent via `color-mix()` (U8).
+- Chrome (drawers, composer shell, toolbars, focus rings, toasts) uses `--chrome-*` tokens with solid vs. frosted glass reactive toggles (`prefs.forceSolidChrome`).
 - Backdrop: A/B image layers with blur + overlay; no image → ambient accent gradient.
 
-### 11.3 Components & Surfaces
-- **Chat:** `ChatViewport` (theme root, 100dvh grid) → `Backdrop`, `TopBar` (`StateHud` → `StateOverridePopover`, Lore drawer trigger), `LoreDrawer` (native slide-over on theme root with About, Voice, You persona switcher with busy lock, and State reference; shortcut `Alt+L`), `MessageLog` (windowed, `content-visibility:auto`, `JumpToLatest`) → `MessageTurn` (index-keyed segments → `NarratorBlock` | `SpeechBubble` with `StreamCaret`; `TurnToolbar`, `SwipeCarousel`, `ErrorSlate`), `Composer` (`VoiceSelect`, `DirectorDrawer`, Send⇄Stop), `NavDrawer`, `SettingsSheet`, `EditTurnDialog`, `ConfirmDialog` (native `<dialog>`).
-- **Foyer v2 (`/`):** Discovery catalog with `CatalogStore` (seq-guarded, 200 ms debounced query, tag AND filtering, sort select `recent`/`name`/`stories`, keyset cursor pagination, URL param sync) rendering `CompanionGrid` with reactive `CompanionCard` swatches.
-- **Author Showcase (`/character/:id`):** `ShowcaseHero` (avatar, creator, tagline, tags), `ActionHub` (keyboard shortcuts `N` new story with `PersonaPicker`, `E` edit, duplicate, cascade delete), `ShowcaseBody` rendering sanitized showcase markdown with safe inline styles (A-U2), and `ResumeMenu` listing recent stories.
-- **Companion Studio (`/character/new`, `/character/:id/edit`):** Tabbed authoring shell with `CharacterDraft` reactive store, TypeBox validation HUD with scroll-to-issue links, `LivePreview` with `parseGreeting` envelope parser (A-U3) and reactive `previewTheme`, `VoicePanel` with lazy code-split `gpt-tokenizer`, `ShowcaseEditor` with split view and snippet insert, 2000 ms local autosave, and OCC safe saves (`expectedUpdatedAt`).
-- **Personas Platform (`/personas`, `/personas/new`, `/personas/:id/edit`):** `PersonasStore`, `PersonaEditor` with canvas 1:1 image cropping, `BubblePreview` reflecting style overrides, and deletion modal with story reassignment.
-- **Dev Workbench (`/dev`):** Dev-only workbench for inspecting mock streams and parser output.
+### 11.3 Components & Non-Nesting Surfaces (Invariant §2.1)
+Surfaces never nest; exactly one `<CustomStyleOutlet>` is ever active on a page:
+- **Chat Surface (`data-ft-surface="chat"`):** `ChatViewport` root (theme root, 100dvh grid) with `<CustomStyleOutlet scope="chat" css={session.character?.customCss} />` enforcing the chat-conservative profile (blocking `position: fixed/sticky`, `z-index > 10`, `scroll-behavior`, and scroll container manipulation) → `Backdrop`, `DecorLayers` (fixed scenery pins / page dolls capped at $\le 2$ layers per C13), `TopBar`, `LoreDrawer`, `MessageLog` (windowed, `content-visibility:auto`, `JumpToLatest`) → `MessageTurn` (index-keyed segments → `NarratorBlock` | `SpeechBubble` with `StreamCaret` and `data-fx` presets; `TurnToolbar`, `SwipeCarousel`, `ErrorSlate`), `Composer`, `NavDrawer`, `SettingsSheet`, dialogs.
+- **Character Surface (`data-ft-surface="character"`):** Author Showcase (`/character/:id`) root with `<CustomStyleOutlet scope="character" css={character.customCss} />` under the permissive profile → `ShowcaseHero`, `DecorLayers`, `ActionHub`, `ShowcaseBody` rendering sanitized showcase markdown with safe inline styles (A-U2), and `ResumeMenu`.
+- **Shell Surface (`data-ft-surface="shell"`):** Outermost container of Foyer `/`, Personas `/personas`, and Studio routes wrapped by `<ShellSurface>`, setting inline `--chrome-*` tokens and mounting `<CustomStyleOutlet scope="shell" css={shellTheme.theme.customCss} />`. Shared components (`TopBar`, `NavDrawer`, dialogs) adopt hooks (`.ft-topbar`, `.ft-dialog`) that render inside whichever surface hosts them.
 
 ### 11.4 Markdown pipelines (`lib/render/`)
 1. **Roleplay prose:** `renderRoleplayMarkdown` via `marked` + speech quotes (`<q class="speech">`) sanitized through strict DOMPurify allow-list (`Markdown.svelte`).

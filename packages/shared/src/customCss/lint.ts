@@ -1,12 +1,20 @@
 import * as csstree from 'css-tree';
 import type { SurfaceScope } from '../hooks/manifest';
+import { explainChatDrop } from './policy';
+import { sanitizeCss, type SanitizeIssue } from './sanitizeCss';
 
 export interface LintIssue {
-  code: 'L1' | 'L2' | 'L3' | 'L4' | 'L5' | 'L6' | 'L7' | 'L8' | 'L9';
+  code: 'L1' | 'L2' | 'L3' | 'L4' | 'L5' | 'L6' | 'L7' | 'L8' | 'L9' | 'CHAT_NOTE';
   message: string;
   selector?: string;
   property?: string;
   atRule?: string;
+}
+
+export interface ChatRestrictionIssue {
+  selector: string;
+  property: string;
+  message: string;
 }
 
 const LAYOUT_PROPERTIES = new Set([
@@ -313,5 +321,33 @@ export function lintSheet(raw: string, scope?: SurfaceScope): LintIssue[] {
     });
   }
 
+  // Chat profile restrictions (when scope is chat)
+  if (scope === 'chat') {
+    const chatDrops = lintChatRestrictions(raw);
+    for (const drop of chatDrops) {
+      issues.push({
+        code: 'CHAT_NOTE',
+        message: drop.message,
+        selector: drop.selector,
+        property: drop.property
+      });
+    }
+  }
+
   return issues;
 }
+
+export function lintChatRestrictions(raw: string): ChatRestrictionIssue[] {
+  if (!raw || !raw.trim()) return [];
+  const out = sanitizeCss(raw, 'chat');
+  const drops = out.report.filter(
+    (r): r is Extract<SanitizeIssue, { kind: 'dropped-declaration' }> =>
+      r.kind === 'dropped-declaration' && r.reason === 'blocked-property-scope'
+  );
+  return drops.map((d) => ({
+    selector: d.selector,
+    property: d.property,
+    message: explainChatDrop(d.property, d.selector)
+  }));
+}
+

@@ -99,6 +99,19 @@ The per-phase blueprints list **required tests by name**; a PR that removes or w
 | P5 (Greeting preview) | `frontend/unit/greetingPreview.test.ts`, `studio.test.ts` |
 | P6 (FTS5 / LIKE probe) | `backend/test/migrations.test.ts`, `backend/test/repositories/characters.test.ts` |
 | P7 (Atomic defaults) | `backend/test/repositories/personas.test.ts`, `backend/test/routes/personas.test.ts` |
+| C1 (Hook manifest) | `frontend/unit/hooksManifest.test.ts` |
+| C2 (Single outlet / A-U2b) | `frontend/unit/boundaries.test.ts`, `frontend/unit/customStyleOutlet.test.ts` |
+| C3 (Pure sanitizer fixed-point) | `packages/shared/test/customCss/idempotency.test.ts`, `sanitizeCss.test.ts` |
+| C4 (Scope containment) | `packages/shared/test/customCss/scope.test.ts` |
+| C5 (Keyframes namespacing) | `packages/shared/test/customCss/keyframes.test.ts` |
+| C6 (URL policy) | `packages/shared/test/customCss/urlPolicy.test.ts`, `backend/test/assets/fonts.test.ts` |
+| C7 (Profiles as data) | `packages/shared/test/customCss/chatProfile.test.ts`, `frontend/unit/chatViewportStyle.test.ts` |
+| C8 (Viewer supremacy) | `frontend/unit/customStyleOutlet.test.ts`, `frontend/unit/chatViewportStyle.test.ts` |
+| C9 (Reduced motion guard) | `frontend/unit/customStyleOutlet.test.ts`, `frontend/unit/motionPresets.test.ts`, `frontend/unit/chatViewportStyle.test.ts` |
+| C10 (128 KiB sheet cap) | `packages/shared/test/schemas.test.ts`, `backend/test/routes/characters.test.ts`, `backend/test/routes/settings.test.ts` |
+| C11 (Import/export symmetry) | `backend/test/repositories/characters.test.ts` (duplicate / raw storage) |
+| C12 (SPA style lifecycle) | `frontend/unit/customStyleOutlet.test.ts`, `frontend/unit/chatViewportStyle.test.ts` |
+| C13 (Performance budgets) | `packages/shared/test/schemas.test.ts` (decor maxItems: 2), `frontend/unit/boundaries.test.ts` (dynamic `css-tree`) |
 
 ### 6.4 Writing tests
 - Prefer table-driven cases over prose-heavy ones; assert on codes/paths (`/style/colors/accent`, `state_unclosed`), not message text.

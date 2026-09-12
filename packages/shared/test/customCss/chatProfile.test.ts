@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'bun:test';
-import { sanitizeCss } from '../../src/customCss';
+import {
+  sanitizeCss,
+  explainChatDrop,
+  CHAT_POLICY_EXPLANATIONS,
+  lintChatRestrictions,
+  lintSheet
+} from '../../src/customCss';
 
 describe('customCss — Chat Conservative Profile vs Permissive Profiles (Invariant C7)', () => {
   describe('position: fixed & sticky', () => {
@@ -138,4 +144,62 @@ describe('customCss — Chat Conservative Profile vs Permissive Profiles (Invari
       expect(res.report).toEqual([]);
     });
   });
+
+  describe('Policy Explanations & Studio Linting (Invariant C7)', () => {
+    it('provides clear explanation strings for all chat drops', () => {
+      expect(explainChatDrop('position', '.ft-turn', 'fixed')).toBe(
+        CHAT_POLICY_EXPLANATIONS.positionFixedSticky.explanation
+      );
+      expect(explainChatDrop('position', '.ft-turn', 'sticky')).toBe(
+        CHAT_POLICY_EXPLANATIONS.positionFixedSticky.explanation
+      );
+      expect(explainChatDrop('z-index', '.ft-bubble-char', '99999')).toBe(
+        CHAT_POLICY_EXPLANATIONS.zIndex.explanation
+      );
+      expect(explainChatDrop('scroll-behavior', '.ft-message-log', 'smooth')).toBe(
+        CHAT_POLICY_EXPLANATIONS.scrollBehavior.explanation
+      );
+      expect(explainChatDrop('overflow', '.ft-message-log', 'hidden')).toBe(
+        CHAT_POLICY_EXPLANATIONS.scrollMechanics.explanation
+      );
+      expect(explainChatDrop('touch-action', '.ft-viewport', 'none')).toBe(
+        CHAT_POLICY_EXPLANATIONS.scrollMechanics.explanation
+      );
+    });
+
+    it('lintChatRestrictions detects properties stripped in chat and provides explanations', () => {
+      const sheet = `
+        .ft-hero { border: 1px solid red; }
+        .ft-turn { position: fixed; z-index: 100; }
+        .ft-message-log { scroll-behavior: smooth; overflow: hidden; }
+      `;
+      const restrictions = lintChatRestrictions(sheet);
+      expect(restrictions.length).toBe(4);
+
+      const posIssue = restrictions.find((r) => r.property === 'position');
+      expect(posIssue).toBeDefined();
+      expect(posIssue?.message).toContain('position: fixed and sticky are stripped in chat');
+
+      const zIssue = restrictions.find((r) => r.property === 'z-index');
+      expect(zIssue).toBeDefined();
+      expect(zIssue?.message).toContain('z-index > 10 is stripped in chat');
+
+      const scrollIssue = restrictions.find((r) => r.property === 'scroll-behavior');
+      expect(scrollIssue).toBeDefined();
+      expect(scrollIssue?.message).toContain('scroll-behavior is stripped in chat');
+
+      const overflowIssue = restrictions.find((r) => r.property === 'overflow');
+      expect(overflowIssue).toBeDefined();
+      expect(overflowIssue?.message).toContain('overflow and scroll mechanics properties');
+    });
+
+    it('lintSheet includes CHAT_NOTE entries when scope is chat', () => {
+      const sheet = '.ft-turn { position: fixed; }';
+      const issues = lintSheet(sheet, 'chat');
+      const chatNotes = issues.filter((i) => i.code === 'CHAT_NOTE');
+      expect(chatNotes.length).toBe(1);
+      expect(chatNotes[0].message).toContain('position: fixed and sticky are stripped in chat');
+    });
+  });
 });
+

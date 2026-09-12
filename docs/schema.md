@@ -1,7 +1,7 @@
 # FormaTavern — Database & Storage Schema Reference
 
-**Scope:** The definitive data dictionary, relational DDL, JSON column schemas, tree branching model, and integrity contracts for FormaTavern (Phase 0 through Phase 4).
-**Engine:** SQLite 3 in WAL mode via Bun embedded (`bun:sqlite`), schema version `PRAGMA user_version = 3`.
+**Scope:** The definitive data dictionary, relational DDL, JSON column schemas, tree branching model, and integrity contracts for FormaTavern (Phase 0 through Customization Series).
+**Engine:** SQLite 3 in WAL mode via Bun embedded (`bun:sqlite`), schema version `PRAGMA user_version = 5`.
 **Cross-references:** See [`docs/architecture.md §5`](architecture.md#5-storage) for storage architecture and [`.agents/AGENTS.md §4`](../.agents/AGENTS.md#4-invariant-cheat-sheet-cite-by-id) for canonical invariants (I1–I6, S2–S6).
 
 ---
@@ -62,7 +62,8 @@ CREATE TABLE IF NOT EXISTS characters (
   style        TEXT NOT NULL,                 -- JSON: CharacterTheme (colors, fonts, bubble, background)
   created_at   INTEGER NOT NULL,              -- Unix timestamp in milliseconds
   updated_at   INTEGER NOT NULL,              -- Unix timestamp in milliseconds
-  metadata     TEXT                           -- JSON: CharacterMetadata (stateSchema, stateBindings, etc.)
+  metadata     TEXT,                          -- JSON: CharacterMetadata (stateSchema, stateBindings, etc.)
+  custom_css   TEXT                           -- Raw author custom CSS; NULL = none (added in v5)
 );
 
 CREATE INDEX IF NOT EXISTS idx_characters_updated ON characters(updated_at DESC);
@@ -178,6 +179,8 @@ Migrations live in `backend/src/db/migrate.ts` and execute automatically during 
 | **v1** | `initial_schema` | Foundation relational tables | Creates `characters`, `personas`, `chats`, `messages`, `settings`. Defines FKs and indices. |
 | **v2** | `narrative_envelope` | Three-Track narrative envelope support | Adds `messages.narrative_role`, `sender_name`, `segments`, `state`. Backfills user rows to `narrative_role = 'persona'`. |
 | **v3** | `chat_branching` | Non-linear tree branching & swipes | Adds `chats.active_leaf_id` (FK to `messages(id)`). Adds partial index on `status = 'streaming'` and composite index on `(parent_id, id)`. Backfills leaf to newest message per chat. |
+| **v4** | `companion_platform` | Companion platform & discovery | Adds FTS5 search index table `characters_fts`; creator credit, tagline, showcase fields in character schemas. |
+| **v5** | `creator_customization` | Creator custom CSS styling | Adds `characters.custom_css TEXT` column. Global shell theme rides `settings` row `shell_theme`. |
 
 ---
 
@@ -432,10 +435,11 @@ The database integrity script (`backend/scripts/check.ts`) enforces strict runti
 
 | Audit Item | Rule / Assertion | Invariant |
 |---|---|---|
-| **Pragma Audit** | `journal_mode = wal`, `foreign_keys = 1`, `user_version = 3`. | I3, I4 |
+| **Pragma Audit** | `journal_mode = wal`, `foreign_keys = 1`, `user_version = 5`. | I3, I4 |
 | **Integrity Check** | `PRAGMA integrity_check` returns `ok`. | Engine |
 | **Foreign Key Check** | `PRAGMA foreign_key_check` returns 0 violations. | I4 |
-| **Columns Check** | `messages` includes `narrative_role`, `sender_name`, `segments`, `state`. `chats` includes `active_leaf_id`. | v2, v3 |
+| **Columns Check** | `messages` includes `narrative_role`, `sender_name`, `segments`, `state`. `chats` includes `active_leaf_id`. `characters` includes `custom_css`. | v2, v3, v5 |
+| **Search Index Parity** | `characters_fts` count matches `characters` count (`fts_parity = ok`). | P6 |
 | **Zero Streaming Rows** | No rows exist with `status = 'streaming'` on an idle database. | S3 |
 | **Active Leaf Cohesion** | `chats.active_leaf_id` exists and belongs to the same chat. | S6 |
 | **Current State Parity** | `chats.metadata.currentState` strictly equals `nearestState(path(leaf), character)`. | S6 |

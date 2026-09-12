@@ -13,7 +13,7 @@ This living document tracks the progressive implementation and verification of t
 | **Slice 3** | Character sheet end-to-end | **Complete** | C2 (single outlet), C8 (viewer supremacy), C10 (cap), C11 (import/export), C12 (SPA lifecycle), A-U2b |
 | **Slice 4** | Global shell & theme cascade | **Complete** | A-U1 (unified cascade), C13 (performance budget) |
 | **Slice 5** | Graduation batch 1 (tokens, decor, fx, fonts) | **Complete** | D7 (sanctioned replacements), C13 (decor layers), C6 (zero remote font assets), C9 (reduced motion fx) |
-| **Slice 6** | Chat scope & conservative profile | *Queued* | C7 (chat profile), C9 (reduced motion), U4–U7 (runtime stability) |
+| **Slice 6** | Chat scope & conservative profile | **Complete** | C7 (chat profile), C8 (viewer supremacy), C9 (reduced motion), C12 (SPA lifecycle), U4–U7 (runtime stability) |
 | **Slice 7** | Presets & the Alice showpiece | *Queued* | Curated starter sheets & showpiece |
 
 ---
@@ -212,12 +212,41 @@ Deliver structured, sanctioned first-party schema features for styling needs ide
 
 ---
 
+## Slice 6: Chat Scope & Conservative Profile
+
+### Objective
+Activate creator custom CSS on the primary reading surface (`ChatViewport.svelte`) under the chat-conservative policy profile (§5.3), enforce viewer supremacy (`hideCustomStyling`, Invariant C8) and reduced motion guards (Invariant C9), surface policy-driven diagnostic explanations in the Studio editor (Invariant C7), and index the C-series invariants across documentation.
+
+### Implementation Summary
+- **Chat Viewport Style Injection** ([`ChatViewport.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/chat/ChatViewport.svelte)):
+  - Mounted `<CustomStyleOutlet scope="chat" css={session.character?.customCss} />` within the `ChatViewport` container (`data-ft-surface="chat"`).
+  - Maintained non-nesting surface architecture (Invariant §2.1): `ChatViewport` operates outside `ShellSurface` so shell sheets never pollute chat chrome.
+  - Automatically receives the chat-conservative sanitization profile: strips `position: fixed/sticky`, blocks `z-index > 10`, forbids `scroll-behavior`, and blocks scroll-container manipulation on `ft-message-log` and `ft-viewport`.
+- **Policy Explanations & Studio Diagnostics UX (Invariant C7)** ([`policy.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/packages/shared/src/customCss/policy.ts), [`lint.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/packages/shared/src/customCss/lint.ts), [`CustomCssPanel.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/studio/CustomCssPanel.svelte)):
+  - Defined `CHAT_POLICY_EXPLANATIONS` and `explainChatDrop(property, selector, value)` in `policy.ts` as the single source of truth driving both sanitizer enforcement and Studio UI lints.
+  - Implemented `lintChatRestrictions(raw: string)` in `lint.ts` to detect properties stripped in chat and return structured explanations.
+  - Added `CHAT_NOTE` issue code to `LintIssue` when `scope === 'chat'`.
+  - Added dedicated **Chat Surface Restrictions** alert box in the `CustomCssPanel` Diagnostics tab when authoring companion sheets (`targetScope === 'character'`), detailing every declaration that will be stripped when chatting and explaining why.
+  - Added `.ft-bubble-char` quick snippet button for instant companion bubble styling.
+- **Documentation & Cheat Sheet Indexing**:
+  - Updated [`.agents/AGENTS.md §4`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/.agents/AGENTS.md) with the complete **Customization Series (C)** invariant cheat sheet (C1–C13).
+  - Updated [`docs/development.md §6.3`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/docs/development.md) indexing C1–C13 to test files.
+  - Updated [`docs/architecture.md`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/docs/architecture.md) §11.2 (Chameleon pipeline with global cascade and CustomStyleOutlet) and §11.3 (Non-nesting surfaces: chat, character, shell).
+  - Updated [`docs/schema.md`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/docs/schema.md) documenting database version 5, `characters.custom_css`, and `settings.shell_theme`.
+- **Verification**:
+  - `packages/shared/test/customCss/chatProfile.test.ts`: tested `explainChatDrop`, `CHAT_POLICY_EXPLANATIONS`, and `lintChatRestrictions` (189 green).
+  - `frontend/unit/chatViewportStyle.test.ts`: verified `ChatViewport` outlet mounting, chat-conservative profile sanitization, reduced-motion guard attachment, and viewer supremacy kill-switch (161 green).
+  - `frontend/unit/boundaries.test.ts`: confirmed single style outlet, dynamic `css-tree` imports, and purity boundaries hold clean.
+
+---
+
 ## Test Suite Status
 
 - **`bun run typecheck`**: 0 errors, 0 warnings across monorepo (`shared`, `backend`, `frontend`).
 - **`bun run test`**: 100% green across all packages:
-  - `packages/shared`: 186 passed, 0 failed.
+  - `packages/shared`: 189 passed, 0 failed.
   - `backend`: 171 passed, 0 failed.
-  - `frontend`: 157 passed, 0 failed.
-  - Total: 514 passed, 0 failed.
+  - `frontend`: 161 passed, 0 failed.
+  - Total: 521 passed, 0 failed.
 - **`bun run db:check`**: Clean integrity (`wal`, `foreign_keys=1`, `user_version=5`, `fts_parity=ok (2/2)`).
+

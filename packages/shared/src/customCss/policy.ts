@@ -144,3 +144,46 @@ export function hasBlockedValuePattern(value: string, property?: string): boolea
     (property ? GLOBAL_BLOCKED_VALUE_PATTERNS.some((pattern) => pattern.test(`${property}:${value}`)) : false)
   );
 }
+
+export const CHAT_POLICY_EXPLANATIONS = {
+  positionFixedSticky: {
+    rule: 'position: fixed / sticky blocked',
+    protects: 'reading surface click-trapping overlays and scroll-hijacking layers',
+    explanation: 'position: fixed and sticky are stripped in chat to prevent click-trapping overlays and scroll-hijacking layers in the reading surface.'
+  },
+  zIndex: {
+    rule: 'z-index > 10 blocked',
+    protects: 'sheets stay under chrome (TopBar z-30, dialogs z-50)',
+    explanation: 'z-index > 10 is stripped in chat so custom styles stay beneath navigation chrome (z-30) and dialogs (z-50).'
+  },
+  scrollBehavior: {
+    rule: 'scroll-behavior blocked',
+    protects: 'smooth-scroll fighting auto-scroll follow during streaming (Invariant U5)',
+    explanation: 'scroll-behavior is stripped in chat to prevent fighting auto-scroll follow during streaming (Invariant U5).'
+  },
+  scrollMechanics: {
+    rule: 'scroll manipulation blocked on message-log and viewport',
+    protects: 'the scroll mechanics of the reading surface',
+    explanation: 'overflow and scroll mechanics properties on ft-message-log or ft-viewport are stripped in chat to protect reading surface scrolling.'
+  }
+} as const;
+
+export function explainChatDrop(property: string, selector: string, value?: string): string {
+  const p = property.toLowerCase();
+  const v = value ? value.trim().toLowerCase() : '';
+  if (p === 'position' && (v.includes('fixed') || v.includes('sticky') || !value)) {
+    return CHAT_POLICY_EXPLANATIONS.positionFixedSticky.explanation;
+  }
+  if (p === 'z-index') {
+    return CHAT_POLICY_EXPLANATIONS.zIndex.explanation;
+  }
+  if (p === 'scroll-behavior') {
+    return CHAT_POLICY_EXPLANATIONS.scrollBehavior.explanation;
+  }
+  const isScrollContainer = selector.includes('ft-message-log') || selector.includes('ft-viewport');
+  if (isScrollContainer) {
+    return CHAT_POLICY_EXPLANATIONS.scrollMechanics.explanation;
+  }
+  return `Chat profile restriction: ${property} is blocked on ${selector} in chat.`;
+}
+

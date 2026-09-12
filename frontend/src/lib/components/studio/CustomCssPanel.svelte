@@ -3,7 +3,7 @@
   import type { CharacterDraft } from '$lib/studio/draft.svelte';
   import { HOOKS, type SurfaceScope } from '@formatavern/shared';
   import { loadCustomCss } from '@formatavern/shared/customCss/loader';
-  import type { SanitizeIssue, LintIssue } from '@formatavern/shared/customCss';
+  import type { SanitizeIssue, LintIssue, ChatRestrictionIssue } from '@formatavern/shared/customCss';
   import { toasts } from '$lib/state/toasts.svelte';
   import Icon from '$lib/components/ui/Icon.svelte';
   import Spinner from '$lib/components/ui/Spinner.svelte';
@@ -74,6 +74,7 @@
 
   let reports = $state<SanitizeIssue[]>([]);
   let lints = $state<LintIssue[]>([]);
+  let chatRestrictions = $state<ChatRestrictionIssue[]>([]);
   let isAnalyzing = $state(false);
   let debounceTimer: any = null;
 
@@ -84,17 +85,20 @@
       if (!currentCode.trim()) {
         reports = [];
         lints = [];
+        chatRestrictions = [];
         return;
       }
       isAnalyzing = true;
       try {
-        const { sanitizeCss, lintSheet } = await loadCustomCss();
+        const { sanitizeCss, lintSheet, lintChatRestrictions } = await loadCustomCss();
         const out = sanitizeCss(currentCode, targetScope);
         reports = out.report;
-        lints = lintSheet(currentCode);
+        lints = lintSheet(currentCode, targetScope);
+        chatRestrictions = targetScope === 'character' ? lintChatRestrictions(currentCode) : [];
       } catch (err: any) {
         reports = [{ kind: 'parse-fatal', detail: err?.message ?? 'Unknown CSS parse error' }];
         lints = [];
+        chatRestrictions = [];
       } finally {
         isAnalyzing = false;
       }
@@ -274,6 +278,13 @@
         >
           .ft-decor-layer
         </button>
+        <button
+          type="button"
+          onclick={() => insertSnippet('.ft-bubble-char {\n  /* Companion speech bubble styling */\n}\n')}
+          class="rounded-lg border border-neutral-800 bg-neutral-850 px-2.5 py-1 text-xs font-mono text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
+        >
+          .ft-bubble-char
+        </button>
       {/if}
       <button
         type="button"
@@ -356,7 +367,7 @@
             ? 'bg-neutral-850 text-white font-semibold border-b-2 border-accent'
             : 'text-neutral-400 hover:text-neutral-200'}"
         >
-          Diagnostics ({reports.length + lints.length})
+          Diagnostics ({reports.length + lints.length + chatRestrictions.length})
         </button>
         <button
           type="button"
@@ -381,7 +392,7 @@
       <!-- Tab Content -->
       <div class="flex-1 overflow-y-auto p-3 text-xs space-y-3">
         {#if activeTab === 'editor'}
-          {#if reports.length === 0 && lints.length === 0}
+          {#if reports.length === 0 && lints.length === 0 && chatRestrictions.length === 0}
             <div class="flex flex-col items-center justify-center h-48 text-center text-neutral-500">
               <p class="text-[11px]">No issues detected.</p>
               <p class="text-[10px] text-neutral-600 mt-1">Raw CSS is preserved in storage. Policy-sanitized styles render in preview.</p>
@@ -405,6 +416,24 @@
                 {#each droppedDecls as d}
                   <div class="text-[11px] font-mono text-neutral-300">
                     <span class="text-amber-400">{d.property}</span> in {d.selector} ({d.reason})
+                  </div>
+                {/each}
+              </div>
+            {/if}
+
+            <!-- Chat Reading View Restrictions (Invariant C7) -->
+            {#if chatRestrictions.length > 0}
+              <div class="rounded-lg border border-amber-500/40 bg-amber-950/25 p-2.5 space-y-2">
+                <div class="flex items-center gap-1.5 font-semibold text-amber-300 text-[11px]">
+                  <span>Chat Surface Restrictions ({chatRestrictions.length})</span>
+                </div>
+                <p class="text-[10px] text-neutral-400">
+                  Allowed on the Author Showcase, but stripped in chat to maintain reading stability:
+                </p>
+                {#each chatRestrictions as cr}
+                  <div class="text-[11px] border-l-2 border-amber-500/50 pl-2 space-y-0.5">
+                    <div class="font-mono text-[10px] text-amber-400 font-semibold">{cr.property} in {cr.selector}</div>
+                    <div class="text-neutral-300 text-[11px]">{cr.message}</div>
                   </div>
                 {/each}
               </div>
