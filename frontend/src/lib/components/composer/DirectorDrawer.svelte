@@ -78,7 +78,7 @@
         {#if saveState === 'saving'}
           <span class="text-neutral-500">Saving…</span>
         {:else if saveState === 'saved'}
-          <span class="text-emerald-500">Saved</span>
+          <span class="text-accent">Saved</span>
         {/if}
       </div>
       <input

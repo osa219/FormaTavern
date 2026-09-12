@@ -38,10 +38,10 @@
     value={value}
     oninput={(e) => onSearch((e.target as HTMLInputElement).value)}
     placeholder="Search companions by name, lore, or tags... (Press / to focus)"
-    class="w-full rounded-2xl border border-neutral-800 bg-neutral-900/90 pl-10 pr-10 py-3 text-sm text-neutral-100 placeholder-neutral-500 shadow-lg focus:border-accent focus:outline-none transition-colors"
+    class="w-full rounded-2xl border border-(--chrome-line) bg-(--chrome-surface) pl-10 pr-10 py-3 text-sm text-(--chrome-text) placeholder-(--chrome-text)/40 shadow-md focus:border-accent focus:outline-none transition-colors"
   />
 
-  <div class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500">
+  <div class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-(--chrome-text)/40">
     <Icon name="sparkles" size={15} />
   </div>
 
@@ -52,7 +52,7 @@
         onSearch('');
         inputEl?.focus();
       }}
-      class="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-neutral-400 hover:text-neutral-200"
+      class="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-(--chrome-text)/40 hover:text-(--chrome-text)"
       aria-label="Clear search"
     >
       <Icon name="close" size={14} />

@@ -102,18 +102,18 @@
   bind:this={dialogEl}
   oncancel={handleCancel}
   onclick={handleBackdropClick}
-  class="fixed inset-0 m-auto hidden open:flex max-h-[85vh] w-full max-w-2xl flex-col rounded-2xl border border-neutral-800 bg-neutral-900/98 p-6 text-neutral-100 shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-sm max-sm:bottom-0 max-sm:top-auto max-sm:max-h-[90vh] max-sm:max-w-none max-sm:rounded-b-none max-sm:border-x-0 max-sm:border-b-0 {HOOKS.shell.settings}"
+  class="fixed inset-0 m-auto hidden open:flex max-h-[85vh] w-full max-w-2xl flex-col rounded-2xl border border-(--chrome-line) bg-(--chrome-surface) p-6 text-(--chrome-text) shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-sm max-sm:bottom-0 max-sm:top-auto max-sm:max-h-[90vh] max-sm:max-w-none max-sm:rounded-b-none max-sm:border-x-0 max-sm:border-b-0 {HOOKS.shell.settings}"
   aria-labelledby="settings-title"
 >
   <!-- Header -->
-  <div class="mb-4 flex items-center justify-between border-b border-neutral-800 pb-3">
+  <div class="mb-4 flex items-center justify-between border-b border-(--chrome-line) pb-3">
     <div class="flex items-center gap-2">
-      <Icon name="settings" size={18} class="text-neutral-400" />
-      <h2 id="settings-title" class="text-base font-semibold text-neutral-100">
+      <Icon name="settings" size={18} class="text-(--chrome-text)/60" />
+      <h2 id="settings-title" class="text-base font-semibold text-(--chrome-text)">
         Settings
       </h2>
       {#if settingsStore.saving}
-        <div class="flex items-center gap-1 text-xs text-neutral-400">
+        <div class="flex items-center gap-1 text-xs text-(--chrome-text)/60">
           <Spinner size={12} />
           <span>Saving…</span>
         </div>
@@ -122,7 +122,7 @@
     <button
       type="button"
       onclick={onClose}
-      class="rounded-lg p-1 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
+      class="rounded-lg p-1 text-(--chrome-text)/60 hover:bg-(--chrome-line)/40 hover:text-(--chrome-text)"
       aria-label="Close settings"
     >
       <Icon name="close" size={16} />
@@ -130,13 +130,13 @@
   </div>
 
   <!-- Tabs -->
-  <div class="mb-5 flex border-b border-neutral-800 text-xs font-medium text-neutral-400">
+  <div class="mb-5 flex border-b border-(--chrome-line) text-xs font-medium text-(--chrome-text)/60">
     <button
       type="button"
       onclick={() => (activeTab = 'provider')}
-      class="border-b-2 px-3.5 py-2 transition-colors hover:text-neutral-200"
+      class="border-b-2 px-3.5 py-2 transition-colors hover:text-(--chrome-text)"
       class:border-accent={activeTab === 'provider'}
-      class:text-neutral-100={activeTab === 'provider'}
+      class:text-(--chrome-text)={activeTab === 'provider'}
       class:border-transparent={activeTab !== 'provider'}
     >
       Provider
@@ -144,9 +144,9 @@
     <button
       type="button"
       onclick={() => (activeTab = 'appearance')}
-      class="border-b-2 px-3.5 py-2 transition-colors hover:text-neutral-200"
+      class="border-b-2 px-3.5 py-2 transition-colors hover:text-(--chrome-text)"
       class:border-accent={activeTab === 'appearance'}
-      class:text-neutral-100={activeTab === 'appearance'}
+      class:text-(--chrome-text)={activeTab === 'appearance'}
       class:border-transparent={activeTab !== 'appearance'}
     >
       Appearance
@@ -154,9 +154,9 @@
     <button
       type="button"
       onclick={() => (activeTab = 'generation')}
-      class="border-b-2 px-3.5 py-2 transition-colors hover:text-neutral-200"
+      class="border-b-2 px-3.5 py-2 transition-colors hover:text-(--chrome-text)"
       class:border-accent={activeTab === 'generation'}
-      class:text-neutral-100={activeTab === 'generation'}
+      class:text-(--chrome-text)={activeTab === 'generation'}
       class:border-transparent={activeTab !== 'generation'}
     >
       Generation
@@ -164,9 +164,9 @@
     <button
       type="button"
       onclick={() => (activeTab = 'narrative')}
-      class="border-b-2 px-3.5 py-2 transition-colors hover:text-neutral-200"
+      class="border-b-2 px-3.5 py-2 transition-colors hover:text-(--chrome-text)"
       class:border-accent={activeTab === 'narrative'}
-      class:text-neutral-100={activeTab === 'narrative'}
+      class:text-(--chrome-text)={activeTab === 'narrative'}
       class:border-transparent={activeTab !== 'narrative'}
     >
       Narrative
@@ -174,9 +174,9 @@
     <button
       type="button"
       onclick={() => (activeTab = 'a11y')}
-      class="border-b-2 px-3.5 py-2 transition-colors hover:text-neutral-200"
+      class="border-b-2 px-3.5 py-2 transition-colors hover:text-(--chrome-text)"
       class:border-accent={activeTab === 'a11y'}
-      class:text-neutral-100={activeTab === 'a11y'}
+      class:text-(--chrome-text)={activeTab === 'a11y'}
       class:border-transparent={activeTab !== 'a11y'}
     >
       Accessibility
@@ -184,9 +184,9 @@
     <button
       type="button"
       onclick={() => (activeTab = 'shortcuts')}
-      class="border-b-2 px-3.5 py-2 transition-colors hover:text-neutral-200"
+      class="border-b-2 px-3.5 py-2 transition-colors hover:text-(--chrome-text)"
       class:border-accent={activeTab === 'shortcuts'}
-      class:text-neutral-100={activeTab === 'shortcuts'}
+      class:text-(--chrome-text)={activeTab === 'shortcuts'}
       class:border-transparent={activeTab !== 'shortcuts'}
     >
       Shortcuts
@@ -194,18 +194,18 @@
   </div>
 
   <!-- Body -->
-  <div class="flex-1 overflow-y-auto pr-1 text-xs text-neutral-300">
+  <div class="flex-1 overflow-y-auto pr-1 text-xs text-(--chrome-text)/80">
     {#if activeTab === 'a11y'}
       <div class="flex flex-col gap-4">
-        <p class="text-[11px] text-neutral-400">
+        <p class="text-[11px] text-(--chrome-text)/60">
           Accessibility and display preferences are stored locally on this device.
         </p>
 
         <!-- Disable Character Themes -->
-        <label class="flex items-center justify-between rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-3 cursor-pointer hover:bg-neutral-850">
+        <label class="flex items-center justify-between rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 p-3 cursor-pointer hover:bg-(--chrome-line)/30">
           <div>
-            <div class="font-medium text-neutral-200">Disable Character Themes</div>
-            <div class="text-[11px] text-neutral-400">Forces neutral high-contrast A11Y theme across all chats</div>
+            <div class="font-medium text-(--chrome-text)">Disable Character Themes</div>
+            <div class="text-[11px] text-(--chrome-text)/60">Forces neutral high-contrast A11Y theme across all chats</div>
           </div>
           <input
             type="checkbox"
@@ -214,15 +214,15 @@
               prefs.disableCharacterThemes = e.currentTarget.checked;
               prefs.save();
             }}
-            class="h-4 w-4 rounded border-neutral-700 bg-neutral-900 text-accent focus:ring-accent"
+            class="h-4 w-4 rounded border-(--chrome-line) bg-(--chrome-surface) text-accent focus:ring-accent"
           />
         </label>
 
         <!-- Hide Custom Styling -->
-        <label class="flex items-center justify-between rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-3 cursor-pointer hover:bg-neutral-850">
+        <label class="flex items-center justify-between rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 p-3 cursor-pointer hover:bg-(--chrome-line)/30">
           <div>
-            <div class="font-medium text-neutral-200">Hide Custom Styling</div>
-            <div class="text-[11px] text-neutral-400">Hides creator-authored custom CSS across cards and chats</div>
+            <div class="font-medium text-(--chrome-text)">Hide Custom Styling</div>
+            <div class="text-[11px] text-(--chrome-text)/60">Hides creator-authored custom CSS across cards and chats</div>
           </div>
           <input
             type="checkbox"
@@ -231,15 +231,15 @@
               prefs.hideCustomStyling = e.currentTarget.checked;
               prefs.save();
             }}
-            class="h-4 w-4 rounded border-neutral-700 bg-neutral-900 text-accent focus:ring-accent"
+            class="h-4 w-4 rounded border-(--chrome-line) bg-(--chrome-surface) text-accent focus:ring-accent"
           />
         </label>
 
         <!-- Disable Reactive Theming -->
-        <label class="flex items-center justify-between rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-3 cursor-pointer hover:bg-neutral-850">
+        <label class="flex items-center justify-between rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 p-3 cursor-pointer hover:bg-(--chrome-line)/30">
           <div>
-            <div class="font-medium text-neutral-200">Disable Reactive Theming</div>
-            <div class="text-[11px] text-neutral-400">Keeps base character theme static without live scene state bindings</div>
+            <div class="font-medium text-(--chrome-text)">Disable Reactive Theming</div>
+            <div class="text-[11px] text-(--chrome-text)/60">Keeps base character theme static without live scene state bindings</div>
           </div>
           <input
             type="checkbox"
@@ -248,15 +248,15 @@
               prefs.disableReactiveTheming = e.currentTarget.checked;
               prefs.save();
             }}
-            class="h-4 w-4 rounded border-neutral-700 bg-neutral-900 text-accent focus:ring-accent"
+            class="h-4 w-4 rounded border-(--chrome-line) bg-(--chrome-surface) text-accent focus:ring-accent"
           />
         </label>
 
         <!-- Enter to Send -->
-        <label class="flex items-center justify-between rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-3 cursor-pointer hover:bg-neutral-850">
+        <label class="flex items-center justify-between rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 p-3 cursor-pointer hover:bg-(--chrome-line)/30">
           <div>
-            <div class="font-medium text-neutral-200">Enter Key Sends Message</div>
-            <div class="text-[11px] text-neutral-400">Press Enter to send, Shift+Enter for new lines</div>
+            <div class="font-medium text-(--chrome-text)">Enter Key Sends Message</div>
+            <div class="text-[11px] text-(--chrome-text)/60">Press Enter to send, Shift+Enter for new lines</div>
           </div>
           <input
             type="checkbox"
@@ -265,15 +265,15 @@
               prefs.enterToSend = e.currentTarget.checked;
               prefs.save();
             }}
-            class="h-4 w-4 rounded border-neutral-700 bg-neutral-900 text-accent focus:ring-accent"
+            class="h-4 w-4 rounded border-(--chrome-line) bg-(--chrome-surface) text-accent focus:ring-accent"
           />
         </label>
 
         <!-- Reduce Motion -->
-        <div class="flex items-center justify-between rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-3">
+        <div class="flex items-center justify-between rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 p-3">
           <div>
-            <div class="font-medium text-neutral-200">Reduced Motion</div>
-            <div class="text-[11px] text-neutral-400">Controls transitions and stream animations</div>
+            <div class="font-medium text-(--chrome-text)">Reduced Motion</div>
+            <div class="text-[11px] text-(--chrome-text)/60">Controls transitions and stream animations</div>
           </div>
           <select
             value={prefs.reducedMotion}
@@ -281,7 +281,7 @@
               prefs.reducedMotion = e.currentTarget.value as any;
               prefs.save();
             }}
-            class="rounded-lg border border-neutral-800 bg-neutral-900 px-2.5 py-1 text-xs text-neutral-200"
+            class="rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1 text-xs text-(--chrome-text)"
           >
             <option value="system">Follow OS</option>
             <option value="on">Always reduce</option>
@@ -290,10 +290,10 @@
         </div>
 
         <!-- Dev Mode -->
-        <label class="flex items-center justify-between rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-3 cursor-pointer hover:bg-neutral-850">
+        <label class="flex items-center justify-between rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 p-3 cursor-pointer hover:bg-(--chrome-line)/30">
           <div>
-            <div class="font-medium text-neutral-200">Developer Diagnostics Overlay</div>
-            <div class="text-[11px] text-neutral-400">Shows frame cost, commit counts, and raw envelope inspector</div>
+            <div class="font-medium text-(--chrome-text)">Developer Diagnostics Overlay</div>
+            <div class="text-[11px] text-(--chrome-text)/60">Shows frame cost, commit counts, and raw envelope inspector</div>
           </div>
           <input
             type="checkbox"
@@ -302,53 +302,53 @@
               prefs.devMode = e.currentTarget.checked;
               prefs.save();
             }}
-            class="h-4 w-4 rounded border-neutral-700 bg-neutral-900 text-accent focus:ring-accent"
+            class="h-4 w-4 rounded border-(--chrome-line) bg-(--chrome-surface) text-accent focus:ring-accent"
           />
         </label>
       </div>
     {:else if activeTab === 'shortcuts'}
       <div class="flex flex-col gap-3">
-        <p class="text-[11px] text-neutral-400">
+        <p class="text-[11px] text-(--chrome-text)/60">
           FormaTavern keyboard shortcuts designed for fluid, keyboard-first storytelling.
         </p>
 
-        <div class="grid grid-cols-[1fr_auto] items-center gap-y-2.5 border-t border-neutral-800 pt-3">
-          <span class="text-neutral-300">Send message</span>
+        <div class="grid grid-cols-[1fr_auto] items-center gap-y-2.5 border-t border-(--chrome-line) pt-3">
+          <span class="text-(--chrome-text)/80">Send message</span>
           <div class="flex items-center gap-1">
-            <Kbd>Enter</Kbd> <span class="text-neutral-500">or</span> <Kbd>Ctrl</Kbd>+<Kbd>Enter</Kbd>
+            <Kbd>Enter</Kbd> <span class="text-(--chrome-text)/50">or</span> <Kbd>Ctrl</Kbd>+<Kbd>Enter</Kbd>
           </div>
 
-          <span class="text-neutral-300">Insert newline</span>
+          <span class="text-(--chrome-text)/80">Insert newline</span>
           <div>
             <Kbd>Shift</Kbd>+<Kbd>Enter</Kbd>
           </div>
 
-          <span class="text-neutral-300">Stop generation / Close modal</span>
+          <span class="text-(--chrome-text)/80">Stop generation / Close modal</span>
           <div>
             <Kbd>Esc</Kbd>
           </div>
 
-          <span class="text-neutral-300">Previous / Next swipe on latest turn</span>
+          <span class="text-(--chrome-text)/80">Previous / Next swipe on latest turn</span>
           <div class="flex items-center gap-1">
-            <Kbd>Alt</Kbd>+<Kbd>←</Kbd> <span class="text-neutral-500">/</span> <Kbd>Alt</Kbd>+<Kbd>→</Kbd>
+            <Kbd>Alt</Kbd>+<Kbd>←</Kbd> <span class="text-(--chrome-text)/50">/</span> <Kbd>Alt</Kbd>+<Kbd>→</Kbd>
           </div>
 
-          <span class="text-neutral-300">Toggle Director drawer</span>
+          <span class="text-(--chrome-text)/80">Toggle Director drawer</span>
           <div>
             <Kbd>Alt</Kbd>+<Kbd>D</Kbd>
           </div>
 
-          <span class="text-neutral-300">Toggle State HUD popover</span>
+          <span class="text-(--chrome-text)/80">Toggle State HUD popover</span>
           <div>
             <Kbd>Alt</Kbd>+<Kbd>S</Kbd>
           </div>
 
-          <span class="text-neutral-300">Toggle Navigation drawer</span>
+          <span class="text-(--chrome-text)/80">Toggle Navigation drawer</span>
           <div>
             <Kbd>Alt</Kbd>+<Kbd>N</Kbd>
           </div>
 
-          <span class="text-neutral-300">Focus composer</span>
+          <span class="text-(--chrome-text)/80">Focus composer</span>
           <div>
             <Kbd>/</Kbd>
           </div>
@@ -361,28 +361,28 @@
           <button
             type="button"
             onclick={() => settingsStore.load()}
-            class="rounded-xl border border-neutral-800 bg-neutral-850 px-3.5 py-1.5 text-xs font-semibold text-neutral-200 transition-colors hover:bg-neutral-800 hover:text-white"
+            class="rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3.5 py-1.5 text-xs font-semibold text-(--chrome-text) transition-colors hover:bg-(--chrome-line)/40"
           >
             Retry
           </button>
         </div>
       {:else}
         <div class="flex h-48 items-center justify-center">
-          <Spinner size={24} class="text-neutral-500" />
+          <Spinner size={24} class="text-(--chrome-text)/50" />
         </div>
       {/if}
     {:else if activeTab === 'provider'}
       <div class="flex flex-col gap-4">
         <!-- Provider Selector -->
         <div>
-          <label for="provider-select" class="mb-1 block font-medium text-neutral-200">
+          <label for="provider-select" class="mb-1 block font-medium text-(--chrome-text)">
             LLM Provider
           </label>
           <select
             id="provider-select"
             value={s.provider.id}
             onchange={(e) => settingsStore.patch({ provider: { id: e.currentTarget.value as any } })}
-            class="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-neutral-200 focus:border-neutral-700 focus:outline-none"
+            class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text) focus:border-accent focus:outline-none"
           >
             <option value="mock">Mock Engine (Offline fixtures)</option>
             <option value="openrouter">OpenRouter (Online LLMs)</option>
@@ -391,7 +391,7 @@
 
         <!-- Model Name / Preset -->
         <div>
-          <label for="model-input" class="mb-1 block font-medium text-neutral-200">
+          <label for="model-input" class="mb-1 block font-medium text-(--chrome-text)">
             Model
           </label>
           {#if s.provider.id === 'mock'}
@@ -399,7 +399,7 @@
               id="model-input"
               value={s.provider.model ?? 'mock:envelope-directive'}
               onchange={(e) => settingsStore.patch({ provider: { model: e.currentTarget.value } })}
-              class="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-neutral-200 focus:border-neutral-700 focus:outline-none"
+              class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text) focus:border-accent focus:outline-none"
             >
               <option value="mock:envelope-directive">mock:envelope-directive (Standard narrative)</option>
               <option value="mock:envelope-xml">mock:envelope-xml (XML format)</option>
@@ -415,17 +415,17 @@
               value={s.provider.model ?? ''}
               placeholder="e.g. anthropic/claude-3.5-sonnet or meta-llama/llama-3.3-70b-instruct"
               oninput={(e) => queuePatch({ provider: { model: e.currentTarget.value } })}
-              class="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-neutral-200 focus:border-neutral-700 focus:outline-none"
+              class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text) focus:border-accent focus:outline-none"
             />
           {/if}
         </div>
 
         <!-- OpenRouter API Key -->
         {#if s.provider.id === 'openrouter'}
-          <div class="rounded-xl border border-neutral-800 bg-neutral-950/50 p-4">
+          <div class="rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 p-4">
             <div class="mb-2 flex items-center justify-between">
-              <span class="font-medium text-neutral-200">API Key</span>
-              <span class="text-[11px] text-neutral-500">
+              <span class="font-medium text-(--chrome-text)">API Key</span>
+              <span class="text-[11px] text-(--chrome-text)/60">
                 Current: {s.openrouter.apiKeyHint ?? 'Not set'} ({s.openrouter.source})
               </span>
             </div>
@@ -434,13 +434,13 @@
                 type="password"
                 bind:value={apiKeyDraft}
                 placeholder="Enter new OpenRouter key (sk-or-...)"
-                class="flex-1 rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-neutral-200 focus:border-neutral-700 focus:outline-none"
+                class="flex-1 rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text) focus:border-accent focus:outline-none"
               />
               <button
                 type="button"
                 onclick={handleSaveApiKey}
                 disabled={!apiKeyDraft.trim()}
-                class="rounded-xl bg-neutral-200 px-3.5 py-2 font-semibold text-neutral-900 transition-colors hover:bg-white disabled:opacity-50"
+                class="rounded-xl bg-accent px-3.5 py-2 font-semibold text-accent-contrast transition-colors hover:bg-accent/90 disabled:opacity-50"
               >
                 Save
               </button>
@@ -448,14 +448,14 @@
                 <button
                   type="button"
                   onclick={handleClearApiKey}
-                  class="rounded-xl border border-neutral-800 bg-neutral-850 px-3 py-2 text-neutral-400 transition-colors hover:bg-red-950/40 hover:text-red-300"
+                  class="rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text)/60 transition-colors hover:bg-red-950/40 hover:text-red-300"
                 >
                   Clear Key
                 </button>
               {/if}
             </div>
             {#if apiKeySavedNotice}
-              <p class="mt-2 text-[11px] text-emerald-400">API key saved securely.</p>
+              <p class="mt-2 text-[11px] text-accent">API key saved securely.</p>
             {/if}
           </div>
         {/if}
@@ -464,9 +464,9 @@
       <div class="flex flex-col gap-4">
         <!-- Temperature -->
         <div>
-          <div class="mb-1 flex justify-between text-neutral-200 font-medium">
+          <div class="mb-1 flex justify-between text-(--chrome-text) font-medium">
             <label for="temp-slider">Temperature</label>
-            <span class="font-mono text-neutral-400">{s.generation.temperature}</span>
+            <span class="font-mono text-(--chrome-text)/60">{s.generation.temperature}</span>
           </div>
           <input
             id="temp-slider"
@@ -485,9 +485,9 @@
 
         <!-- Max Tokens -->
         <div>
-          <div class="mb-1 flex justify-between text-neutral-200 font-medium">
+          <div class="mb-1 flex justify-between text-(--chrome-text) font-medium">
             <label for="max-tokens">Max Tokens</label>
-            <span class="font-mono text-neutral-400">{s.generation.maxTokens}</span>
+            <span class="font-mono text-(--chrome-text)/60">{s.generation.maxTokens}</span>
           </div>
           <input
             id="max-tokens"
@@ -506,7 +506,7 @@
 
         <!-- Context Length -->
         <div>
-          <label for="ctx-length" class="mb-1 block font-medium text-neutral-200">
+          <label for="ctx-length" class="mb-1 block font-medium text-(--chrome-text)">
             Context Length (Tokens)
           </label>
           <input
@@ -522,15 +522,15 @@
                 settingsStore.patch({ generation: { contextLength: val } });
               }
             }}
-            class="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-neutral-200 focus:border-neutral-700 focus:outline-none"
+            class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text) focus:border-accent focus:outline-none"
           />
         </div>
 
         <!-- Top P -->
         <div>
-          <div class="mb-1 flex justify-between text-neutral-200 font-medium">
+          <div class="mb-1 flex justify-between text-(--chrome-text) font-medium">
             <label for="top-p">Top P (Nucleus Sampling)</label>
-            <span class="font-mono text-neutral-400">{s.generation.topP ?? 1}</span>
+            <span class="font-mono text-(--chrome-text)/60">{s.generation.topP ?? 1}</span>
           </div>
           <input
             id="top-p"
@@ -550,14 +550,14 @@
     {:else if activeTab === 'narrative'}
       <div class="flex flex-col gap-4">
         <div>
-          <label for="narrative-mode" class="mb-1 block font-medium text-neutral-200">
+          <label for="narrative-mode" class="mb-1 block font-medium text-(--chrome-text)">
             Default Narrative Mode
           </label>
           <select
             id="narrative-mode"
             value={s.narrative.defaultMode}
             onchange={(e) => settingsStore.patch({ narrative: { defaultMode: e.currentTarget.value as any } })}
-            class="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-neutral-200 focus:border-neutral-700 focus:outline-none"
+            class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text) focus:border-accent focus:outline-none"
           >
             <option value="narrative">Three-Track Narrative Envelope</option>
             <option value="classic">Classic Roleplay (Unenveloped prose)</option>
@@ -565,14 +565,14 @@
         </div>
 
         <div>
-          <label for="narrative-dialect" class="mb-1 block font-medium text-neutral-200">
+          <label for="narrative-dialect" class="mb-1 block font-medium text-(--chrome-text)">
             Envelope Grammar Dialect
           </label>
           <select
             id="narrative-dialect"
             value={s.narrative.defaultDialect}
             onchange={(e) => settingsStore.patch({ narrative: { defaultDialect: e.currentTarget.value as any } })}
-            class="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-neutral-200 focus:border-neutral-700 focus:outline-none"
+            class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text) focus:border-accent focus:outline-none"
           >
             <option value="directive">Directive (::: narrator / ::: speech)</option>
             <option value="xml">XML Tags (&lt;narrator&gt; / &lt;speech&gt;)</option>
@@ -581,7 +581,7 @@
         </div>
 
         <div>
-          <label for="system-preamble" class="mb-1 block font-medium text-neutral-200">
+          <label for="system-preamble" class="mb-1 block font-medium text-(--chrome-text)">
             Custom System Preamble
           </label>
           <textarea
@@ -590,22 +590,22 @@
             placeholder="Optional guidance injected into Block 1 of the prompt..."
             rows={4}
             oninput={(e) => queuePatch({ preamble: e.currentTarget.value }, 600)}
-            class="w-full rounded-xl border border-neutral-800 bg-neutral-950 p-3 font-mono text-xs text-neutral-200 focus:border-neutral-700 focus:outline-none"
+            class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) p-3 font-mono text-xs text-(--chrome-text) focus:border-accent focus:outline-none"
           ></textarea>
         </div>
       </div>
     {:else if activeTab === 'appearance'}
       <div class="flex flex-col gap-5">
-        <p class="text-[11px] text-neutral-400">
+        <p class="text-[11px] text-(--chrome-text)/60">
           Customize the global shell appearance, chrome accent, and surface styling across the Foyer, Studio, and Personas.
         </p>
 
         <!-- Chrome Accent Color -->
-        <div class="rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-4 space-y-3">
+        <div class="rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 p-4 space-y-3">
           <div class="flex items-center justify-between">
             <div>
-              <div class="font-medium text-neutral-200">Chrome Accent Color</div>
-              <div class="text-[11px] text-neutral-400">Primary highlight color for buttons, borders, and active indicators</div>
+              <div class="font-medium text-(--chrome-text)">Chrome Accent Color</div>
+              <div class="text-[11px] text-(--chrome-text)/60">Primary highlight color for buttons, borders, and active indicators</div>
             </div>
             <div class="flex items-center gap-2">
               <input
@@ -617,7 +617,7 @@
                     chrome: { ...shellTheme.theme.chrome, accent: hex }
                   });
                 }}
-                class="h-7 w-7 rounded-lg border border-neutral-700 bg-transparent cursor-pointer p-0.5"
+                class="h-7 w-7 rounded-lg border border-(--chrome-line) bg-transparent cursor-pointer p-0.5"
                 title="Choose custom accent color"
               />
               <input
@@ -631,7 +631,7 @@
                     }, 0);
                   }
                 }}
-                class="w-24 rounded-lg border border-neutral-800 bg-neutral-900 px-2 py-1 font-mono text-xs text-neutral-200 focus:border-accent focus:outline-none"
+                class="w-24 rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2 py-1 font-mono text-xs text-(--chrome-text) focus:border-accent focus:outline-none"
               />
             </div>
           </div>
@@ -655,10 +655,10 @@
         </div>
 
         <!-- Frosted vs Solid Chrome (forceSolidChrome) -->
-        <label class="flex items-center justify-between rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-3.5 cursor-pointer hover:bg-neutral-850">
+        <label class="flex items-center justify-between rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 p-3.5 cursor-pointer hover:bg-(--chrome-line)/30">
           <div>
-            <div class="font-medium text-neutral-200">Solid Chrome Surface</div>
-            <div class="text-[11px] text-neutral-400">Forces solid background on chrome bars and sheets (disables frosted glass blur)</div>
+            <div class="font-medium text-(--chrome-text)">Solid Chrome Surface</div>
+            <div class="text-[11px] text-(--chrome-text)/60">Forces solid background on chrome bars and sheets (disables frosted glass blur)</div>
           </div>
           <input
             type="checkbox"
@@ -667,18 +667,18 @@
               prefs.forceSolidChrome = e.currentTarget.checked;
               prefs.save();
             }}
-            class="h-4 w-4 rounded border-neutral-700 bg-neutral-900 text-accent focus:ring-accent"
+            class="h-4 w-4 rounded border-(--chrome-line) bg-(--chrome-surface) text-accent focus:ring-accent"
           />
         </label>
 
         <!-- Surface Scrim Strength Slider -->
-        <div class="rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-4 space-y-2">
-          <div class="flex items-center justify-between text-neutral-200 font-medium">
+        <div class="rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 p-4 space-y-2">
+          <div class="flex items-center justify-between text-(--chrome-text) font-medium">
             <div>
               <label for="scrim-slider" class="block">Surface Scrim Opacity</label>
-              <span class="text-[11px] font-normal text-neutral-400">Controls background darkness/opacity behind chrome elements</span>
+              <span class="text-[11px] font-normal text-(--chrome-text)/60">Controls background darkness/opacity behind chrome elements</span>
             </div>
-            <span class="font-mono text-neutral-400">
+            <span class="font-mono text-(--chrome-text)/60">
               {shellTheme.theme.scrim ?? '0.8'}
             </span>
           </div>
@@ -699,11 +699,11 @@
         </div>
 
         <!-- Foyer Title Override -->
-        <div class="rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-4 space-y-2">
-          <label for="foyer-title" class="block font-medium text-neutral-200">
+        <div class="rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 p-4 space-y-2">
+          <label for="foyer-title" class="block font-medium text-(--chrome-text)">
             Foyer Header Title
           </label>
-          <div class="text-[11px] text-neutral-400">Custom label displayed in the top bar navigation header on the Foyer page</div>
+          <div class="text-[11px] text-(--chrome-text)/60">Custom label displayed in the top bar navigation header on the Foyer page</div>
           <input
             id="foyer-title"
             type="text"
@@ -716,18 +716,18 @@
                 labels: { ...shellTheme.theme.labels, foyerTitle: val || undefined }
               });
             }}
-            class="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3.5 py-2 text-neutral-200 focus:border-accent focus:outline-none"
+            class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3.5 py-2 text-(--chrome-text) focus:border-accent focus:outline-none"
           />
         </div>
 
         <!-- Card Layout & Density -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <!-- Card Density -->
-          <div class="rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-4 space-y-2">
-            <label for="card-density" class="block font-medium text-neutral-200">
+          <div class="rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 p-4 space-y-2">
+            <label for="card-density" class="block font-medium text-(--chrome-text)">
               Card Density
             </label>
-            <div class="text-[11px] text-neutral-400">Controls padding and spacing in companion cards</div>
+            <div class="text-[11px] text-(--chrome-text)/60">Controls padding and spacing in companion cards</div>
             <select
               id="card-density"
               value={shellTheme.theme.card?.density ?? 'regular'}
@@ -737,7 +737,7 @@
                   card: { ...shellTheme.theme.card, density }
                 }, 0);
               }}
-              class="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-neutral-200 focus:border-accent focus:outline-none"
+              class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text) focus:border-accent focus:outline-none"
             >
               <option value="compact">Compact (Dense)</option>
               <option value="regular">Regular (Balanced)</option>
@@ -746,11 +746,11 @@
           </div>
 
           <!-- Card Radius -->
-          <div class="rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-4 space-y-2">
-            <label for="card-radius" class="block font-medium text-neutral-200">
+          <div class="rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 p-4 space-y-2">
+            <label for="card-radius" class="block font-medium text-(--chrome-text)">
               Card Corner Radius
             </label>
-            <div class="text-[11px] text-neutral-400">Border radius for companion cards</div>
+            <div class="text-[11px] text-(--chrome-text)/60">Border radius for companion cards</div>
             <div class="flex items-center gap-2">
               <select
                 id="card-radius"
@@ -763,7 +763,7 @@
                     }, 0);
                   }
                 }}
-                class="flex-1 rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-neutral-200 focus:border-accent focus:outline-none text-xs"
+                class="flex-1 rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text) focus:border-accent focus:outline-none text-xs"
               >
                 <option value="0px">Sharp (0px)</option>
                 <option value="0.5rem">Subtle (8px)</option>
@@ -786,7 +786,7 @@
                     });
                   }
                 }}
-                class="w-24 rounded-xl border border-neutral-800 bg-neutral-900 px-2.5 py-2 font-mono text-xs text-neutral-200 focus:border-accent focus:outline-none text-center"
+                class="w-24 rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-2 font-mono text-xs text-(--chrome-text) focus:border-accent focus:outline-none text-center"
                 title="Custom CSS corner radius (e.g. 12px, 0.75rem, 0px)"
               />
             </div>
@@ -794,9 +794,9 @@
         </div>
 
         <!-- Foyer / Shell Background -->
-        <div class="rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-4 space-y-3">
-          <div class="font-medium text-neutral-200">Foyer Background</div>
-          <div class="text-[11px] text-neutral-400">Optional backdrop image and overlay styling for the shell</div>
+        <div class="rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 p-4 space-y-3">
+          <div class="font-medium text-(--chrome-text)">Foyer Background</div>
+          <div class="text-[11px] text-(--chrome-text)/60">Optional backdrop image and overlay styling for the shell</div>
           <div class="space-y-2">
             <input
               type="text"
@@ -811,7 +811,7 @@
                   }
                 });
               }}
-              class="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3.5 py-2 text-neutral-200 focus:border-accent focus:outline-none font-mono text-xs"
+              class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3.5 py-2 text-(--chrome-text) focus:border-accent focus:outline-none font-mono text-xs"
             />
             <div class="grid grid-cols-2 gap-2">
               <input
@@ -827,7 +827,7 @@
                     }
                   });
                 }}
-                class="rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-neutral-200 focus:border-accent focus:outline-none font-mono text-xs"
+                class="rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text) focus:border-accent focus:outline-none font-mono text-xs"
               />
               <input
                 type="text"
@@ -842,18 +842,18 @@
                     }
                   });
                 }}
-                class="rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-neutral-200 focus:border-accent focus:outline-none font-mono text-xs"
+                class="rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text) focus:border-accent focus:outline-none font-mono text-xs"
               />
             </div>
           </div>
         </div>
 
         <!-- Shell Custom CSS -->
-        <div class="rounded-xl border border-neutral-800/70 bg-neutral-950/40 p-4 space-y-3">
+        <div class="rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 p-4 space-y-3">
           <div class="flex items-center justify-between">
             <div>
-              <div class="font-medium text-neutral-200">Shell Custom CSS</div>
-              <div class="text-[11px] text-neutral-400">Scoped CSS rules applied to the Foyer, Studio, and Personas shell surfaces</div>
+              <div class="font-medium text-(--chrome-text)">Shell Custom CSS</div>
+              <div class="text-[11px] text-(--chrome-text)/60">Scoped CSS rules applied to the Foyer, Studio, and Personas shell surfaces</div>
             </div>
           </div>
           <div class="h-[420px]">

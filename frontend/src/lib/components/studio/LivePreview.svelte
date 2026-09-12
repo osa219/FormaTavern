@@ -149,7 +149,7 @@
         <!-- Mock Action Hub with .ft-action-hub hook -->
         <div class="{HOOKS.character.actionHub} flex items-center justify-between gap-3 p-4 rounded-2xl bg-neutral-900/60 border border-neutral-800/80 backdrop-blur-sm">
           <div class="flex items-center gap-2">
-            <span class="inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+            <span class="inline-flex h-2 w-2 rounded-full bg-accent"></span>
             <span class="text-xs font-medium text-neutral-300">Ready to chat</span>
           </div>
           <div class="flex items-center gap-2">

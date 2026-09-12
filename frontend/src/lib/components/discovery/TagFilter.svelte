@@ -17,7 +17,7 @@
 {#if availableTags.length > 0}
   <div class="space-y-2">
     <div class="flex items-center justify-between text-xs">
-      <span class="font-mono text-[11px] uppercase tracking-wider text-neutral-400">
+      <span class="font-mono text-[11px] uppercase tracking-wider text-(--chrome-text)/60">
         {#if selectedTags.length > 0}
           Matching all of ({selectedTags.length}):
         {:else}
@@ -29,7 +29,7 @@
         <button
           type="button"
           onclick={onClearTags}
-          class="text-xs text-neutral-400 hover:text-neutral-200 underline"
+          class="text-xs text-(--chrome-text)/60 hover:text-(--chrome-text) underline"
         >
           Clear filters
         </button>
@@ -44,7 +44,7 @@
           onclick={() => onToggleTag(tag)}
           class="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-mono transition-colors {selected
             ? 'border-accent bg-accent/20 text-accent font-semibold shadow-xs'
-            : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:border-neutral-700 hover:bg-neutral-850 hover:text-neutral-200'}"
+            : 'border-(--chrome-line) bg-(--chrome-surface) text-(--chrome-text)/70 hover:border-accent/40 hover:text-(--chrome-text)'}"
         >
           <span>{displayTag(tag)}</span>
           <span class="text-[10px] opacity-60">({count})</span>

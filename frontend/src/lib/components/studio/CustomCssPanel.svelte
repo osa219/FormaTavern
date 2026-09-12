@@ -333,7 +333,7 @@
       {:else if isAnalyzing}
         <span class="text-neutral-500 text-[11px]">Validating...</span>
       {:else if code.trim()}
-        <span class="inline-flex items-center gap-1 rounded bg-emerald-500/20 px-2 py-0.5 text-[11px] font-semibold text-emerald-300 border border-emerald-500/40">
+        <span class="inline-flex items-center gap-1 rounded bg-accent/15 px-2 py-0.5 text-[11px] font-semibold text-accent border border-accent/30">
           Valid
         </span>
       {/if}

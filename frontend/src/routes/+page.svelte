@@ -117,13 +117,13 @@
 
 <ShellSurface>
   <!-- Top Navigation Header -->
-  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/80 chrome-bar px-6 {HOOKS.shell.foyerHeader}">
+  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-(--chrome-line) chrome-bar px-6 {HOOKS.shell.foyerHeader}">
     <div class="flex items-center gap-3">
       <span class="text-accent text-lg">◈</span>
-      <h1 class="text-sm font-bold tracking-wide text-neutral-100 uppercase">
+      <h1 class="text-sm font-bold tracking-wide text-(--chrome-text) uppercase">
         {shellTheme.theme.labels?.foyerTitle || 'FormaTavern'}
       </h1>
-      <span class="rounded bg-neutral-800 px-2 py-0.5 text-[10px] font-mono text-neutral-400">
+      <span class="rounded border border-(--chrome-line) bg-(--chrome-surface) px-2 py-0.5 text-[10px] font-mono text-(--chrome-text)/70">
         Foyer
       </span>
     </div>
@@ -132,7 +132,7 @@
       <!-- Personas Quick-Access -->
       <a
         href="/personas"
-        class="flex items-center gap-1.5 rounded-xl border border-neutral-800 bg-neutral-850 px-3 py-1.5 text-xs text-neutral-300 hover:bg-neutral-800 hover:text-white"
+        class="flex items-center gap-1.5 rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-1.5 text-xs text-(--chrome-text)/80 hover:border-accent/40 transition-colors"
         title="Manage your user personas"
       >
         <Icon name="user" size={13} />
@@ -162,7 +162,7 @@
       <button
         type="button"
         onclick={() => (settingsOpen = true)}
-        class="flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-800 bg-neutral-850 text-neutral-300 transition-colors hover:bg-neutral-800 hover:text-white"
+        class="flex h-9 w-9 items-center justify-center rounded-xl border border-(--chrome-line) bg-(--chrome-surface) text-(--chrome-text)/80 transition-colors hover:border-accent/40"
         aria-label="Open settings"
         title="Settings"
       >
@@ -175,10 +175,10 @@
     <!-- Hero / Intro -->
     <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
       <div>
-        <h2 class="text-2xl font-bold tracking-tight text-neutral-100 sm:text-3xl">
+        <h2 class="text-2xl font-bold tracking-tight text-(--chrome-text) sm:text-3xl">
           Discover Companions
         </h2>
-        <p class="mt-1 text-sm text-neutral-400">
+        <p class="mt-1 text-sm text-(--chrome-text)/70">
           Chameleon roleplay companions with author-designed aesthetics, responsive typography, and atmospheric worlds.
         </p>
       </div>
@@ -222,18 +222,18 @@
     </section>
 
     <!-- Recent Stories Section -->
-    <section aria-label="Recent Stories" class="border-t border-neutral-800/80 pt-8 space-y-4 {HOOKS.shell.recentStories}">
-      <div class="flex items-center justify-between border-b border-neutral-800 pb-2">
-        <h3 class="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+    <section aria-label="Recent Stories" class="border-t border-(--chrome-line) pt-8 space-y-4 {HOOKS.shell.recentStories}">
+      <div class="flex items-center justify-between border-b border-(--chrome-line) pb-2">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-(--chrome-text)/70">
           Recent Stories
         </h3>
-        <span class="text-xs text-neutral-500 font-mono">
+        <span class="text-xs text-(--chrome-text)/50 font-mono">
           {filteredChats.length} {filteredChats.length === 1 ? 'story' : 'stories'}
         </span>
       </div>
 
       {#if filteredChats.length === 0}
-        <div class="flex h-28 items-center justify-center rounded-2xl border border-dashed border-neutral-850 text-xs text-neutral-500">
+        <div class="flex h-28 items-center justify-center rounded-2xl border border-dashed border-(--chrome-line) text-xs text-(--chrome-text)/50">
           {catalogStore.q ? 'No recorded stories match your current search.' : 'No stories recorded yet. Select a companion above to begin.'}
         </div>
       {:else}
@@ -249,14 +249,14 @@
                   goto(`/chat/${chat.id}`);
                 }
               }}
-              class="group relative flex flex-col justify-between rounded-xl border border-neutral-800/80 bg-neutral-900/70 p-4 transition-colors hover:border-neutral-700 hover:bg-neutral-850 cursor-pointer"
+              class="group relative flex flex-col justify-between rounded-xl border border-(--chrome-line) bg-(--chrome-surface) p-4 transition-colors hover:border-accent/40 cursor-pointer shadow-xs"
             >
               <div class="flex items-start justify-between gap-2">
                 <div class="flex flex-col overflow-hidden">
-                  <span class="truncate text-sm font-semibold text-neutral-100">
+                  <span class="truncate text-sm font-semibold text-(--chrome-text)">
                     {chat.title || 'Untitled Story'}
                   </span>
-                  <span class="text-xs text-neutral-400 font-mono">
+                  <span class="text-xs text-(--chrome-text)/60 font-mono">
                     ID: {chat.primaryCharacterId}
                   </span>
                 </div>
@@ -272,13 +272,13 @@
                 {/if}
               </div>
 
-              <div class="mt-4 flex items-center justify-between border-t border-neutral-800/60 pt-2 text-[11px] text-neutral-500 font-mono">
+              <div class="mt-4 flex items-center justify-between border-t border-(--chrome-line) pt-2 text-[11px] text-(--chrome-text)/50 font-mono">
                 <span>{chat.messageCount ?? 0} turns</span>
 
                 <button
                   type="button"
                   onclick={(e) => promptDeleteChat(chat.id, e)}
-                  class="rounded p-1 text-neutral-500 opacity-0 transition-opacity hover:text-red-400 group-hover:opacity-100 focus:opacity-100"
+                  class="rounded p-1 text-(--chrome-text)/50 opacity-0 transition-opacity hover:text-red-400 group-hover:opacity-100 focus:opacity-100"
                   aria-label="Delete story"
                   title="Delete story"
                 >

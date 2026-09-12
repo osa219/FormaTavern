@@ -93,6 +93,24 @@
   color: var(--chrome-text, inherit);
 }
 
+[data-ft-surface="shell"] {
+  color: var(--chrome-text);
+  background-color: var(--chrome-bg);
+}
+
+[data-ft-surface="shell"] h1,
+[data-ft-surface="shell"] h2,
+[data-ft-surface="shell"] h3,
+[data-ft-surface="shell"] h4 {
+  color: var(--chrome-text);
+}
+
+[data-ft-surface="shell"] dialog {
+  background-color: var(--chrome-surface);
+  border-color: var(--chrome-line);
+  color: var(--chrome-text);
+}
+
 @media (prefers-reduced-motion: reduce) {
   :root {
     --motion-theme: 0ms;

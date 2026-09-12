@@ -93,4 +93,36 @@ describe('Surface Completeness & Dialog Scoping (Invariant C14)', () => {
       expect(content).not.toMatch(/text-black[^'"`}]*bg-accent/);
     }
   });
+
+  it('ensures status badges and success labels honor theme accent instead of hardcoded emerald', () => {
+    const inspectedFiles = [
+      'CustomCssPanel.svelte',
+      'SettingsSheet.svelte',
+      'LivePreview.svelte',
+      'DirectorDrawer.svelte'
+    ];
+    for (const file of allSvelteFiles) {
+      const match = inspectedFiles.some((name) => file.endsWith(name));
+      if (!match) continue;
+      const content = readFileSync(file, 'utf-8');
+      expect(content).not.toMatch(/text-emerald-[3-6]00/);
+      expect(content).not.toMatch(/bg-emerald-[3-6]00/);
+    }
+  });
+
+  it('ensures shell discovery components and settings sheet use semantic chrome text tokens rather than hardcoded neutral-100', () => {
+    const shellComponents = [
+      'CompanionCard.svelte',
+      'SearchBar.svelte',
+      'TagFilter.svelte',
+      'SortSelect.svelte',
+      'SettingsSheet.svelte'
+    ];
+    for (const file of allSvelteFiles) {
+      const match = shellComponents.some((name) => file.endsWith(name));
+      if (!match) continue;
+      const content = readFileSync(file, 'utf-8');
+      expect(content).not.toContain('text-neutral-100');
+    }
+  });
 });

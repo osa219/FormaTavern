@@ -27,7 +27,7 @@
       goto(`/character/${companion.id}`);
     }
   }}
-  class="group relative flex flex-col justify-between overflow-hidden border border-neutral-800/80 bg-neutral-900/60 transition-colors hover:border-neutral-700 hover:bg-neutral-850/80 cursor-pointer text-left shadow-lg hover:shadow-xl {HOOKS.chrome.card}"
+  class="group relative flex flex-col justify-between overflow-hidden border border-(--chrome-line) bg-(--chrome-surface) transition-colors hover:border-accent/40 cursor-pointer text-left shadow-lg hover:shadow-xl {HOOKS.chrome.card}"
 >
   <!-- Subtle accent glow -->
   <div
@@ -41,13 +41,13 @@
       <img
         src={companion.avatar}
         alt={companion.name}
-        class="h-14 w-14 rounded-2xl object-cover border border-neutral-700 select-none shrink-0 shadow-md"
+        class="h-14 w-14 rounded-2xl object-cover border border-(--chrome-line) select-none shrink-0 shadow-md"
         loading="lazy"
         decoding="async"
       />
     {:else}
       <div
-        class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-neutral-800 text-lg font-bold text-neutral-300 border border-neutral-700 select-none shadow-md"
+        class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-(--chrome-bg) text-lg font-bold text-(--chrome-text) border border-(--chrome-line) select-none shadow-md"
       >
         {companion.name.slice(0, 1).toUpperCase()}
       </div>
@@ -55,7 +55,7 @@
 
     <div class="min-w-0 flex-1">
       <div class="flex items-center gap-2">
-        <h3 class="truncate text-base font-semibold text-neutral-100 group-hover:text-white">
+        <h3 class="truncate text-base font-semibold text-(--chrome-text) group-hover:text-accent">
           {companion.name}
         </h3>
         <!-- Swatch dot -->
@@ -67,7 +67,7 @@
       </div>
 
       {#if companion.tagline}
-        <p class="mt-1 line-clamp-2 text-xs text-neutral-400 font-light leading-relaxed">
+        <p class="mt-1 line-clamp-2 text-xs text-(--chrome-text)/70 font-light leading-relaxed">
           {companion.tagline}
         </p>
       {/if}
@@ -75,16 +75,16 @@
   </div>
 
   <!-- Tags & Story Count Footer -->
-  <div class="relative mt-5 pt-3 border-t border-neutral-800/60 flex items-center justify-between gap-2 text-xs">
+  <div class="relative mt-5 pt-3 border-t border-(--chrome-line) flex items-center justify-between gap-2 text-xs">
     <!-- Tag chips -->
     <div class="flex flex-wrap items-center gap-1 overflow-hidden">
       {#each visibleTags as tag (tag)}
-        <span class="rounded bg-neutral-800/80 px-1.5 py-0.5 text-[10px] font-mono text-neutral-400 border border-neutral-700/60">
+        <span class="rounded bg-(--chrome-bg)/80 px-1.5 py-0.5 text-[10px] font-mono text-(--chrome-text)/70 border border-(--chrome-line)">
           {displayTag(tag)}
         </span>
       {/each}
       {#if overflowCount > 0}
-        <span class="text-[10px] font-mono text-neutral-500">
+        <span class="text-[10px] font-mono text-(--chrome-text)/50">
           +{overflowCount}
         </span>
       {/if}
@@ -92,7 +92,7 @@
 
     <!-- Story count or hover actions -->
     <div class="shrink-0">
-      <span class="font-mono text-[11px] text-neutral-500 group-hover:hidden">
+      <span class="font-mono text-[11px] text-(--chrome-text)/50 group-hover:hidden">
         {companion.storyCount} {companion.storyCount === 1 ? 'story' : 'stories'}
       </span>
 
@@ -116,8 +116,8 @@
             e.stopPropagation();
             goto(`/character/${companion.id}/edit`);
           }}
-          class="rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-1 text-[11px] font-medium text-neutral-300 hover:text-white"
-          title="Edit companion"
+          class="rounded-lg border border-(--chrome-line) bg-(--chrome-surface) p-1 text-(--chrome-text)/70 hover:text-(--chrome-text)"
+          title="Edit companion in studio"
         >
           Edit
         </button>
