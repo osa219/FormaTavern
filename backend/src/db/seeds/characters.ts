@@ -68,7 +68,8 @@ export const alice: CharacterCard = {
       narratorText: '#e2e8f0'
     },
     bubble: { radius: '0.5rem', charTail: 'left', padding: '1rem 1.25rem' },
-    background: { overlay: 'rgba(15, 5, 10, 0.8)', blur: '6px' }
+    background: { overlay: 'rgba(15, 5, 10, 0.8)', blur: '6px' },
+    fx: { bubble: 'glow' }
   },
   stateSchema: {
     mood: {
@@ -90,7 +91,69 @@ export const alice: CharacterCard = {
   initialState: { mood: 'guarded', affinity: 4, danger: 'elevated', scene: 'tavern_ambush' },
   tags: ['gothic', 'steampunk', 'seed'],
   creator: 'formatavern',
-  version: '1'
+  version: '1',
+  customCss: `/* ==========================================================
+   Alice — Gothic Gold Architectural Showpiece
+   Theme: Victorian Steampunk / Gothic Gold Elegance
+   ========================================================== */
+
+/* Hero Banner Vignette & Gold Frame */
+.ft-hero {
+  border: 1px solid rgba(217, 119, 6, 0.45);
+  background: radial-gradient(
+    ellipse at top right,
+    rgba(159, 18, 57, 0.25) 0%,
+    rgba(24, 8, 16, 0.9) 70%,
+    rgba(10, 4, 8, 0.98) 100%
+  );
+  box-shadow: 0 0 24px rgba(217, 119, 6, 0.12);
+  border-radius: 8px;
+}
+
+/* Showcase Body Serif Polish */
+.ft-showcase-body {
+  font-family: 'Playfair Display', Georgia, serif;
+  color: #fce7f3;
+}
+
+/* Companion Bubble: Gothic Parchment Edge & Gold Accent */
+.ft-bubble-char {
+  border: 1px solid rgba(217, 119, 6, 0.5);
+  background-color: rgba(28, 10, 20, 0.88);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 0 16px rgba(217, 119, 6, 0.08),
+    0 2px 10px rgba(0, 0, 0, 0.4);
+  position: relative;
+}
+
+/* Slow Glow Preset Synergy */
+.ft-bubble-char[data-fx="glow"] {
+  box-shadow:
+    inset 0 0 16px rgba(217, 119, 6, 0.12),
+    0 0 18px rgba(217, 119, 6, 0.2),
+    0 0 32px rgba(159, 18, 57, 0.15);
+}
+
+/* User Bubble Complement */
+.ft-bubble-user {
+  border: 1px solid rgba(159, 18, 57, 0.35);
+  background-color: rgba(18, 8, 14, 0.8);
+  border-radius: 6px;
+}
+
+/* Steampunk Label Swap */
+.ft-action-hub button::before {
+  content: "⚙ ";
+  color: #f59e0b;
+}
+
+/* Tag Chips Polish */
+.ft-tag-chips span {
+  border-color: rgba(217, 119, 6, 0.3);
+  background-color: rgba(35, 12, 22, 0.6);
+}
+`
 };
 
 export const seedCharacters: readonly CharacterCard[] = [eldrin, alice];

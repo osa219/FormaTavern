@@ -240,13 +240,66 @@ Activate creator custom CSS on the primary reading surface (`ChatViewport.svelte
 
 ---
 
+## Slice 7: Presets & the Alice Showpiece
+
+### Objective
+Complete the final slice of the Customization Blueprint: provide four curated, production-grade starter stylesheets (*Terminal*, *Manuscript*, *Window*, *Night Market*) with in-editor quick starter loading in `CustomCssPanel.svelte`, equip seed character Alice with a ~60-line gothic gold showpiece custom stylesheet, provide unit test coverage for presets and seeds, and document seed refresh commands.
+
+### Implementation Summary
+- **Curated Starter Presets** ([`presets.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/custom/presets.ts)):
+  - Defined `CUSTOM_CSS_PRESETS` list and individual exports (`TERMINAL_PRESET`, `MANUSCRIPT_PRESET`, `WINDOW_PRESET`, `NIGHT_MARKET_PRESET`).
+  - **Terminal**: Retro CRT monospace aesthetic with phosphor green accents, subtle vignette background, and uppercase button styling.
+  - **Manuscript**: Warm antique parchment with classic serif typography, gold-sepia card borders, and ornate bubble insets.
+  - **Window**: Classic desktop OS window frame with beveled 3D borders (`inset`/`outset` styling) and retro button styling.
+  - **Night Market**: Cyberpunk neon noir with luminous cyan/magenta glassmorphic glow, radial gradient hero backdrop, and dark-glass speech bubbles.
+  - All four presets are strictly constrained under 8 KB ($\le 8,192$ bytes), produce zero lint issues (`lintSheet`), and pass `sanitizeCss` with zero drops under both character and chat-conservative profiles.
+- **Studio Editor Preset Selector** ([`CustomCssPanel.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/studio/CustomCssPanel.svelte)):
+  - Added dedicated **"Start from a preset"** row in the editor header featuring one-click buttons for each curated starter.
+  - Implemented `applyPreset(preset)` with overwrite protection: prompts confirmation if the editor already contains non-empty edits that differ from the selected preset.
+  - Dispatches positive feedback via `toasts.success`.
+- **Alice Gothic Gold Showpiece** ([`backend/src/db/seeds/characters.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/db/seeds/characters.ts)):
+  - Configured `alice.style.fx = { bubble: 'glow' }` to pair with slow glow keyframes.
+  - Added a 61-line gothic gold custom CSS showpiece to Alice:
+    - `.ft-hero`: Gothic gold / deep wine radial gradient vignette with gold frame border and soft drop shadow.
+    - `.ft-showcase-body`: Victorian serif typography with delicate pink text tint.
+    - `.ft-bubble-char`: Gothic parchment border with dark wine background and gold inset aura.
+    - `.ft-bubble-char[data-fx="glow"]`: Deep ruby and amber triple-layer glow aura complementing the compositor motion preset.
+    - `.ft-bubble-user`: Subtle crimson-tinted user bubble with matching radius.
+    - `.ft-action-hub button::before`: Steampunk cogwheel label swap (`content: "⚙ "` in amber gold).
+    - `.ft-tag-chips span`: Polished dark wine tag chips with amber borders.
+  - Verified 100% `sanitizeCss`-clean under both character and chat scopes (0 dropped rules, 0 dropped declarations, 0 dropped at-rules, 0 fatal errors).
+- **Seed Refresh Instructions**:
+  - To refresh existing local databases with Alice's updated showpiece sheet:
+    ```bash
+    bun run db:seed --force
+    ```
+- **Verification**:
+  - `frontend/unit/presets.test.ts`: verified all 4 presets define valid metadata, remain strictly $\le 8$ KB, pass `sanitizeCss` with 0 drops across character and chat scopes, and pass `lintSheet` with 0 issues (6 passed).
+  - `frontend/unit/customCssPanel.test.ts`: verified "Start from a preset" row and all four preset buttons render in the editor (6 passed).
+  - `backend/test/seed.test.ts`: verified Alice's custom CSS presence, length (~61 lines), `sanitizeCss`-cleanliness on both scopes, and database seeding preservation (4 passed).
+
+---
+
+## Blueprint Series Completion Status
+
+All 7 slices of the **Customization Series (C)** are now complete and fully verified:
+- **Slice 1:** Hook Contract Retrofit (`packages/shared/src/hooks/manifest.ts`, Invariant C1)
+- **Slice 2:** Pure CSS Sanitizer & Scope Engine (`packages/shared/src/customCss/`, Invariants C3, C4, C5, C6, C7)
+- **Slice 3:** Character Sheet End-to-End & Single Style Outlet (`CustomStyleOutlet.svelte`, Studio CSS tab, Invariants C2, C8, C10, C11, C12, C13, Amendment A-U2b)
+- **Slice 4:** Global Shell Theme & Unified Cascade (`ShellSurface.svelte`, settings doc, Invariants A-U1, C13)
+- **Slice 5:** Graduation Batch 1: Motion Presets, Decor Layers & Local Font Manager (Invariants C9, C13)
+- **Slice 6:** Chat Scope & Conservative Reading Profile (Invariants C7, C8, C9)
+- **Slice 7:** Curated Starter Presets & Alice Gothic Gold Showpiece (Invariants C1–C13)
+
+---
+
 ## Test Suite Status
 
 - **`bun run typecheck`**: 0 errors, 0 warnings across monorepo (`shared`, `backend`, `frontend`).
 - **`bun run test`**: 100% green across all packages:
   - `packages/shared`: 189 passed, 0 failed.
-  - `backend`: 171 passed, 0 failed.
-  - `frontend`: 161 passed, 0 failed.
-  - Total: 521 passed, 0 failed.
+  - `backend`: 172 passed, 0 failed.
+  - `frontend`: 168 passed, 0 failed.
+  - Total: 529 passed, 0 failed.
 - **`bun run db:check`**: Clean integrity (`wal`, `foreign_keys=1`, `user_version=5`, `fts_parity=ok (2/2)`).
 

@@ -5,6 +5,7 @@
   import { loadCustomCss } from '@formatavern/shared/customCss/loader';
   import type { SanitizeIssue, LintIssue, ChatRestrictionIssue } from '@formatavern/shared/customCss';
   import { toasts } from '$lib/state/toasts.svelte';
+  import { CUSTOM_CSS_PRESETS, type CustomCssPreset } from '$lib/custom/presets';
   import Icon from '$lib/components/ui/Icon.svelte';
   import Spinner from '$lib/components/ui/Spinner.svelte';
 
@@ -221,6 +222,18 @@
     insertSnippet(snippet);
     toasts.success(`Inserted showcase rule for ${font.name}`);
   }
+
+  function applyPreset(preset: CustomCssPreset) {
+    if (code.trim() && code.trim() !== preset.css.trim()) {
+      if (typeof window !== 'undefined' && !window.confirm(
+        `Replace current custom CSS with the "${preset.name}" starter preset? Any unsaved edits will be replaced.`
+      )) {
+        return;
+      }
+    }
+    updateCode(preset.css);
+    toasts.success(`Loaded "${preset.name}" preset`);
+  }
 </script>
 
 <div class="flex flex-col h-full space-y-4">
@@ -324,6 +337,26 @@
           Valid
         </span>
       {/if}
+    </div>
+  </div>
+
+  <!-- Presets Row (Slice 7) -->
+  <div class="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-neutral-800/80 bg-neutral-900/50 px-3 py-2 text-xs">
+    <div class="flex items-center gap-2 text-neutral-400">
+      <span class="font-semibold text-neutral-300">Start from a preset:</span>
+      <span class="text-[11px] text-neutral-500 hidden sm:inline">Curated starter sheets (under 8 KB, lint-clean)</span>
+    </div>
+    <div class="flex flex-wrap items-center gap-1.5">
+      {#each CUSTOM_CSS_PRESETS as preset (preset.id)}
+        <button
+          type="button"
+          onclick={() => applyPreset(preset)}
+          class="rounded-lg border border-neutral-800 bg-neutral-850 px-2.5 py-1 text-xs font-medium text-neutral-200 hover:bg-neutral-800 hover:text-white hover:border-neutral-700 transition-colors"
+          title={preset.description}
+        >
+          {preset.name}
+        </button>
+      {/each}
     </div>
   </div>
 

@@ -112,4 +112,17 @@ describe('CustomCssPanel & Studio CSS Integration (Slice 3)', () => {
     const lintIssues = lintSheet('.ft-hero { !important; }');
     expect(Array.isArray(lintIssues)).toBe(true);
   });
+
+  it('renders "Start from a preset" row with all curated starter presets', () => {
+    const draft = new CharacterDraft();
+    const rendered = render(CustomCssPanel, {
+      props: { draft }
+    });
+
+    expect(rendered.body).toContain('Start from a preset:');
+    expect(rendered.body).toContain('Terminal');
+    expect(rendered.body).toContain('Manuscript');
+    expect(rendered.body).toContain('Window');
+    expect(rendered.body).toContain('Night Market');
+  });
 });

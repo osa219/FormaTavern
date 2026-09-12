@@ -2,6 +2,8 @@ import { describe, it, expect, afterEach } from 'bun:test';
 import { runMigrations } from '../src/db/migrate';
 import { createRepositories } from '../src/db/repositories';
 import { seed } from '../src/db/seeds/seed';
+import { alice } from '../src/db/seeds/characters';
+import { sanitizeCss } from '@formatavern/shared/customCss';
 import { openTestDb, type TestDbInstance } from './helpers';
 
 describe('Database Seeding', () => {
@@ -80,5 +82,35 @@ describe('Database Seeding', () => {
     expect(result.seeded).toBe(false);
     expect(repos.characters.count()).toBe(1);
     expect(repos.characters.get('alice')).toBeNull();
+  });
+
+  it('seeds Alice with the gothic gold showpiece customCss which is 100% sanitizeCss-clean', () => {
+    expect(alice.customCss).toBeDefined();
+    expect(typeof alice.customCss).toBe('string');
+    expect(alice.customCss!.length).toBeGreaterThan(100);
+
+    const lineCount = alice.customCss!.trim().split('\n').length;
+    expect(lineCount).toBeGreaterThanOrEqual(50);
+    expect(lineCount).toBeLessThanOrEqual(70);
+
+    // Verify sanitizeCss-clean on both character and chat scopes
+    const charClean = sanitizeCss(alice.customCss!, 'character');
+    expect(charClean.report.filter((r) => r.kind !== 'note')).toEqual([]);
+    expect(charClean.css.length).toBeGreaterThan(0);
+
+    const chatClean = sanitizeCss(alice.customCss!, 'chat');
+    expect(chatClean.report.filter((r) => r.kind !== 'note')).toEqual([]);
+    expect(chatClean.css.length).toBeGreaterThan(0);
+
+    // Verify DB seeding stores Alice with customCss intact
+    inst = openTestDb(':memory:');
+    runMigrations(inst.db);
+    const repos = createRepositories(inst.db);
+    seed(repos);
+
+    const aliceRecord = repos.characters.get('alice');
+    expect(aliceRecord).not.toBeNull();
+    expect(aliceRecord?.customCss).toBe(alice.customCss);
+    expect(aliceRecord?.style?.fx?.bubble).toBe('glow');
   });
 });
