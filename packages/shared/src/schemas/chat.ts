@@ -57,7 +57,12 @@ export type ChatListItem = Static<typeof ChatListItemSchema>;
 
 export const ChatListQuerySchema = Type.Object({
   characterId: Type.Optional(Id),
-  limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })),
+  limit: Type.Optional(
+    Type.Union([
+      Type.Integer({ minimum: 1, maximum: 100 }),
+      Type.String({ pattern: '^[0-9]+$' })
+    ])
+  ),
   cursor: Type.Optional(Type.String())
 });
 export type ChatListQuery = Static<typeof ChatListQuerySchema>;

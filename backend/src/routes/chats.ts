@@ -1,6 +1,7 @@
 import { Elysia } from 'elysia';
 import {
   ChatCreateSchema,
+  ChatListQuerySchema,
   ChatPatchSchema,
   SendMessageBodySchema,
   StatePatchBodySchema,
@@ -139,10 +140,21 @@ export function createChatsRouter(deps: {
         body: ChatCreateSchema
       }
     )
-    .get('', (): ChatView[] => {
-      const chats = repos.chats.list();
-      return chats.map((c) => toChatView(c, hub, (c as any).messageCount));
-    })
+    .get(
+      '',
+      ({ query }): ChatView[] => {
+        const limit = query?.limit !== undefined ? Number(query.limit) : undefined;
+        const chats = repos.chats.list({
+          characterId: query?.characterId,
+          limit,
+          cursor: query?.cursor
+        });
+        return chats.map((c) => toChatView(c, hub, (c as any).messageCount));
+      },
+      {
+        query: ChatListQuerySchema
+      }
+    )
     .get('/:id', ({ params }): ChatView => {
       const chat = repos.chats.get(params.id);
       if (!chat) {

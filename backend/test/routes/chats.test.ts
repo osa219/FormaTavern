@@ -183,4 +183,73 @@ describe('routes/chats', () => {
     expect(updatedChat!.metadata.currentState?.affinity).toBe(10);
     expect(updatedChat!.metadata.stateOverrides?.length).toBe(1);
   });
+
+  it('filters chat list by characterId and applies limit', async () => {
+    const { app, repos } = setupTestApp();
+
+    // Create a second character
+    repos.characters.upsert({
+      id: 'char-lyra',
+      name: 'Lyra',
+      description: 'A stargazing scholar',
+      personality: 'Curious',
+      scenario: 'In the observatory',
+      firstMessage: 'Greetings traveler.',
+      style: repos.characters.get('eldrin-the-mage')!.style
+    });
+
+    // Create chats for eldrin
+    repos.chats.create({
+      id: 'chat-eldrin-1',
+      title: 'Eldrin Story 1',
+      primaryCharacterId: 'eldrin-the-mage',
+      activePersonaId: 'persona-default'
+    });
+    repos.chats.create({
+      id: 'chat-eldrin-2',
+      title: 'Eldrin Story 2',
+      primaryCharacterId: 'eldrin-the-mage',
+      activePersonaId: 'persona-default'
+    });
+
+    // Create chat for lyra
+    repos.chats.create({
+      id: 'chat-lyra-1',
+      title: 'Lyra Story 1',
+      primaryCharacterId: 'char-lyra',
+      activePersonaId: 'persona-default'
+    });
+
+    // Request without filter -> returns all 3
+    const allRes = await app.handle(new Request('http://127.0.0.1/api/chats'));
+    expect(allRes.status).toBe(200);
+    const allChats = (await allRes.json()) as ChatView[];
+    expect(allChats.length).toBe(3);
+
+    // Filter by characterId = eldrin-the-mage -> returns only 2
+    const eldrinRes = await app.handle(
+      new Request('http://127.0.0.1/api/chats?characterId=eldrin-the-mage')
+    );
+    expect(eldrinRes.status).toBe(200);
+    const eldrinChats = (await eldrinRes.json()) as ChatView[];
+    expect(eldrinChats.length).toBe(2);
+    expect(eldrinChats.every((c) => c.primaryCharacterId === 'eldrin-the-mage')).toBe(true);
+
+    // Filter by characterId = char-lyra -> returns only 1
+    const lyraRes = await app.handle(
+      new Request('http://127.0.0.1/api/chats?characterId=char-lyra')
+    );
+    expect(lyraRes.status).toBe(200);
+    const lyraChats = (await lyraRes.json()) as ChatView[];
+    expect(lyraChats.length).toBe(1);
+    expect(lyraChats[0].id).toBe('chat-lyra-1');
+
+    // Filter by characterId with limit = 1 -> returns 1
+    const limitRes = await app.handle(
+      new Request('http://127.0.0.1/api/chats?characterId=eldrin-the-mage&limit=1')
+    );
+    expect(limitRes.status).toBe(200);
+    const limitedChats = (await limitRes.json()) as ChatView[];
+    expect(limitedChats.length).toBe(1);
+  });
 });

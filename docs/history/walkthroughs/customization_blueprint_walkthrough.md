@@ -293,13 +293,35 @@ All 7 slices of the **Customization Series (C)** are now complete and fully veri
 
 ---
 
+## Post-Implementation Polish & Bug Fixes
+
+Following Slice 7 and visual verification across companion pages, two UX and theming inconsistencies were addressed:
+
+### 1. Chat Chameleon Drawer Theme Nesting & Nav Unwrapping
+- **Issue:** Opening the sidebars (`NavDrawer`, `LoreDrawer`) in a themed chat (e.g., Alice's crimson theme) rendered default blue/neutral chrome instead of the companion's crimson theme. In addition, the navigation drawer showed `UNKNOWN CHARACTER` headers.
+- **Resolution:**
+  - In [`ChatViewport.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/chat/ChatViewport.svelte), moved `<NavDrawer>`, `<LoreDrawer>`, and modal dialogs inside the `<div style={themeEngine.styleAttr} data-ft-surface="chat">` container, allowing the companion's active theme custom properties (`--theme-accent`, `--theme-chrome`, `--theme-font`) to cascade cleanly into the drawers.
+  - Fixed `loadNavData()` in `ChatViewport.svelte` to unwrap paginated `{ items: CharacterSummary[] }` from `GET /api/characters`, eliminating `UNKNOWN CHARACTER` headers.
+  - Added unit test in `frontend/unit/chatViewportStyle.test.ts` asserting `<NavDrawer>` and `<LoreDrawer>` are nested inside `[data-ft-surface="chat"]`.
+
+### 2. Character Showcase Story Filtering & Layout Reordering
+- **Issue:** On the Character Showcase page (`/character/[id]`), the "Resume Existing Story" menu listed all chats from all characters across the entire application, and was placed above the character's description. This pushed the companion's lore, scene, and opening words far down the page.
+- **Resolution:**
+  - In [`backend/src/routes/chats.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/routes/chats.ts), wired up `query: ChatListQuerySchema` on `GET /api/chats` and passed `{ characterId, limit, cursor }` to `repos.chats.list()`, scoping the story list strictly to the active companion (`c.primary_character_id = ?`).
+  - In [`packages/shared/src/schemas/chat.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/packages/shared/src/schemas/chat.ts), updated `ChatListQuerySchema` so `limit` accepts both numbers and numeric strings.
+  - In [`frontend/src/routes/character/[id]/+page.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/routes/character/%5Bid%5D/+page.svelte), reordered `<main>` elements so the character's details (Showcase body, About, The Scene, Opening Words, and Author Prompt fields) appear directly below `ActionHub`, followed by `ResumeMenu` at the bottom of the page.
+  - Added tests in `backend/test/routes/chats.test.ts` verifying `GET /api/chats?characterId=...` returns only the matching character's stories and respects `limit`.
+
+---
+
 ## Test Suite Status
 
 - **`bun run typecheck`**: 0 errors, 0 warnings across monorepo (`shared`, `backend`, `frontend`).
 - **`bun run test`**: 100% green across all packages:
   - `packages/shared`: 189 passed, 0 failed.
-  - `backend`: 172 passed, 0 failed.
-  - `frontend`: 168 passed, 0 failed.
-  - Total: 529 passed, 0 failed.
-- **`bun run db:check`**: Clean integrity (`wal`, `foreign_keys=1`, `user_version=5`, `fts_parity=ok (2/2)`).
+  - `backend`: 173 passed, 0 failed.
+  - `frontend`: 169 passed, 0 failed.
+  - Total: 531 passed, 0 failed.
+- **`bun run db:check`**: Clean integrity (`wal`, `foreign_keys=1`, `user_version=5`, `fts_parity=ok (3/3)`).
+
 

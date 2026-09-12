@@ -6,7 +6,7 @@ import type { CharacterCard, ChatView, Persona } from '@formatavern/shared';
 export const load: PageLoad = async ({ params }) => {
   const [charRes, chatsRes, personasRes] = await Promise.all([
     api.api.characters({ id: params.id }).get(),
-    (api.api.chats.get as any)({ query: { characterId: params.id, limit: 10 } }),
+    api.api.chats.get({ query: { characterId: params.id, limit: 10 } }),
     api.api.personas.get()
   ]);
 

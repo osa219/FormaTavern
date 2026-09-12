@@ -126,11 +126,6 @@
     <!-- Action Hub (Start Story / Edit / Duplicate / Delete) -->
     <ActionHub {character} {personas} />
 
-    <!-- Resume Existing Stories Menu -->
-    {#if chats.length > 0}
-      <ResumeMenu {chats} onDeleteChat={promptDeleteChat} />
-    {/if}
-
     <!-- Main Character Body / Showcase -->
     <section class="rounded-3xl border border-neutral-800 bg-neutral-900/40 p-6 md:p-8 space-y-8">
       {#if character.showcase}
@@ -203,6 +198,11 @@
         </details>
       {/if}
     </section>
+
+    <!-- Resume Existing Stories Menu -->
+    {#if chats.length > 0}
+      <ResumeMenu {chats} onDeleteChat={promptDeleteChat} />
+    {/if}
   </main>
 </div>
 
