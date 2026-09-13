@@ -456,6 +456,7 @@
             <option value="openrouter">OpenRouter (Online LLMs)</option>
             <option value="custom">Custom OpenAI-compatible (Base URL)</option>
             <option value="gemini">Gemini (Google AI Studio)</option>
+            <option value="gemini-interactions">Gemini Native (Interactions API)</option>
           </select>
         </div>
 
@@ -483,7 +484,7 @@
               id="model-input"
               type="text"
               value={s.provider.model ?? ''}
-              placeholder={s.provider.id === 'gemini'
+              placeholder={s.provider.id === 'gemini' || s.provider.id === 'gemini-interactions'
                 ? 'e.g. gemini-3.5-flash'
                 : s.provider.id === 'custom'
                   ? 'e.g. llama3.1 (model id on your server)'
@@ -597,7 +598,7 @@
         {/if}
 
         <!-- Gemini API Key -->
-        {#if s.provider.id === 'gemini'}
+        {#if s.provider.id === 'gemini' || s.provider.id === 'gemini-interactions'}
           <div class="rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 p-4">
             <div class="mb-2 flex items-center justify-between">
               <span class="font-medium text-(--chrome-text)">API Key</span>

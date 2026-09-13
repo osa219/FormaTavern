@@ -3,7 +3,7 @@ import { Value } from '@sinclair/typebox/value';
 
 export const AppSettingsSchema = Type.Object({
   provider: Type.Object({
-    id: Type.Union([Type.Literal('mock'), Type.Literal('openrouter'), Type.Literal('custom'), Type.Literal('gemini')], { default: 'mock' }),
+    id: Type.Union([Type.Literal('mock'), Type.Literal('openrouter'), Type.Literal('custom'), Type.Literal('gemini'), Type.Literal('gemini-interactions')], { default: 'mock' }),
     model: Type.Optional(Type.String())
   }, { default: { id: 'mock' } }),
   openrouter: Type.Object({
@@ -41,7 +41,7 @@ export const DEFAULT_SETTINGS: AppSettings = Value.Default(AppSettingsSchema, {}
 
 export const SettingsViewSchema = Type.Object({
   provider: Type.Object({
-    id: Type.Union([Type.Literal('mock'), Type.Literal('openrouter'), Type.Literal('custom'), Type.Literal('gemini')]),
+    id: Type.Union([Type.Literal('mock'), Type.Literal('openrouter'), Type.Literal('custom'), Type.Literal('gemini'), Type.Literal('gemini-interactions')]),
     model: Type.Optional(Type.String())
   }),
   openrouter: Type.Object({
@@ -83,7 +83,7 @@ export type SettingsView = Static<typeof SettingsViewSchema>;
 
 export const SettingsPatchSchema = Type.Object({
   provider: Type.Optional(Type.Partial(Type.Object({
-    id: Type.Union([Type.Literal('mock'), Type.Literal('openrouter'), Type.Literal('custom'), Type.Literal('gemini')]),
+    id: Type.Union([Type.Literal('mock'), Type.Literal('openrouter'), Type.Literal('custom'), Type.Literal('gemini'), Type.Literal('gemini-interactions')]),
     model: Type.Optional(Type.String())
   }))),
   openrouter: Type.Optional(Type.Object({

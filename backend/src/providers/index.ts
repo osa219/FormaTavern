@@ -6,6 +6,7 @@ export * from './mock';
 export * from './openai-compatible';
 export * from './openrouter';
 export * from './presets';
+export * from './gemini-interactions';
 export * from './utils';
 export * from './sse';
 

@@ -309,6 +309,23 @@ describe('routes/settings', () => {
       );
       expect(geminiRes.status).toBe(409);
       expect(((await geminiRes.json()) as any).error.code).toBe('provider_unconfigured');
+
+      await app.handle(
+        new Request('http://127.0.0.1/api/settings', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ provider: { id: 'gemini-interactions' } })
+        })
+      );
+      const nativeRes = await app.handle(
+        new Request(`http://127.0.0.1/api/chats/${chat.id}/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: 'Hello native' })
+        })
+      );
+      expect(nativeRes.status).toBe(409);
+      expect(((await nativeRes.json()) as any).error.code).toBe('provider_unconfigured');
     });
 
     it('generates through a keyless custom endpoint with fake fetch', async () => {

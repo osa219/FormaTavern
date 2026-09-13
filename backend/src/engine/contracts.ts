@@ -38,7 +38,7 @@ export interface ProviderResolution {
 
 export interface ProviderRegistry {
   resolve(settings: {
-    provider?: { id?: 'mock' | 'openrouter' | 'custom' | 'gemini'; model?: string };
+    provider?: { id?: 'mock' | 'openrouter' | 'custom' | 'gemini' | 'gemini-interactions'; model?: string };
     openrouter?: { apiKey?: string };
     custom?: { baseUrl?: string; apiKey?: string };
     gemini?: { apiKey?: string };

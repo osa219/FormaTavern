@@ -97,6 +97,7 @@ describe('Shared API & DTO Schemas', () => {
   it('SettingsPatchSchema accepts custom/gemini provider patches', () => {
     expect(Value.Check(SettingsPatchSchema, { provider: { id: 'custom' } })).toBe(true);
     expect(Value.Check(SettingsPatchSchema, { provider: { id: 'gemini' } })).toBe(true);
+    expect(Value.Check(SettingsPatchSchema, { provider: { id: 'gemini-interactions' } })).toBe(true);
     expect(
       Value.Check(SettingsPatchSchema, {
         custom: { baseUrl: 'http://localhost:11434/v1', apiKey: null }

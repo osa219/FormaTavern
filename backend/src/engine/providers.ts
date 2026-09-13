@@ -5,6 +5,7 @@ import {
 import { MockLLMProvider } from '../providers/mock';
 import { OpenRouterProvider, type FetchFn } from '../providers/openrouter';
 import { CustomProvider, GeminiProvider } from '../providers/presets';
+import { GeminiInteractionsProvider } from '../providers/gemini-interactions';
 import type { ProviderRegistry, ProviderResolution } from './contracts';
 import { ApiError } from './errors';
 
@@ -18,6 +19,7 @@ export class ProviderRegistryImpl implements ProviderRegistry {
   private openRouterCache = new Map<string, OpenRouterProvider>();
   private customCache = new Map<string, CustomProvider>();
   private geminiCache = new Map<string, GeminiProvider>();
+  private geminiInteractionsCache = new Map<string, GeminiInteractionsProvider>();
   private customFetch?: FetchFn;
 
   constructor(options: ProviderRegistryOptions = {}) {
@@ -26,7 +28,7 @@ export class ProviderRegistryImpl implements ProviderRegistry {
   }
 
   resolve(settings: {
-    provider?: { id?: 'mock' | 'openrouter' | 'custom' | 'gemini'; model?: string };
+    provider?: { id?: 'mock' | 'openrouter' | 'custom' | 'gemini' | 'gemini-interactions'; model?: string };
     openrouter?: { apiKey?: string };
     custom?: { baseUrl?: string; apiKey?: string };
     gemini?: { apiKey?: string };
@@ -126,6 +128,37 @@ export class ProviderRegistryImpl implements ProviderRegistry {
           fetch: this.customFetch
         });
         this.geminiCache.set(apiKey, provider);
+      }
+
+      const model = settings.provider?.model ?? 'gemini-3.5-flash';
+      return {
+        provider,
+        model,
+        contextLength
+      };
+    }
+
+    if (providerId === 'gemini-interactions') {
+      // Native Interactions API; shares the Gemini key section (A12.8).
+      const apiKey = settings.gemini?.apiKey || process.env.GEMINI_API_KEY;
+      if (!apiKey || apiKey.trim() === '') {
+        throw new ApiError('provider_unconfigured', 409, 'Gemini API key is not configured');
+      }
+
+      let provider = this.geminiInteractionsCache.get(apiKey);
+      if (!provider) {
+        if (this.geminiInteractionsCache.size >= 2) {
+          const firstKey = this.geminiInteractionsCache.keys().next().value;
+          if (firstKey) {
+            this.geminiInteractionsCache.delete(firstKey);
+          }
+        }
+
+        provider = new GeminiInteractionsProvider({
+          apiKey,
+          fetch: this.customFetch
+        });
+        this.geminiInteractionsCache.set(apiKey, provider);
       }
 
       const model = settings.provider?.model ?? 'gemini-3.5-flash';
