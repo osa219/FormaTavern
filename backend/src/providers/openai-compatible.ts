@@ -8,130 +8,181 @@ import {
 } from '@formatavern/shared';
 import { parseSseBytes } from './sse';
 import { coalesceConsecutiveRoles, ensureUserFirst } from './utils';
-import type { FetchFn } from './openai-compatible';
 
-export type { FetchFn };
+export type FetchFn = (
+  input: string | URL | Request,
+  init?: RequestInit | any
+) => Promise<Response>;
 
-export interface OpenRouterConfig {
-  apiKey: string;
+export type UsageAccounting = 'stream_options' | 'openrouter' | 'none';
+
+export interface OpenAICompatibleConfig {
+  baseUrl: string;
+  apiKey?: string;
   defaultModel?: string;
+  extraHeaders?: Record<string, string>;
+  extraBody?: Record<string, any>;
+  excludeKeys?: string[];
   fetch?: FetchFn;
-  idleTimeoutMs?: number; // default 60_000
-  referer?: string;
-  title?: string;
+  idleTimeoutMs?: number;
+  allowExtendedSampling?: boolean; // default false: top_k/min_p/repetition_penalty dropped
+  usageAccounting?: UsageAccounting; // default 'stream_options'
 }
 
-export class OpenRouterProvider implements LLMProvider {
-  id = 'openrouter';
+/**
+ * Joins a base URL and a path with exactly one slash between them.
+ */
+export function joinUrl(base: string, path: string): string {
+  return `${base.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
+}
+
+/**
+ * Normalizes user-supplied endpoint input into a clean base URL:
+ * - trims whitespace and trailing slashes
+ * - strips a pasted `/chat/completions` or `/models` operation suffix
+ * - leaves any version prefix (e.g. `/v1`) intact
+ */
+export function normalizeBaseUrl(raw: string): string {
+  let base = raw.trim().replace(/\/+$/, '');
+  base = base.replace(/\/(chat\/completions|models)\/*$/i, '').replace(/\/+$/, '');
+  return base;
+}
+
+const THINK_OPEN = '<think>';
+const THINK_CLOSE = '</think>';
+
+export class OpenAICompatibleProvider implements LLMProvider {
+  id = 'openai-compatible';
   capabilities = {
     chatCompletion: true,
     textCompletion: false,
     listModels: true,
-    prefill: true,
+    prefill: false,
     nativeStateChannel: false
   };
 
-  private apiKey: string;
-  private defaultModel: string;
-  private fetchFn: FetchFn;
-  private idleTimeoutMs: number;
-  private referer: string;
-  private title: string;
+  protected baseUrl: string;
+  protected apiKey?: string;
+  protected defaultModel: string;
+  protected fetchFn: FetchFn;
+  protected idleTimeoutMs: number;
+  protected extraHeaders: Record<string, string>;
+  protected extraBody: Record<string, any>;
+  protected excludeKeys: string[];
+  protected allowExtendedSampling: boolean;
+  protected usageAccounting: UsageAccounting;
 
-  constructor(cfg: OpenRouterConfig) {
-    this.apiKey = cfg.apiKey;
-    this.defaultModel = cfg.defaultModel ?? 'anthropic/claude-3.5-sonnet';
+  constructor(cfg: OpenAICompatibleConfig) {
+    if (!cfg.baseUrl || cfg.baseUrl.trim() === '') {
+      throw new Error('OpenAICompatibleProvider requires a baseUrl');
+    }
+    this.baseUrl = normalizeBaseUrl(cfg.baseUrl);
+    const key = cfg.apiKey?.trim();
+    this.apiKey = key ? key : undefined;
+    this.defaultModel = cfg.defaultModel ?? 'gpt-4o-mini';
     this.fetchFn = (cfg.fetch ?? globalThis.fetch) as FetchFn;
     this.idleTimeoutMs = cfg.idleTimeoutMs ?? 60_000;
-    this.referer = cfg.referer ?? 'http://127.0.0.1:3000';
-    this.title = cfg.title ?? 'FormaTavern';
+    this.extraHeaders = { ...(cfg.extraHeaders ?? {}) };
+    this.extraBody = { ...(cfg.extraBody ?? {}) };
+    this.excludeKeys = [...(cfg.excludeKeys ?? [])];
+    this.allowExtendedSampling = cfg.allowExtendedSampling ?? false;
+    this.usageAccounting = cfg.usageAccounting ?? 'stream_options';
   }
 
-  private scrub(msg: string): string {
+  protected scrub(msg: string): string {
     if (!this.apiKey) return msg;
     return msg.replaceAll(this.apiKey, '[REDACTED]');
   }
 
+  protected buildHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...this.extraHeaders
+    };
+    if (this.apiKey) {
+      headers.Authorization = `Bearer ${this.apiKey}`;
+    }
+    return headers;
+  }
+
   async listModels(): Promise<ModelInfo[]> {
     try {
-      const res = await this.fetchFn('https://openrouter.ai/api/v1/models', {
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-          'HTTP-Referer': this.referer,
-          'X-Title': this.title
-        }
+      const res = await this.fetchFn(joinUrl(this.baseUrl, '/models'), {
+        headers: this.buildHeaders()
       });
       if (!res.ok) return [];
       const json = (await res.json()) as any;
       if (!json.data || !Array.isArray(json.data)) return [];
-      return json.data.map((m: any) => ({
-        id: m.id,
-        name: m.name ?? m.id,
-        contextLength: m.context_length ?? 8192
-      }));
+      return json.data
+        .filter((m: any) => typeof m?.id === 'string')
+        .map((m: any) => ({
+          id: m.id,
+          name: m.name ?? m.id,
+          contextLength: m.context_length ?? m.contextLength ?? m.max_tokens ?? 8192
+        }));
     } catch {
       return [];
     }
   }
 
   async *generate(req: LLMRequest, signal?: AbortSignalLike): AsyncIterable<StreamEvent> {
-    // P4: Abort check before fetch
     if (signal?.aborted) {
       yield { type: 'done', finishReason: 'aborted' };
       return;
     }
 
-    // 1. Format messages: [systemPrompt?] + req.history
     const rawMessages: MessagePayload[] = [];
     if (req.systemPrompt) {
       rawMessages.push({ role: 'system', content: req.systemPrompt });
     }
     rawMessages.push(...req.history);
 
-    // 2. ensureUserFirst
     let messages = ensureUserFirst(rawMessages);
 
-    // 3. Trailing prefill
     if (req.assistantPrefill) {
       messages.push({ role: 'assistant', content: req.assistantPrefill });
     }
 
-    // 4. Coalesce consecutive roles
     messages = coalesceConsecutiveRoles(messages);
 
-    // 5. Cap stop sequences at 4
     let stop = req.stop;
     if (stop && stop.length > 4) {
-      console.warn(`[OpenRouter] Truncating ${stop.length} stop sequences to 4`);
+      console.warn(`[OpenAICompatible] Truncating ${stop.length} stop sequences to 4`);
       stop = stop.slice(0, 4);
     }
 
-    // 6. Build request payload
     const bodyPayload: Record<string, any> = {
       model: req.model ?? this.defaultModel,
       messages,
-      stream: true,
-      usage: { include: true }
+      stream: true
     };
 
     if (req.temperature !== undefined) bodyPayload.temperature = req.temperature;
     if (req.topP !== undefined) bodyPayload.top_p = req.topP;
-    if (req.topK !== undefined) bodyPayload.top_k = req.topK;
-    if (req.minP !== undefined) bodyPayload.min_p = req.minP;
-    if (req.repetitionPenalty !== undefined) bodyPayload.repetition_penalty = req.repetitionPenalty;
+    if (this.allowExtendedSampling) {
+      if (req.topK !== undefined) bodyPayload.top_k = req.topK;
+      if (req.minP !== undefined) bodyPayload.min_p = req.minP;
+      if (req.repetitionPenalty !== undefined) bodyPayload.repetition_penalty = req.repetitionPenalty;
+    }
     if (stop !== undefined && stop.length > 0) bodyPayload.stop = stop;
     if (req.maxTokens !== undefined) bodyPayload.max_tokens = req.maxTokens;
 
+    if (this.usageAccounting === 'openrouter') {
+      bodyPayload.usage = { include: true };
+    } else if (this.usageAccounting === 'stream_options') {
+      bodyPayload.stream_options = { include_usage: true };
+    }
+
+    Object.assign(bodyPayload, this.extraBody);
+    for (const key of this.excludeKeys) {
+      delete bodyPayload[key];
+    }
+
     let res: Response;
     try {
-      res = await this.fetchFn('https://openrouter.ai/api/v1/chat/completions', {
+      res = await this.fetchFn(joinUrl(this.baseUrl, '/chat/completions'), {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': this.referer,
-          'X-Title': this.title
-        },
+        headers: this.buildHeaders(),
         body: JSON.stringify(bodyPayload),
         signal: signal as any
       });
@@ -153,7 +204,6 @@ export class OpenRouterProvider implements LLMProvider {
       return;
     }
 
-    // HTTP Error Handling
     if (!res.ok) {
       let bodyText = '';
       try {
@@ -180,19 +230,18 @@ export class OpenRouterProvider implements LLMProvider {
 
       yield {
         type: 'error',
-        message: this.scrub(`OpenRouter ${status}: ${errMsg}`),
+        message: this.scrub(`Upstream ${status}: ${errMsg}`),
         recoverable
       };
       return;
     }
 
-    // Check Content-Type for SSE
     const contentType = res.headers.get('content-type') ?? '';
     if (!contentType.includes('text/event-stream')) {
       yield {
         type: 'error',
         message: this.scrub(
-          `OpenRouter 200: unexpected content-type "${contentType}" (expected text/event-stream)`
+          `Upstream 200: unexpected content-type "${contentType}" (expected text/event-stream)`
         ),
         recoverable: true
       };
@@ -202,16 +251,17 @@ export class OpenRouterProvider implements LLMProvider {
     if (!res.body) {
       yield {
         type: 'error',
-        message: 'OpenRouter 200: response body is null',
+        message: 'Upstream 200: response body is null',
         recoverable: true
       };
       return;
     }
 
-    // Stream consumption with idle timeout
     let recordedFinishReason: 'stop' | 'length' | undefined;
     let usageEmitted = false;
     let terminalEmitted = false;
+    let thinkOpen = false;
+    let seenOwnThinkTag = false;
 
     const reader = res.body.getReader();
 
@@ -275,7 +325,6 @@ export class OpenRouterProvider implements LLMProvider {
           continue;
         }
 
-        // Check error inside frame
         if (json?.error) {
           yield {
             type: 'error',
@@ -286,19 +335,42 @@ export class OpenRouterProvider implements LLMProvider {
           return;
         }
 
-        // Token
         const delta = json.choices?.[0]?.delta;
-        if (delta?.content && delta.content.length > 0) {
-          yield { type: 'token', text: delta.content };
+        const content: string | undefined =
+          typeof delta?.content === 'string' && delta.content.length > 0 ? delta.content : undefined;
+        const reasoning: string | undefined =
+          (typeof delta?.reasoning_content === 'string' && delta.reasoning_content.length > 0
+            ? delta.reasoning_content
+            : undefined) ??
+          (typeof delta?.reasoning === 'string' && delta.reasoning.length > 0
+            ? delta.reasoning
+            : undefined);
+
+        if (content && content.includes(THINK_OPEN)) {
+          seenOwnThinkTag = true;
         }
 
-        // Record finish reason
+        if (reasoning) {
+          if (!thinkOpen && !seenOwnThinkTag && !reasoning.includes(THINK_OPEN)) {
+            thinkOpen = true;
+            yield { type: 'token', text: THINK_OPEN };
+          }
+          yield { type: 'token', text: reasoning };
+        }
+
+        if (content) {
+          if (thinkOpen) {
+            thinkOpen = false;
+            yield { type: 'token', text: `${THINK_CLOSE}\n\n` };
+          }
+          yield { type: 'token', text: content };
+        }
+
         const finishReason = json.choices?.[0]?.finish_reason;
         if (finishReason) {
           recordedFinishReason = finishReason === 'length' ? 'length' : 'stop';
         }
 
-        // Usage
         if (json.usage && !usageEmitted) {
           usageEmitted = true;
           yield {
@@ -325,8 +397,11 @@ export class OpenRouterProvider implements LLMProvider {
         return;
       }
 
-      // Finish cleanly
       if (!terminalEmitted) {
+        if (thinkOpen) {
+          thinkOpen = false;
+          yield { type: 'token', text: THINK_CLOSE };
+        }
         yield {
           type: 'done',
           finishReason: recordedFinishReason ?? 'stop'

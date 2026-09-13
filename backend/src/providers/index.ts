@@ -3,6 +3,7 @@ import { MockLLMProvider } from './mock';
 import { OpenRouterProvider } from './openrouter';
 
 export * from './mock';
+export * from './openai-compatible';
 export * from './openrouter';
 export * from './utils';
 export * from './sse';
