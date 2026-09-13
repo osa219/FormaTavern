@@ -358,6 +358,17 @@ describe('Shared Schema Validation', () => {
         expect(overrides2.colors).toEqual({ accent: '#f43f5e', charBubbleBg: '#333' });
       });
 
+      it('shellToThemeOverrides enforces precedence: shell.colors.accent > chrome.accent', () => {
+        const theme = {
+          colors: { accent: '#10b981', charBubbleBg: '#222' },
+          chrome: { accent: '#f43f5e' }
+        };
+        const overrides = shellToThemeOverrides(theme);
+        // Explicit shell.colors.accent wins over chrome.accent
+        expect(overrides.colors?.accent).toBe('#10b981');
+        expect(overrides.colors?.charBubbleBg).toBe('#222');
+      });
+
       it('shellToThemeOverrides returns empty object on null/undefined', () => {
         expect(shellToThemeOverrides(null)).toEqual({});
         expect(shellToThemeOverrides(undefined)).toEqual({});

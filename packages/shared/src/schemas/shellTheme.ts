@@ -40,7 +40,12 @@ export const DEFAULT_SHELL_THEME: ShellTheme = {};
 
 /**
  * Adapter converting a ShellTheme document into ThemeOverrides for the unified cascade.
- * Passes font, background, bubble, colors, and maps chrome.accent to colors.accent for default cascade.
+ *
+ * Precedence order for cascade colors:
+ * character > shell.colors > chrome.accent > neutral
+ *
+ * - Passes font, background, and bubble if present.
+ * - Passes colors, with accent resolved via explicit fallback: shell.colors?.accent ?? shell.chrome?.accent.
  */
 export function shellToThemeOverrides(shell?: ShellTheme | null): ThemeOverrides {
   if (!shell) return {};
@@ -54,14 +59,13 @@ export function shellToThemeOverrides(shell?: ShellTheme | null): ThemeOverrides
   if (shell.bubble) {
     overrides.bubble = shell.bubble;
   }
-  if (shell.colors) {
-    overrides.colors = { ...shell.colors };
-  }
-  if (shell.chrome?.accent) {
+  const resolvedAccent = shell.colors?.accent ?? shell.chrome?.accent;
+  if (shell.colors || resolvedAccent) {
     overrides.colors = {
-      accent: shell.chrome.accent,
-      ...(overrides.colors ?? {})
+      ...shell.colors,
+      ...(resolvedAccent ? { accent: resolvedAccent } : {})
     };
   }
   return overrides;
 }
+

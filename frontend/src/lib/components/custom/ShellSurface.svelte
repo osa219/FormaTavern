@@ -25,9 +25,10 @@
     const c = t.chrome;
     const card = t.card;
 
-    if (c?.accent) {
-      vars.push(`--theme-accent: ${c.accent}`);
-      const isLight = isLightColor(c.accent);
+    const accent = t.colors?.accent ?? c?.accent;
+    if (accent) {
+      vars.push(`--theme-accent: ${accent}`);
+      const isLight = isLightColor(accent);
       vars.push(`--theme-accent-contrast: ${isLight ? '#0a0a0c' : '#ffffff'}`);
     }
     if (c?.surface) vars.push(`--chrome-bg: ${c.surface}`);

@@ -182,15 +182,40 @@ describe('Surface Completeness & Dialog Scoping (Invariant C14)', () => {
     }
   });
 
-  it('ensures character and chat surfaces isolate neutral and chrome tokens from shell cascade', () => {
-    const appCssPath = resolve(SRC_DIR, 'app.css');
-    const css = readFileSync(appCssPath, 'utf-8');
-    expect(css).toContain('[data-ft-surface="character"]');
-    expect(css).toContain('[data-ft-surface="chat"]');
-    expect(css).toContain('--n-950: #313338;');
-    expect(css).toContain('--chrome-bg: color-mix(');
-    expect(css).toContain('color-scheme: dark;');
+  it('ensures data-ft-surface is only present on authorized surface roots and never on html or layout', () => {
+    // 1. Verify app.html never sets data-ft-surface
+    const appHtmlPath = resolve(SRC_DIR, 'app.html');
+    const appHtmlContent = readFileSync(appHtmlPath, 'utf-8');
+    expect(appHtmlContent).not.toContain('data-ft-surface');
 
+    // 2. Verify +layout.svelte never sets data-ft-surface on html/document (uses data-ft-active-surface)
+    const layoutPath = resolve(ROUTES_DIR, '+layout.svelte');
+    const layoutContent = readFileSync(layoutPath, 'utf-8');
+    expect(layoutContent).not.toContain("setAttribute('data-ft-surface'");
+    expect(layoutContent).not.toContain('data-ft-surface=');
+    expect(layoutContent).toContain("setAttribute('data-ft-active-surface'");
+
+    // 3. Verify all occurrences of data-ft-surface in templates are only in authorized surface roots
+    const allowedSurfaceFiles = [
+      'ShellSurface.svelte',
+      'ChatViewport.svelte',
+      '+page.svelte',
+      'LivePreview.svelte',
+      'ShowcaseEditor.svelte'
+    ];
+
+    for (const file of allSvelteFiles) {
+      const content = readFileSync(file, 'utf-8');
+      if (content.includes('data-ft-surface=')) {
+        const isAuthorized = allowedSurfaceFiles.some((allowed) => file.endsWith(allowed));
+        expect(
+          isAuthorized,
+          `Unauthorized data-ft-surface found in ${file.replace(/\\/g, '/')}`
+        ).toBe(true);
+      }
+    }
+
+    // 4. Verify LivePreview isolates its local chrome reset from studio shell
     const livePreviewPath = resolve(SRC_DIR, 'lib/components/studio/LivePreview.svelte');
     const previewContent = readFileSync(livePreviewPath, 'utf-8');
     expect(previewContent).toContain('--n-950: #313338;');
