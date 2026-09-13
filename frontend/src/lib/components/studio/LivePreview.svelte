@@ -10,6 +10,7 @@
   import ShowcaseHero from '$lib/components/showcase/ShowcaseHero.svelte';
   import ShowcaseBody from '$lib/components/showcase/ShowcaseBody.svelte';
   import DecorLayers from '$lib/components/custom/DecorLayers.svelte';
+  import Backdrop from '$lib/components/chat/Backdrop.svelte';
 
   let {
     draft,
@@ -20,6 +21,26 @@
   } = $props();
 
   const themeVars = $derived(serializeVars(themeToCssVars(draft.previewTheme.theme)));
+  const previewBg = $derived(draft.previewTheme.theme.background.image ?? null);
+  const previewChromeReset = `
+    --n-950: #313338;
+    --n-900: #38393c;
+    --n-800: #44464d;
+    --n-700: #545660;
+    --n-600: #6b6e7b;
+    --n-500: #888b99;
+    --n-400: #a5a8b6;
+    --n-300: #c2c5d3;
+    --n-200: #e0e2ec;
+    --n-100: #f0f1f6;
+    --n-50:  #fbfbfe;
+    --chrome-bg: color-mix(in oklab, #313338, var(--theme-accent) var(--chrome-tint-strength, 0%));
+    --chrome-surface: color-mix(in oklab, #38393c, var(--theme-accent) calc(var(--chrome-tint-strength, 0%) * 1.25));
+    --chrome-line: color-mix(in oklab, #44464d, var(--theme-accent) calc(var(--chrome-tint-strength, 0%) * 1.5));
+    --chrome-focus: #e0e2ec;
+    --chrome-text: #f0f1f6;
+    color-scheme: dark;
+  `;
   const fx = $derived(draft.card.style?.fx?.bubble ?? 'none');
   const decor = $derived(draft.card.style?.decor ?? []);
   const greetingResult = $derived(parseGreeting(draft.card.firstMessage, draft.card.name || 'Companion'));
@@ -135,12 +156,14 @@
 
   <!-- Viewport Root applying author theme CSS variables -->
   <div
-    style="{themeVars};"
+    style="{themeVars}; {previewChromeReset}"
     data-ft-surface="character"
-    class="relative flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-neutral-950 font-(--theme-font-family) text-neutral-100"
+    class="relative isolate flex-1 overflow-hidden flex flex-col bg-(--chrome-bg) font-(--theme-font-family) text-(--chrome-text)"
   >
     <CustomStyleOutlet scope="character" css={draft.card.customCss} />
+    <Backdrop image={previewBg} />
     <DecorLayers layers={decor} fixed={false} />
+    <div class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
     {#if activeTab === 'showcase'}
       <!-- Showcase Mode: Hero + Action Hub + Showcase Body + Dialogue Sample -->
       <div class="space-y-6">
@@ -231,5 +254,6 @@
         />
       </div>
     {/if}
+    </div>
   </div>
 </div>

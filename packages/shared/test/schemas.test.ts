@@ -316,6 +316,7 @@ describe('Shared Schema Validation', () => {
             density: 'compact' as const
           },
           scrim: '0.8',
+          tint: '4%',
           labels: { foyerTitle: 'The Grand Archive' },
           customCss: '.ft-topbar { border-bottom-color: red; }'
         };
@@ -330,7 +331,7 @@ describe('Shared Schema Validation', () => {
         expect(validate(ShellThemeSchema, overCapTheme).ok).toBe(false);
       });
 
-      it('shellToThemeOverrides extracts only font and background for character cascade', () => {
+      it('shellToThemeOverrides extracts font, background, bubble, colors and maps chrome.accent for character cascade', () => {
         const theme = {
           font: { family: 'Cinzel', size: '1rem' },
           background: { image: '/assets/bg.jpg', overlay: 'rgba(0,0,0,0.5)', blur: '8px' },
@@ -340,10 +341,21 @@ describe('Shared Schema Validation', () => {
         const overrides = shellToThemeOverrides(theme);
         expect(overrides).toEqual({
           font: { family: 'Cinzel', size: '1rem' },
-          background: { image: '/assets/bg.jpg', overlay: 'rgba(0,0,0,0.5)', blur: '8px' }
+          background: { image: '/assets/bg.jpg', overlay: 'rgba(0,0,0,0.5)', blur: '8px' },
+          colors: { accent: '#38bdf8' }
         });
         expect((overrides as any).chrome).toBeUndefined();
         expect((overrides as any).card).toBeUndefined();
+
+        // Also verify explicit bubble and colors pass through
+        const themeWithBubbleAndColors = {
+          bubble: { radius: '1.2rem' },
+          colors: { charBubbleBg: '#333' },
+          chrome: { accent: '#f43f5e' }
+        };
+        const overrides2 = shellToThemeOverrides(themeWithBubbleAndColors);
+        expect(overrides2.bubble).toEqual({ radius: '1.2rem' });
+        expect(overrides2.colors).toEqual({ accent: '#f43f5e', charBubbleBg: '#333' });
       });
 
       it('shellToThemeOverrides returns empty object on null/undefined', () => {

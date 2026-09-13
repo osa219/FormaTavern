@@ -291,7 +291,7 @@
   data-theme-scheme={themeEngine.themeScheme}
   data-transitions={transitionAttr}
   data-ft-surface="chat"
-  class="relative isolate grid h-[100dvh] w-full grid-rows-[auto_1fr_auto] overflow-hidden bg-neutral-950 font-sans text-neutral-100 select-text {HOOKS.chat.viewport}"
+  class="relative isolate grid h-[100dvh] w-full grid-rows-[auto_1fr_auto] overflow-hidden bg-(--chrome-bg) font-sans text-(--chrome-text) select-text {HOOKS.chat.viewport}"
 >
   <CustomStyleOutlet scope="chat" css={session.character?.customCss} />
 

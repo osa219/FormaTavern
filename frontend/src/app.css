@@ -29,22 +29,23 @@
   --theme-scheme: dark;
 
   /* Neutral palette */
-  --n-950: #0a0a0c;
-  --n-900: #121216;
-  --n-800: #1e1e24;
-  --n-700: #2d2d37;
-  --n-600: #454554;
-  --n-500: #717182;
-  --n-400: #9e9eb0;
-  --n-300: #c4c4d2;
-  --n-200: #e2e2ec;
-  --n-100: #f1f1f7;
+  --n-950: #313338;
+  --n-900: #38393c;
+  --n-800: #44464d;
+  --n-700: #545660;
+  --n-600: #6b6e7b;
+  --n-500: #888b99;
+  --n-400: #a5a8b6;
+  --n-300: #c2c5d3;
+  --n-200: #e0e2ec;
+  --n-100: #f0f1f6;
   --n-50:  #fbfbfe;
 
-  /* Chrome palette borrowing a whisper (<= 8%) of character accent */
-  --chrome-bg: color-mix(in oklab, var(--n-950), var(--theme-accent) 6%);
-  --chrome-surface: color-mix(in oklab, var(--n-900), var(--theme-accent) 8%);
-  --chrome-line: color-mix(in oklab, var(--n-800), var(--theme-accent) 10%);
+  /* Chrome palette with adjustable accent tint (default 0% = pure neutral) */
+  --chrome-tint-strength: 0%;
+  --chrome-bg: color-mix(in oklab, var(--n-950), var(--theme-accent) var(--chrome-tint-strength, 0%));
+  --chrome-surface: color-mix(in oklab, var(--n-900), var(--theme-accent) calc(var(--chrome-tint-strength, 0%) * 1.25));
+  --chrome-line: color-mix(in oklab, var(--n-800), var(--theme-accent) calc(var(--chrome-tint-strength, 0%) * 1.5));
   --chrome-focus: var(--n-200);
   --chrome-text: var(--n-100);
   --chrome-font: var(--theme-font-family);
@@ -99,6 +100,29 @@
 }
 
 [data-ft-surface="shell"] {
+  color: var(--chrome-text);
+  background-color: var(--chrome-bg);
+}
+
+[data-ft-surface="character"],
+[data-ft-surface="chat"] {
+  --n-950: #313338;
+  --n-900: #38393c;
+  --n-800: #44464d;
+  --n-700: #545660;
+  --n-600: #6b6e7b;
+  --n-500: #888b99;
+  --n-400: #a5a8b6;
+  --n-300: #c2c5d3;
+  --n-200: #e0e2ec;
+  --n-100: #f0f1f6;
+  --n-50:  #fbfbfe;
+  --chrome-bg: color-mix(in oklab, var(--n-950), var(--theme-accent) var(--chrome-tint-strength, 0%));
+  --chrome-surface: color-mix(in oklab, var(--n-900), var(--theme-accent) calc(var(--chrome-tint-strength, 0%) * 1.25));
+  --chrome-line: color-mix(in oklab, var(--n-800), var(--theme-accent) calc(var(--chrome-tint-strength, 0%) * 1.5));
+  --chrome-focus: var(--n-200);
+  --chrome-text: var(--n-100);
+  color-scheme: dark;
   color: var(--chrome-text);
   background-color: var(--chrome-bg);
 }

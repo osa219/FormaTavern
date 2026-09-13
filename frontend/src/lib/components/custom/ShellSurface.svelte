@@ -55,6 +55,10 @@
       vars.push(`--chrome-scrim: ${t.scrim}`);
     }
 
+    if (t.tint !== undefined) {
+      vars.push(`--chrome-tint-strength: ${t.tint}`);
+    }
+
     if (t.background?.image) {
       vars.push(`--theme-bg-img: url('${t.background.image}')`);
     }

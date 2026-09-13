@@ -27,19 +27,30 @@
   let apiKeyDraft = $state('');
   let apiKeySavedNotice = $state(false);
 
+  // Surface Accent Tint draft
+  let tintDraft = $state<number>(0);
+
+  $effect(() => {
+    if (shellTheme.theme.tint) {
+      const parsed = parseInt(shellTheme.theme.tint, 10);
+      tintDraft = isNaN(parsed) ? 0 : parsed;
+    } else {
+      tintDraft = 0;
+    }
+  });
+
   // Debounce timers for numeric inputs
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   let shellDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
   function queueShellPatch(patch: Partial<ShellTheme>, delay = 400) {
+    shellTheme.theme = {
+      ...shellTheme.theme,
+      ...patch
+    };
     if (shellDebounceTimer) clearTimeout(shellDebounceTimer);
     shellDebounceTimer = setTimeout(() => {
-      const current = shellTheme.theme;
-      const updated: ShellTheme = {
-        ...current,
-        ...patch
-      };
-      shellTheme.save(updated);
+      shellTheme.save(shellTheme.theme);
     }, delay);
   }
 
@@ -652,6 +663,45 @@
               ></button>
             {/each}
           </div>
+        </div>
+
+        <!-- Surface Accent Tint Strength Slider -->
+        <div class="rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 p-4 space-y-2">
+          <div class="flex items-center justify-between text-(--chrome-text) font-medium">
+            <div>
+              <label for="tint-slider" class="block">Surface Accent Tint</label>
+              <span class="text-[11px] font-normal text-(--chrome-text)/60">Controls how much accent color blends into dark surfaces and chrome</span>
+            </div>
+            <span class="font-mono text-xs text-(--chrome-text)/70">
+              {(() => {
+                if (tintDraft === 0) return '0% (Pure Neutral)';
+                if (tintDraft <= 4) return `${tintDraft}% (Subtle)`;
+                if (tintDraft <= 8) return `${tintDraft}% (Ambient)`;
+                return `${tintDraft}% (Vibrant)`;
+              })()}
+            </span>
+          </div>
+          <input
+            id="tint-slider"
+            type="range"
+            min="0"
+            max="15"
+            step="1"
+            bind:value={tintDraft}
+            oninput={(e) => {
+              const val = Number(e.currentTarget.value);
+              tintDraft = val;
+              document.documentElement.style.setProperty('--chrome-tint-strength', `${val}%`);
+              queueShellPatch({ tint: `${val}%` });
+            }}
+            onchange={(e) => {
+              const val = Number(e.currentTarget.value);
+              tintDraft = val;
+              document.documentElement.style.setProperty('--chrome-tint-strength', `${val}%`);
+              queueShellPatch({ tint: `${val}%` }, 0);
+            }}
+            class="w-full accent-accent"
+          />
         </div>
 
         <!-- Frosted vs Solid Chrome (forceSolidChrome) -->

@@ -355,6 +355,36 @@ describe('Shared Theme Cascade & matchesWhen', () => {
         expect(resolved.theme.background.blur).toBe('12px');
       });
 
+      it('global layer provides fallback accent when character has no accent', () => {
+        const globalOverrides = {
+          colors: { accent: '#f43f5e' }
+        };
+
+        const resolved = resolveTheme({
+          global: globalOverrides,
+          a11y: { disableCharacterThemes: false, disableReactiveTheming: false }
+        });
+
+        expect(resolved.theme.colors.accent).toBe('#f43f5e');
+
+        // Character with specific accent overrides global accent
+        const charTheme: CharacterTheme = {
+          ...DEFAULT_CHARACTER_THEME,
+          colors: {
+            ...DEFAULT_CHARACTER_THEME.colors,
+            accent: '#10b981'
+          }
+        };
+
+        const resolvedChar = resolveTheme({
+          global: globalOverrides,
+          character: charTheme,
+          a11y: { disableCharacterThemes: false, disableReactiveTheming: false }
+        });
+
+        expect(resolvedChar.theme.colors.accent).toBe('#10b981');
+      });
+
       it('a11y.disableCharacterThemes overrides global layer completely', () => {
         const globalOverrides = {
           font: { family: 'CustomGlobalFont' }

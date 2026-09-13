@@ -312,16 +312,79 @@ Following Slice 7 and visual verification across companion pages, two UX and the
   - In [`frontend/src/routes/character/[id]/+page.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/routes/character/%5Bid%5D/+page.svelte), reordered `<main>` elements so the character's details (Showcase body, About, The Scene, Opening Words, and Author Prompt fields) appear directly below `ActionHub`, followed by `ResumeMenu` at the bottom of the page.
   - Added tests in `backend/test/routes/chats.test.ts` verifying `GET /api/chats?characterId=...` returns only the matching character's stories and respects `limit`.
 
+### 3. Persona Speech Bubble Styling Scope
+- **Issue:** Persona style overrides in `PersonaEditor.svelte` were able to spill into companion or narrative styling.
+- **Resolution:** Scoped persona style overrides strictly to the user speech bubble, preserving companion and narrative styling boundaries.
+
+### 4. Surface Completeness, Dialog Containment & Invariant C14
+- **Issue:** Dialogs (`ConfirmDialog`, `SettingsSheet`) and Persona management routes were previously mounted outside surface boundaries or lacking `--theme-accent-contrast` pairing, creating accessibility and theme cascade gaps.
+- **Resolution:**
+  - Codified **Invariant C14 (Surface Completeness & Dialog Scoping)** in `AGENTS.md`, `docs/architecture.md`, and `docs/development.md`.
+  - Wrapped all Persona routes (`/personas`, `/personas/new`, `/personas/[id]/edit`) in `<ShellSurface>`.
+  - Enclosed all modal dialogs and settings sheets inside their host surface container so that CSS custom properties (`--theme-*`, `--chrome-*`, `--theme-accent-contrast`) cascade downwards seamlessly.
+  - Replaced hardcoded dark text on `bg-accent` with semantic `text-accent-contrast` across all buttons and interactive elements.
+  - Added the static architecture test suite in [`frontend/unit/surfaces.test.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/unit/surfaces.test.ts) enforcing surface root delegation, dialog containment, and contrast safety.
+
+### 5. Semantic Chrome Harmonization & Status Badges
+- **Issue:** Discovery components and settings still had hardcoded `text-neutral-100` or `bg-neutral-900` classes, and status badges hardcoded Tailwind emerald utilities.
+- **Resolution:**
+  - Migrated [`CompanionCard.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/discovery/CompanionCard.svelte), [`SearchBar.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/discovery/SearchBar.svelte), [`TagFilter.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/discovery/TagFilter.svelte), [`SortSelect.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/discovery/SortSelect.svelte), and [`SettingsSheet.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/settings/SettingsSheet.svelte) to semantic chrome tokens (`text-(--chrome-text)`, `bg-(--chrome-surface)`, `border-(--chrome-line)`).
+  - Harmonized status badges and success indicators across the shell to use dynamic `--theme-accent` instead of hardcoded emerald.
+
+### 6. Themable Scrollbars & Persona/Custom CSS Panel Harmonization
+- **Issue:** Scrollbars were unstyled browser defaults that clashed with dark and light custom themes; Persona editor and `CustomCssPanel` had residual static neutral classes.
+- **Resolution:**
+  - Configured themable modern scrollbar custom properties in [`frontend/src/app.css`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/app.css) (`--scrollbar-track`, `--scrollbar-thumb`, `--scrollbar-thumb-hover`, `scrollbar-color: ...`).
+  - Harmonized [`PersonaCard.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/persona/PersonaCard.svelte), [`PersonaEditor.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/persona/PersonaEditor.svelte), [`BubblePreview.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/persona/BubblePreview.svelte), and [`CustomCssPanel.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/studio/CustomCssPanel.svelte) with semantic chrome tokens.
+
+### 7. Active Surface Synchronization & Accessible Custom Checkboxes
+- **Issue:** Native browser checkboxes in dark mode had white borders/checkmarks that ignored custom accent colors; the active surface attribute was not synchronized to `<html>`.
+- **Resolution:**
+  - In [`frontend/src/routes/+layout.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/routes/+layout.svelte), reactively synchronized `data-ft-surface`, `data-ft-motion`, and accent tokens directly to `document.documentElement`.
+  - Added custom CSS checkbox rules in `app.css` using `accent-accent` to eliminate browser-default white/dark contrast bugs.
+
+### 8. Studio Shell Harmonization & Custom Style Outlet
+- **Issue:** Studio editor panels retained static neutral classes and did not apply the user's shell custom CSS.
+- **Resolution:**
+  - Harmonized [`StudioShell.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/studio/StudioShell.svelte) and all eight editor panels (`IdentityPanel`, `VoicePanel`, `ShowcaseEditor`, `AestheticPanel`, `StatePanel`, `BindingsPanel`, `GalleryManager`) to use semantic chrome tokens.
+  - Mounted `<CustomStyleOutlet scope="shell" css={shellTheme.theme.customCss} />` in `StudioShell.svelte`, ensuring custom shell styling applies across the studio.
+
+### 9. Modern Dark Slate Palette Baseline (`#313338` / `#38393C`)
+- **Issue:** The harsh OLED pitch-black baseline created extreme contrast fatigue and sharp visual disparity across dark themes.
+- **Resolution:**
+  - Softened the application neutral baseline in [`frontend/src/app.css`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/app.css), updating `--n-950` to modern graphite slate (`#313338`) and `--n-900` to `#38393c`.
+  - Dynamically bound `bg-(--chrome-bg)` and `text-(--chrome-text)` across `app.html` (`<body>`), [`character/[id]/+page.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/routes/character/%5Bid%5D/+page.svelte), [`ChatViewport.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/chat/ChatViewport.svelte), and [`LivePreview.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/studio/LivePreview.svelte).
+
+### 10. Surface Accent Tint Slider (`--chrome-tint-strength`)
+- **Issue:** Users could not control how much the active accent color tinted surfaces and backgrounds.
+- **Resolution:**
+  - Added optional `tint: Type.Optional(CssToken)` to `ShellThemeSchema` in [`packages/shared/src/schemas/shellTheme.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/packages/shared/src/schemas/shellTheme.ts).
+  - Wired reactive variable `--chrome-tint-strength` in `app.css` (default `0%`) across `--chrome-bg`, `--chrome-surface`, and `--chrome-line`.
+  - Added the **Surface Accent Tint** slider in [`SettingsSheet.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/settings/SettingsSheet.svelte) Appearance tab (0% to 15%, step 1%) with real-time dragging and descriptive labels (`Pure Neutral`, `Subtle`, `Ambient`, `Vibrant`).
+
+### 11. Token Track Cascade Expansion
+- **Issue:** Shell theme customizations (accent, font, bubble radius, background) did not cascade down into characters that lacked custom overrides.
+- **Resolution:**
+  - Updated `shellToThemeOverrides()` in [`packages/shared/src/schemas/shellTheme.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/packages/shared/src/schemas/shellTheme.ts) to bridge `chrome.accent` into `overrides.colors.accent`, along with `font`, `background`, `bubble`, and `colors`.
+  - Added comprehensive test suites in [`packages/shared/test/theme/cascade.test.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/packages/shared/test/theme/cascade.test.ts) verifying global cascade behavior.
+
+### 12. Studio Live Preview Surface Isolation & Layered Viewport
+- **Issue:** When a user configured shell custom CSS (e.g. setting `--n-950: #f8fafc;`), the live aesthetic preview in the studio rendered a white background because `LivePreview.svelte` is nested inside `[data-ft-surface="shell"]`. In addition, `<Backdrop>` squished when scrolling.
+- **Resolution:**
+  - In [`frontend/src/app.css`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/app.css), added global surface isolation rules for `[data-ft-surface="character"]` and `[data-ft-surface="chat"]` to explicitly re-anchor `--n-950: #313338;` down to `--n-50`, `--chrome-bg`, `--chrome-surface`, `--chrome-line`, `--chrome-text`, and `color-scheme: dark;`.
+  - In [`LivePreview.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/studio/LivePreview.svelte), defined `previewChromeReset` with inline specificity and restructured the preview into a fixed outer viewport holding `<Backdrop>` at `absolute inset-0`, with an independent inner container (`flex-1 overflow-y-auto`) handling scrolling.
+  - Added regression test in [`frontend/unit/surfaces.test.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/unit/surfaces.test.ts).
+
 ---
 
 ## Test Suite Status
 
-- **`bun run typecheck`**: 0 errors, 0 warnings across monorepo (`shared`, `backend`, `frontend`).
+- **`bun run typecheck`**: 0 errors, 0 warnings across monorepo (`shared`, `backend`, `frontend`, `svelte-check` clean).
 - **`bun run test`**: 100% green across all packages:
-  - `packages/shared`: 189 passed, 0 failed.
+  - `packages/shared`: 190 passed, 0 failed.
   - `backend`: 173 passed, 0 failed.
-  - `frontend`: 169 passed, 0 failed.
-  - Total: 531 passed, 0 failed.
+  - `frontend`: 179 passed, 0 failed.
+  - Total: 542 passed, 0 failed.
 - **`bun run db:check`**: Clean integrity (`wal`, `foreign_keys=1`, `user_version=5`, `fts_parity=ok (3/3)`).
 
 

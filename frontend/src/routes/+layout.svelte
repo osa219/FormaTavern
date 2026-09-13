@@ -39,6 +39,12 @@
         document.documentElement.style.removeProperty('--theme-accent-contrast');
       }
 
+      if (shellTheme.theme.tint !== undefined) {
+        document.documentElement.style.setProperty('--chrome-tint-strength', shellTheme.theme.tint);
+      } else {
+        document.documentElement.style.removeProperty('--chrome-tint-strength');
+      }
+
       if (activeSurface === 'shell') {
         if (c?.surface) {
           document.documentElement.style.setProperty('--chrome-bg', c.surface);

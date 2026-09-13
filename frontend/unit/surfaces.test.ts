@@ -181,4 +181,20 @@ describe('Surface Completeness & Dialog Scoping (Invariant C14)', () => {
       expect(content).not.toContain('bg-neutral-900');
     }
   });
+
+  it('ensures character and chat surfaces isolate neutral and chrome tokens from shell cascade', () => {
+    const appCssPath = resolve(SRC_DIR, 'app.css');
+    const css = readFileSync(appCssPath, 'utf-8');
+    expect(css).toContain('[data-ft-surface="character"]');
+    expect(css).toContain('[data-ft-surface="chat"]');
+    expect(css).toContain('--n-950: #313338;');
+    expect(css).toContain('--chrome-bg: color-mix(');
+    expect(css).toContain('color-scheme: dark;');
+
+    const livePreviewPath = resolve(SRC_DIR, 'lib/components/studio/LivePreview.svelte');
+    const previewContent = readFileSync(livePreviewPath, 'utf-8');
+    expect(previewContent).toContain('--n-950: #313338;');
+    expect(previewContent).toContain('--chrome-bg: color-mix(');
+    expect(previewContent).toContain('color-scheme: dark;');
+  });
 });

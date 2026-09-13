@@ -1,10 +1,12 @@
 import { Type, type Static } from '@sinclair/typebox';
 import { CssToken } from './primitives';
-import { ThemeFontSchema, ThemeBackgroundSchema, type ThemeOverrides } from './theme';
+import { ThemeFontSchema, ThemeBackgroundSchema, ThemeColorsSchema, ThemeBubbleSchema, type ThemeOverrides } from './theme';
 
 export const ShellThemeSchema = Type.Object({
   font: Type.Optional(Type.Partial(ThemeFontSchema)),
   background: Type.Optional(ThemeBackgroundSchema),
+  colors: Type.Optional(Type.Partial(ThemeColorsSchema)),
+  bubble: Type.Optional(Type.Partial(ThemeBubbleSchema)),
   chrome: Type.Optional(
     Type.Object({
       accent: Type.Optional(CssToken),
@@ -24,6 +26,7 @@ export const ShellThemeSchema = Type.Object({
     })
   ),
   scrim: Type.Optional(CssToken),
+  tint: Type.Optional(CssToken),
   labels: Type.Optional(
     Type.Object({
       foyerTitle: Type.Optional(Type.String({ maxLength: 40 }))
@@ -37,7 +40,7 @@ export const DEFAULT_SHELL_THEME: ShellTheme = {};
 
 /**
  * Adapter converting a ShellTheme document into ThemeOverrides for the unified cascade.
- * Only 'font' and 'background' pass into the character cascade; chrome colors drive --chrome-*.
+ * Passes font, background, bubble, colors, and maps chrome.accent to colors.accent for default cascade.
  */
 export function shellToThemeOverrides(shell?: ShellTheme | null): ThemeOverrides {
   if (!shell) return {};
@@ -47,6 +50,18 @@ export function shellToThemeOverrides(shell?: ShellTheme | null): ThemeOverrides
   }
   if (shell.background) {
     overrides.background = shell.background;
+  }
+  if (shell.bubble) {
+    overrides.bubble = shell.bubble;
+  }
+  if (shell.colors) {
+    overrides.colors = { ...shell.colors };
+  }
+  if (shell.chrome?.accent) {
+    overrides.colors = {
+      accent: shell.chrome.accent,
+      ...(overrides.colors ?? {})
+    };
   }
   return overrides;
 }

@@ -82,7 +82,7 @@
   style={showcaseStyle}
   data-transitions="off"
   data-ft-surface="character"
-  class="relative isolate min-h-screen bg-neutral-950 text-neutral-100 font-sans"
+  class="relative isolate min-h-screen bg-(--chrome-bg) text-(--chrome-text) font-sans"
 >
   <CustomStyleOutlet scope="character" css={character.customCss} />
 
@@ -93,7 +93,7 @@
   <DecorLayers layers={showcaseDecor} />
 
   <!-- Top Bar -->
-  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/40 chrome-bar px-6">
+  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-(--chrome-line) chrome-bar px-6">
     <div class="flex items-center gap-3">
       <a
         href="/"
@@ -182,7 +182,7 @@
                 <span class="block text-[11px] text-neutral-500 uppercase tracking-wider mb-1">
                   Personality
                 </span>
-                <pre class="overflow-x-auto rounded-xl bg-neutral-950 p-3 text-xs leading-relaxed text-neutral-300 whitespace-pre-wrap">{character.personality}</pre>
+                <pre class="overflow-x-auto rounded-xl bg-(--chrome-surface) border border-(--chrome-line) p-3 text-xs leading-relaxed text-(--chrome-text) whitespace-pre-wrap">{character.personality}</pre>
               </div>
             {/if}
 
@@ -191,7 +191,7 @@
                 <span class="block text-[11px] text-neutral-500 uppercase tracking-wider mb-1">
                   Example Dialogue
                 </span>
-                <pre class="overflow-x-auto rounded-xl bg-neutral-950 p-3 text-xs leading-relaxed text-neutral-300 whitespace-pre-wrap">{character.exampleDialogue}</pre>
+                <pre class="overflow-x-auto rounded-xl bg-(--chrome-surface) border border-(--chrome-line) p-3 text-xs leading-relaxed text-(--chrome-text) whitespace-pre-wrap">{character.exampleDialogue}</pre>
               </div>
             {/if}
           </div>
