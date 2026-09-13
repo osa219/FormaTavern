@@ -197,4 +197,16 @@ describe('Surface Completeness & Dialog Scoping (Invariant C14)', () => {
     expect(previewContent).toContain('--chrome-bg: color-mix(');
     expect(previewContent).toContain('color-scheme: dark;');
   });
+
+  it('ensures themable range slider rules and pseudoelements are configured in app.css', () => {
+    const appCssPath = resolve(SRC_DIR, 'app.css');
+    const css = readFileSync(appCssPath, 'utf-8');
+    expect(css).toContain('input[type="range"]');
+    expect(css).toContain('::-webkit-slider-runnable-track');
+    expect(css).toContain('::-webkit-slider-thumb');
+    expect(css).toContain('::-moz-range-track');
+    expect(css).toContain('::-moz-range-thumb');
+    expect(css).toContain('var(--chrome-line)');
+    expect(css).toContain('var(--theme-accent)');
+  });
 });

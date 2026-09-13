@@ -375,6 +375,13 @@ Following Slice 7 and visual verification across companion pages, two UX and the
   - In [`LivePreview.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/studio/LivePreview.svelte), defined `previewChromeReset` with inline specificity and restructured the preview into a fixed outer viewport holding `<Backdrop>` at `absolute inset-0`, with an independent inner container (`flex-1 overflow-y-auto`) handling scrolling.
   - Added regression test in [`frontend/unit/surfaces.test.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/unit/surfaces.test.ts).
 
+### 13. Fully Themable Range Slider Base
+- **Issue:** Browser-native unstyled `<input type="range">` tracks were hardcoded dark in Chromium, creating an unstyled, thick black bar on light custom themes and lacking theme accent integration.
+- **Resolution:**
+  - Added a global `/* Fully Themable Range Slider Base */` in [`frontend/src/app.css`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/app.css) styling WebKit (`::-webkit-slider-runnable-track`, `::-webkit-slider-thumb`) and Firefox (`::-moz-range-track`, `::-moz-range-thumb`) pseudoelements with `var(--chrome-line)` tracks and `var(--theme-accent)` circular thumbs.
+  - Automatically harmonizes all range sliders across Settings, Studio, and HUD popovers across both dark and light custom themes.
+  - Added automated assertion in [`frontend/unit/surfaces.test.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/unit/surfaces.test.ts).
+
 ---
 
 ## Test Suite Status
@@ -383,8 +390,9 @@ Following Slice 7 and visual verification across companion pages, two UX and the
 - **`bun run test`**: 100% green across all packages:
   - `packages/shared`: 190 passed, 0 failed.
   - `backend`: 173 passed, 0 failed.
-  - `frontend`: 179 passed, 0 failed.
-  - Total: 542 passed, 0 failed.
+  - `frontend`: 180 passed, 0 failed.
+  - Total: 543 passed, 0 failed.
 - **`bun run db:check`**: Clean integrity (`wal`, `foreign_keys=1`, `user_version=5`, `fts_parity=ok (3/3)`).
+
 
 
