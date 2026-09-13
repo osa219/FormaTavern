@@ -202,6 +202,7 @@ Expect `data:` frames ~40 ms apart (mock) and one `usage` + one `done`. A single
 
 **Ctrl+C hangs**
 → Active generations finalizing (`abortAll`, ≤ 2 s) or a pending timer. Second Ctrl+C force-kills; next boot recovers `streaming` rows as `aborted`.
+→ On Windows, Ctrl+C sometimes never reaches processes under `bun run dev` (`--parallel` wrapper). From a second terminal: `bun run stop` (kills listeners on 3000/5173 via `scripts/stop.ts`), then start fresh.
 
 ---
 
