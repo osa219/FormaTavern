@@ -3,10 +3,17 @@ import { Value } from '@sinclair/typebox/value';
 
 export const AppSettingsSchema = Type.Object({
   provider: Type.Object({
-    id: Type.Union([Type.Literal('mock'), Type.Literal('openrouter')], { default: 'mock' }),
+    id: Type.Union([Type.Literal('mock'), Type.Literal('openrouter'), Type.Literal('custom'), Type.Literal('gemini')], { default: 'mock' }),
     model: Type.Optional(Type.String())
   }, { default: { id: 'mock' } }),
   openrouter: Type.Object({
+    apiKey: Type.Optional(Type.String())
+  }, { default: {} }),
+  custom: Type.Object({
+    baseUrl: Type.Optional(Type.String()),
+    apiKey: Type.Optional(Type.String())
+  }, { default: {} }),
+  gemini: Type.Object({
     apiKey: Type.Optional(Type.String())
   }, { default: {} }),
   generation: Type.Object({
@@ -34,10 +41,21 @@ export const DEFAULT_SETTINGS: AppSettings = Value.Default(AppSettingsSchema, {}
 
 export const SettingsViewSchema = Type.Object({
   provider: Type.Object({
-    id: Type.Union([Type.Literal('mock'), Type.Literal('openrouter')]),
+    id: Type.Union([Type.Literal('mock'), Type.Literal('openrouter'), Type.Literal('custom'), Type.Literal('gemini')]),
     model: Type.Optional(Type.String())
   }),
   openrouter: Type.Object({
+    apiKeySet: Type.Boolean(),
+    apiKeyHint: Type.Union([Type.String(), Type.Null()]),
+    source: Type.Union([Type.Literal('settings'), Type.Literal('env'), Type.Literal('none')])
+  }),
+  custom: Type.Object({
+    baseUrl: Type.Union([Type.String(), Type.Null()]),
+    apiKeySet: Type.Boolean(),
+    apiKeyHint: Type.Union([Type.String(), Type.Null()]),
+    source: Type.Union([Type.Literal('settings'), Type.Literal('env'), Type.Literal('none')])
+  }),
+  gemini: Type.Object({
     apiKeySet: Type.Boolean(),
     apiKeyHint: Type.Union([Type.String(), Type.Null()]),
     source: Type.Union([Type.Literal('settings'), Type.Literal('env'), Type.Literal('none')])
@@ -65,12 +83,19 @@ export type SettingsView = Static<typeof SettingsViewSchema>;
 
 export const SettingsPatchSchema = Type.Object({
   provider: Type.Optional(Type.Partial(Type.Object({
-    id: Type.Union([Type.Literal('mock'), Type.Literal('openrouter')]),
+    id: Type.Union([Type.Literal('mock'), Type.Literal('openrouter'), Type.Literal('custom'), Type.Literal('gemini')]),
     model: Type.Optional(Type.String())
   }))),
   openrouter: Type.Optional(Type.Object({
     apiKey: Type.Union([Type.String({ minLength: 1 }), Type.Null()])
   })),
+  custom: Type.Optional(Type.Partial(Type.Object({
+    baseUrl: Type.Union([Type.String({ minLength: 1 }), Type.Null()]),
+    apiKey: Type.Union([Type.String({ minLength: 1 }), Type.Null()])
+  }))),
+  gemini: Type.Optional(Type.Partial(Type.Object({
+    apiKey: Type.Union([Type.String({ minLength: 1 }), Type.Null()])
+  }))),
   generation: Type.Optional(Type.Partial(Type.Object({
     temperature: Type.Number({ minimum: 0, maximum: 2 }),
     maxTokens: Type.Integer({ minimum: 16, maximum: 32_000 }),

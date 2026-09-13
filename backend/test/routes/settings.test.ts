@@ -87,8 +87,7 @@ describe('routes/settings', () => {
     expect(json.error.code).toBe('provider_unconfigured');
   });
 
-  it('sends stream: true to OpenRouter with fake fetch, and scrubs apiKey from error bodies', async () => {
-    let capturedBody: any = null;
+  it('sends stream: true to OpenRouter with fake fetch, and scrubs apiKey from error bodies', async () => {    let capturedBody: any = null;
     const testSecret = 'sk-or-v1-supersecret-7777';
 
     const fakeFetch = async (_url: any, init: any) => {
@@ -218,6 +217,147 @@ describe('routes/settings', () => {
         })
       );
       expect(res.status).toBe(422);
+    });
+  });
+
+  describe('custom + gemini providers', () => {
+    it('exposes custom/gemini key status masked on GET', async () => {
+      const { app } = setupTestApp();
+      const res = await app.handle(new Request('http://127.0.0.1/api/settings'));
+      expect(res.status).toBe(200);
+      const view = (await res.json()) as SettingsView;
+      expect(view.custom.baseUrl).toBeNull();
+      expect(view.custom.apiKeySet).toBe(false);
+      expect(view.custom.source).toBe('none');
+      expect(view.gemini.apiKeySet).toBe(false);
+      expect(view.gemini.source).toBe('none');
+      expect((view as any).custom.apiKey).toBeUndefined();
+      expect((view as any).gemini.apiKey).toBeUndefined();
+    });
+
+    it('rejects invalid custom base URLs and empty keys with 422', async () => {
+      const { app } = setupTestApp();
+
+      const badUrl = await app.handle(
+        new Request('http://127.0.0.1/api/settings', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ custom: { baseUrl: 'not-a-url' } })
+        })
+      );
+      expect(badUrl.status).toBe(422);
+
+      const ftpUrl = await app.handle(
+        new Request('http://127.0.0.1/api/settings', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ custom: { baseUrl: 'ftp://host/v1' } })
+        })
+      );
+      expect(ftpUrl.status).toBe(422);
+
+      const emptyKey = await app.handle(
+        new Request('http://127.0.0.1/api/settings', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ gemini: { apiKey: '' } })
+        })
+      );
+      expect(emptyKey.status).toBe(422);
+    });
+
+    it('fails with 409 provider_unconfigured for custom without base URL and gemini without key', async () => {
+      const { app, repos } = setupTestApp();
+      const chat = repos.chats.create({
+        id: 'c-unconf-p3',
+        title: 'Unconfigured P3',
+        primaryCharacterId: 'eldrin-the-mage',
+        activePersonaId: 'persona-default',
+        metadata: { envelopeDialect: 'directive', narrativeMode: 'narrative' }
+      });
+
+      await app.handle(
+        new Request('http://127.0.0.1/api/settings', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ provider: { id: 'custom' } })
+        })
+      );
+      const customRes = await app.handle(
+        new Request(`http://127.0.0.1/api/chats/${chat.id}/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: 'Hello' })
+        })
+      );
+      expect(customRes.status).toBe(409);
+      expect(((await customRes.json()) as any).error.code).toBe('provider_unconfigured');
+
+      await app.handle(
+        new Request('http://127.0.0.1/api/settings', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ provider: { id: 'gemini' } })
+        })
+      );
+      const geminiRes = await app.handle(
+        new Request(`http://127.0.0.1/api/chats/${chat.id}/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: 'Hello again' })
+        })
+      );
+      expect(geminiRes.status).toBe(409);
+      expect(((await geminiRes.json()) as any).error.code).toBe('provider_unconfigured');
+    });
+
+    it('generates through a keyless custom endpoint with fake fetch', async () => {
+      let capturedUrl = '';
+      let capturedBody: any = null;
+      const fakeFetch = async (url: any, init: any) => {
+        capturedUrl = String(url);
+        capturedBody = JSON.parse(init.body);
+        return new Response('data: [DONE]\n\n', {
+          headers: { 'Content-Type': 'text/event-stream' }
+        });
+      };
+
+      const { app, repos } = setupTestApp({ customFetch: fakeFetch });
+      const setupRes = await app.handle(
+        new Request('http://127.0.0.1/api/settings', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            provider: { id: 'custom', model: 'llama3.1' },
+            custom: { baseUrl: 'http://localhost:11434/v1' }
+          })
+        })
+      );
+      expect(setupRes.status).toBe(200);
+
+      const chat = repos.chats.create({
+        id: 'c-custom-fetch',
+        title: 'Custom Fetch',
+        primaryCharacterId: 'eldrin-the-mage',
+        activePersonaId: 'persona-default',
+        metadata: { envelopeDialect: 'directive', narrativeMode: 'narrative' }
+      });
+
+      const sendRes = await app.handle(
+        new Request(`http://127.0.0.1/api/chats/${chat.id}/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: 'Hello local' })
+        })
+      );
+      expect(sendRes.status).toBe(200);
+      // Generation runs in the background; wait for the upstream call.
+      for (let i = 0; i < 100 && capturedUrl === ''; i++) {
+        await new Promise((r) => setTimeout(r, 20));
+      }
+      expect(capturedUrl).toBe('http://localhost:11434/v1/chat/completions');
+      expect(capturedBody?.model).toBe('llama3.1');
+      expect(capturedBody?.stream).toBe(true);
     });
   });
 });

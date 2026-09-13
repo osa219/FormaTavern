@@ -96,4 +96,28 @@ describe('SQLiteSettingsRepository', () => {
     expect(s.generation).toEqual(DEFAULT_SETTINGS.generation);
     expect(s.narrative).toEqual(DEFAULT_SETTINGS.narrative);
   });
+
+  it('roundtrips custom baseUrl/apiKey and gemini apiKey, including null clears', () => {
+    const repos = createRepositories(inst.db);
+
+    repos.settings.patch({
+      custom: { baseUrl: 'http://localhost:11434/v1', apiKey: 'local-secret' },
+      gemini: { apiKey: 'AI-test-key' }
+    });
+
+    const s1 = repos.settings.getAll();
+    expect(s1.custom.baseUrl).toBe('http://localhost:11434/v1');
+    expect(s1.custom.apiKey).toBe('local-secret');
+    expect(s1.gemini.apiKey).toBe('AI-test-key');
+    // openrouter untouched
+    expect(s1.openrouter.apiKey).toBeUndefined();
+
+    // Null clears
+    repos.settings.patch({ custom: { baseUrl: null, apiKey: null }, gemini: { apiKey: null } });
+
+    const s2 = repos.settings.getAll();
+    expect(s2.custom.baseUrl).toBeUndefined();
+    expect(s2.custom.apiKey).toBeUndefined();
+    expect(s2.gemini.apiKey).toBeUndefined();
+  });
 });

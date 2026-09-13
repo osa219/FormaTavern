@@ -24,6 +24,8 @@ export class SQLiteSettingsRepository implements SettingsRepository {
     const subSchemas: Record<string, any> = {
       provider: AppSettingsSchema.properties.provider,
       openrouter: AppSettingsSchema.properties.openrouter,
+      custom: AppSettingsSchema.properties.custom,
+      gemini: AppSettingsSchema.properties.gemini,
       generation: AppSettingsSchema.properties.generation,
       narrative: AppSettingsSchema.properties.narrative,
       preamble: AppSettingsSchema.properties.preamble
@@ -75,6 +77,33 @@ export class SQLiteSettingsRepository implements SettingsRepository {
           current.apiKey = p.openrouter.apiKey;
         }
         upsertStmt.run('openrouter', JSON.stringify(current), now);
+      }
+
+      // 2b. custom
+      if (p.custom !== undefined) {
+        const current = this.loadSubObject('custom');
+        if (p.custom.baseUrl === null) {
+          delete current.baseUrl;
+        } else if (p.custom.baseUrl !== undefined) {
+          current.baseUrl = p.custom.baseUrl.trim();
+        }
+        if (p.custom.apiKey === null) {
+          delete current.apiKey;
+        } else if (p.custom.apiKey !== undefined) {
+          current.apiKey = p.custom.apiKey;
+        }
+        upsertStmt.run('custom', JSON.stringify(current), now);
+      }
+
+      // 2c. gemini
+      if (p.gemini !== undefined) {
+        const current = this.loadSubObject('gemini');
+        if (p.gemini.apiKey === null) {
+          delete current.apiKey;
+        } else if (p.gemini.apiKey !== undefined) {
+          current.apiKey = p.gemini.apiKey;
+        }
+        upsertStmt.run('gemini', JSON.stringify(current), now);
       }
 
       // 3. generation

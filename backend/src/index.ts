@@ -57,7 +57,14 @@ const hasOpenRouterKey = Boolean(
   (settings.openrouter?.apiKey && settings.openrouter.apiKey.trim().length > 0) ||
     process.env.OPENROUTER_API_KEY
 );
-console.log(`[providers] mock ready, openrouter ${hasOpenRouterKey ? 'ready' : 'disabled (no key)'}`);
+const hasCustom = Boolean(settings.custom?.baseUrl && settings.custom.baseUrl.trim().length > 0);
+const hasGeminiKey = Boolean(
+  (settings.gemini?.apiKey && settings.gemini.apiKey.trim().length > 0) ||
+    process.env.GEMINI_API_KEY
+);
+console.log(
+  `[providers] mock ready, openrouter ${hasOpenRouterKey ? 'ready' : 'disabled (no key)'}, custom ${hasCustom ? 'ready' : 'disabled (no base URL)'}, gemini ${hasGeminiKey ? 'ready' : 'disabled (no key)'}`
+);
 
 // 7. Graceful shutdown
 const shutdown = async () => {

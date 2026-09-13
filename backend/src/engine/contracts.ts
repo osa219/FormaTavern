@@ -38,8 +38,10 @@ export interface ProviderResolution {
 
 export interface ProviderRegistry {
   resolve(settings: {
-    provider?: { id?: 'mock' | 'openrouter'; model?: string };
+    provider?: { id?: 'mock' | 'openrouter' | 'custom' | 'gemini'; model?: string };
     openrouter?: { apiKey?: string };
+    custom?: { baseUrl?: string; apiKey?: string };
+    gemini?: { apiKey?: string };
     generation?: { contextLength?: number };
   }): ProviderResolution;
 }

@@ -5,6 +5,7 @@ import { OpenRouterProvider } from './openrouter';
 export * from './mock';
 export * from './openai-compatible';
 export * from './openrouter';
+export * from './presets';
 export * from './utils';
 export * from './sse';
 

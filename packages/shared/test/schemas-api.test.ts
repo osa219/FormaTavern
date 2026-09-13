@@ -94,9 +94,25 @@ describe('Shared API & DTO Schemas', () => {
     expect(cleaned).toEqual({ generation: { temperature: 0.9 } });
   });
 
+  it('SettingsPatchSchema accepts custom/gemini provider patches', () => {
+    expect(Value.Check(SettingsPatchSchema, { provider: { id: 'custom' } })).toBe(true);
+    expect(Value.Check(SettingsPatchSchema, { provider: { id: 'gemini' } })).toBe(true);
+    expect(
+      Value.Check(SettingsPatchSchema, {
+        custom: { baseUrl: 'http://localhost:11434/v1', apiKey: null }
+      })
+    ).toBe(true);
+    expect(Value.Check(SettingsPatchSchema, { custom: { baseUrl: null } })).toBe(true);
+    expect(Value.Check(SettingsPatchSchema, { gemini: { apiKey: 'AI-test' } })).toBe(true);
+    expect(Value.Check(SettingsPatchSchema, { custom: { apiKey: '' } })).toBe(false);
+    expect(Value.Check(SettingsPatchSchema, { provider: { id: 'bogus' } })).toBe(false);
+  });
+
   it('DEFAULT_SETTINGS matches documented architectural defaults', () => {
     expect(DEFAULT_SETTINGS.provider).toEqual({ id: 'mock' });
     expect(DEFAULT_SETTINGS.openrouter).toEqual({});
+    expect(DEFAULT_SETTINGS.custom).toEqual({});
+    expect(DEFAULT_SETTINGS.gemini).toEqual({});
     expect(DEFAULT_SETTINGS.generation.temperature).toBe(0.8);
     expect(DEFAULT_SETTINGS.generation.maxTokens).toBe(1024);
     expect(DEFAULT_SETTINGS.generation.contextLength).toBe(16_384);

@@ -27,6 +27,13 @@
   let apiKeyDraft = $state('');
   let apiKeySavedNotice = $state(false);
 
+  // Custom provider drafts
+  let customBaseUrlDraft = $state('');
+  let customKeyDraft = $state('');
+
+  // Gemini key draft
+  let geminiKeyDraft = $state('');
+
   // Surface Accent Tint draft
   let tintDraft = $state<number>(0);
 
@@ -93,6 +100,56 @@
       openrouter: { apiKey: null }
     });
     apiKeyDraft = '';
+  }
+
+  async function handleSaveCustomBaseUrl() {
+    if (!customBaseUrlDraft.trim()) return;
+    await settingsStore.patch({
+      custom: { baseUrl: customBaseUrlDraft.trim() }
+    });
+    customBaseUrlDraft = '';
+    apiKeySavedNotice = true;
+    setTimeout(() => {
+      apiKeySavedNotice = false;
+    }, 2500);
+  }
+
+  async function handleSaveCustomKey() {
+    if (!customKeyDraft.trim()) return;
+    await settingsStore.patch({
+      custom: { apiKey: customKeyDraft.trim() }
+    });
+    customKeyDraft = '';
+    apiKeySavedNotice = true;
+    setTimeout(() => {
+      apiKeySavedNotice = false;
+    }, 2500);
+  }
+
+  async function handleClearCustomKey() {
+    await settingsStore.patch({
+      custom: { apiKey: null }
+    });
+    customKeyDraft = '';
+  }
+
+  async function handleSaveGeminiKey() {
+    if (!geminiKeyDraft.trim()) return;
+    await settingsStore.patch({
+      gemini: { apiKey: geminiKeyDraft.trim() }
+    });
+    geminiKeyDraft = '';
+    apiKeySavedNotice = true;
+    setTimeout(() => {
+      apiKeySavedNotice = false;
+    }, 2500);
+  }
+
+  async function handleClearGeminiKey() {
+    await settingsStore.patch({
+      gemini: { apiKey: null }
+    });
+    geminiKeyDraft = '';
   }
 
   function handleCancel(e: Event) {
@@ -397,6 +454,8 @@
           >
             <option value="mock">Mock Engine (Offline fixtures)</option>
             <option value="openrouter">OpenRouter (Online LLMs)</option>
+            <option value="custom">Custom OpenAI-compatible (Base URL)</option>
+            <option value="gemini">Gemini (Google AI Studio)</option>
           </select>
         </div>
 
@@ -424,7 +483,11 @@
               id="model-input"
               type="text"
               value={s.provider.model ?? ''}
-              placeholder="e.g. anthropic/claude-3.5-sonnet or meta-llama/llama-3.3-70b-instruct"
+              placeholder={s.provider.id === 'gemini'
+                ? 'e.g. gemini-3.5-flash'
+                : s.provider.id === 'custom'
+                  ? 'e.g. llama3.1 (model id on your server)'
+                  : 'e.g. anthropic/claude-3.5-sonnet or meta-llama/llama-3.3-70b-instruct'}
               oninput={(e) => queuePatch({ provider: { model: e.currentTarget.value } })}
               class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text) focus:border-accent focus:outline-none"
             />
@@ -459,6 +522,111 @@
                 <button
                   type="button"
                   onclick={handleClearApiKey}
+                  class="rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text)/60 transition-colors hover:bg-red-950/40 hover:text-red-300"
+                >
+                  Clear Key
+                </button>
+              {/if}
+            </div>
+            {#if apiKeySavedNotice}
+              <p class="mt-2 text-[11px] text-accent">API key saved securely.</p>
+            {/if}
+          </div>
+        {/if}
+
+        <!-- Custom provider endpoint + key -->
+        {#if s.provider.id === 'custom'}
+          <div class="rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 p-4">
+            <div class="mb-2 flex items-center justify-between">
+              <span class="font-medium text-(--chrome-text)">Base URL</span>
+              <span class="text-[11px] text-(--chrome-text)/60">
+                Current: {s.custom.baseUrl ?? 'Not set'}
+              </span>
+            </div>
+            <div class="flex gap-2">
+              <input
+                type="url"
+                bind:value={customBaseUrlDraft}
+                placeholder="e.g. http://localhost:11434/v1"
+                class="flex-1 rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 font-mono text-(--chrome-text) focus:border-accent focus:outline-none"
+              />
+              <button
+                type="button"
+                onclick={handleSaveCustomBaseUrl}
+                disabled={!customBaseUrlDraft.trim()}
+                class="rounded-xl bg-accent px-3.5 py-2 font-semibold text-accent-contrast transition-colors hover:bg-accent/90 disabled:opacity-50"
+              >
+                Save
+              </button>
+            </div>
+            <div class="mb-2 mt-4 flex items-center justify-between">
+              <span class="font-medium text-(--chrome-text)">API Key <span class="font-normal text-(--chrome-text)/60">(optional — leave empty for local servers)</span></span>
+              <span class="text-[11px] text-(--chrome-text)/60">
+                Current: {s.custom.apiKeyHint ?? 'Not set'} ({s.custom.source})
+              </span>
+            </div>
+            <div class="flex gap-2">
+              <input
+                type="password"
+                bind:value={customKeyDraft}
+                placeholder="Optional key for this endpoint"
+                class="flex-1 rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text) focus:border-accent focus:outline-none"
+              />
+              <button
+                type="button"
+                onclick={handleSaveCustomKey}
+                disabled={!customKeyDraft.trim()}
+                class="rounded-xl bg-accent px-3.5 py-2 font-semibold text-accent-contrast transition-colors hover:bg-accent/90 disabled:opacity-50"
+              >
+                Save
+              </button>
+              {#if s.custom.apiKeySet}
+                <button
+                  type="button"
+                  onclick={handleClearCustomKey}
+                  class="rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text)/60 transition-colors hover:bg-red-950/40 hover:text-red-300"
+                >
+                  Clear Key
+                </button>
+              {/if}
+            </div>
+            {#if apiKeySavedNotice}
+              <p class="mt-2 text-[11px] text-accent">Custom endpoint saved.</p>
+            {/if}
+          </div>
+        {/if}
+
+        <!-- Gemini API Key -->
+        {#if s.provider.id === 'gemini'}
+          <div class="rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 p-4">
+            <div class="mb-2 flex items-center justify-between">
+              <span class="font-medium text-(--chrome-text)">API Key</span>
+              <span class="text-[11px] text-(--chrome-text)/60">
+                Current: {s.gemini.apiKeyHint ?? 'Not set'} ({s.gemini.source})
+              </span>
+            </div>
+            <p class="mb-2 text-[11px] text-(--chrome-text)/60">
+              Get an Auth key from Google AI Studio. Uses the OpenAI-compatible endpoint.
+            </p>
+            <div class="flex gap-2">
+              <input
+                type="password"
+                bind:value={geminiKeyDraft}
+                placeholder="Enter new Gemini key (AI…)"
+                class="flex-1 rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text) focus:border-accent focus:outline-none"
+              />
+              <button
+                type="button"
+                onclick={handleSaveGeminiKey}
+                disabled={!geminiKeyDraft.trim()}
+                class="rounded-xl bg-accent px-3.5 py-2 font-semibold text-accent-contrast transition-colors hover:bg-accent/90 disabled:opacity-50"
+              >
+                Save
+              </button>
+              {#if s.gemini.apiKeySet}
+                <button
+                  type="button"
+                  onclick={handleClearGeminiKey}
                   class="rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text)/60 transition-colors hover:bg-red-950/40 hover:text-red-300"
                 >
                   Clear Key
