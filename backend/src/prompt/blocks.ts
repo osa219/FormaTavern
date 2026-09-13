@@ -76,6 +76,12 @@ export function generateBlock(id: BlockId, ctx: PromptContext): string | null {
       return macro(content, ctx);
     }
 
+    case '1c': {
+      const prompt = ctx.configPrompt?.trim();
+      if (!prompt) return null;
+      return macro(prompt, ctx);
+    }
+
     case '2': {
       const desc = ctx.character.description?.trim();
       if (!desc) return null;

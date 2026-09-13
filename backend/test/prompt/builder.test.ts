@@ -395,4 +395,36 @@ describe('PromptBuilder', () => {
     const expected = await Bun.file(goldenPath).text();
     expect(rendered).toBe(expected);
   });
+
+  describe('Block 1c (provider config prompt)', () => {
+    it('is omitted without a config prompt and leaves the golden output untouched', () => {
+      const built = buildPrompt(makeContext());
+      const report = built.blocks.find((b) => b.id === '1c');
+      expect(report).toMatchObject({ included: false, tokens: 0 });
+    });
+
+    it('sits between preamble/grammar and character blocks with macros applied', () => {
+      const built = buildPrompt(
+        makeContext({ configPrompt: 'Extra rule for {{char}}: keep replies terse, {{user}}.' })
+      );
+      const report = built.blocks.find((b) => b.id === '1c');
+      expect(report?.included).toBe(true);
+      expect(report!.tokens).toBeGreaterThan(0);
+
+      const text = built.systemPrompt;
+      expect(text).toContain('Extra rule for Eldrin the Mage: keep replies terse, Traveler.');
+      const idxPrompt = text.indexOf('Extra rule for Eldrin');
+      const idxGrammar = text.indexOf('[Narrative Mode: directive]');
+      const idxChar = text.indexOf('Ancient wizard in starry robes.');
+      expect(idxGrammar).toBeGreaterThanOrEqual(0);
+      expect(idxChar).toBeGreaterThan(0);
+      expect(idxPrompt).toBeGreaterThan(idxGrammar);
+      expect(idxPrompt).toBeLessThan(idxChar);
+    });
+
+    it('ignores blank prompts', () => {
+      const built = buildPrompt(makeContext({ configPrompt: '   ' }));
+      expect(built.blocks.find((b) => b.id === '1c')).toMatchObject({ included: false });
+    });
+  });
 });

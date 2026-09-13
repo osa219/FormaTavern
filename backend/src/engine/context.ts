@@ -46,6 +46,7 @@ export interface AssembleContextInput {
   settings: AppSettings;
   triggerId: string;
   capabilities: { prefill: boolean };
+  configPrompt?: string;
   continuation?: { partial: string };
   messages?: MessageRepository;
   pathRows?: MessageRow[];
@@ -107,6 +108,7 @@ export function assembleContext(input: AssembleContextInput): AssembledContext {
     activeNpcs,
     lorebookEntries: [],
     preamble: input.settings.preamble,
+    configPrompt: input.configPrompt,
     budget: {
       contextLength,
       reservedCompletion

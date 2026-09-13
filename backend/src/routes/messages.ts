@@ -100,7 +100,10 @@ export function createMessagesRouter(deps: {
       }
 
       const settings = repos.settings.getAll();
-      const resolution = providers.resolve(settings);
+      const activeConfig = settings.provider.activeConfigId
+        ? repos.providerConfigs.get(settings.provider.activeConfigId)
+        : null;
+      const resolution = providers.resolve(settings, activeConfig);
 
       // Assemble context with triggerId = target.parentId (user node)
       const ctx = assembleContext({
@@ -110,6 +113,7 @@ export function createMessagesRouter(deps: {
         settings,
         triggerId: target.parentId,
         capabilities: resolution.provider.capabilities,
+        configPrompt: resolution.configPrompt,
         messages: repos.messages
       });
 
@@ -214,7 +218,10 @@ export function createMessagesRouter(deps: {
       }
 
       const settings = repos.settings.getAll();
-      const resolution = providers.resolve(settings);
+      const activeConfig = settings.provider.activeConfigId
+        ? repos.providerConfigs.get(settings.provider.activeConfigId)
+        : null;
+      const resolution = providers.resolve(settings, activeConfig);
 
       const stripped = stripOutOfBand(target.content);
       repos.messages.reopenForContinue(target.id, stripped);
@@ -236,6 +243,7 @@ export function createMessagesRouter(deps: {
         triggerId: target.id,
         capabilities: resolution.provider.capabilities,
         continuation: { partial: stripped },
+        configPrompt: resolution.configPrompt,
         messages: repos.messages
       });
 

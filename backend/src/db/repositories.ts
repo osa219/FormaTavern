@@ -20,6 +20,7 @@ import type { CharacterRepository, PersonaRepository, Repositories } from './con
 import { SQLiteChatRepository } from './repositories/chats';
 import { SQLiteMessageRepository } from './repositories/messages';
 import { SQLiteSettingsRepository } from './repositories/settings';
+import { SQLiteProviderConfigRepository } from './repositories/providerConfigs';
 import { newId } from './ids';
 
 interface CharacterRow {
@@ -925,6 +926,7 @@ export function createRepositories(db: Database): Repositories {
   const chats = new SQLiteChatRepository(db);
   const messages = new SQLiteMessageRepository(db);
   const settings = new SQLiteSettingsRepository(db);
+  const providerConfigs = new SQLiteProviderConfigRepository(db);
 
   return {
     characters,
@@ -932,6 +934,7 @@ export function createRepositories(db: Database): Repositories {
     chats,
     messages,
     settings,
+    providerConfigs,
     schemaVersion() {
       const row = db.query('PRAGMA user_version;').get() as { user_version: number };
       return row.user_version;

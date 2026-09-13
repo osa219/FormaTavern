@@ -136,6 +136,25 @@ export const migrations: readonly Migration[] = [
     up: (db) => {
       db.run(`ALTER TABLE characters ADD COLUMN custom_css TEXT;`);
     }
+  },
+  {
+    version: 6,
+    name: 'provider_configs',
+    up: (db) => {
+      db.run(`CREATE TABLE IF NOT EXISTS provider_configs (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL COLLATE NOCASE UNIQUE,
+        provider_type TEXT NOT NULL
+          CHECK (provider_type IN ('openrouter','custom','gemini','gemini-interactions')),
+        base_url TEXT,
+        api_key TEXT,
+        model TEXT,
+        custom_prompt TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      );`);
+      db.run(`CREATE INDEX IF NOT EXISTS idx_provider_configs_updated ON provider_configs(updated_at DESC);`);
+    }
   }
 ];
 

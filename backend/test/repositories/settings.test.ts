@@ -97,6 +97,14 @@ describe('SQLiteSettingsRepository', () => {
     expect(s.narrative).toEqual(DEFAULT_SETTINGS.narrative);
   });
 
+  it('drops blank provider model and null activeConfigId on patch', () => {
+    const repos = createRepositories(inst.db);
+    repos.settings.patch({ provider: { id: 'mock', model: '  ', activeConfigId: null } });
+    const s = repos.settings.getAll();
+    expect(s.provider.model).toBeUndefined();
+    expect(s.provider.activeConfigId).toBeUndefined();
+  });
+
   it('roundtrips custom baseUrl/apiKey and gemini apiKey, including null clears', () => {
     const repos = createRepositories(inst.db);
 

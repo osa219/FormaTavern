@@ -342,7 +342,10 @@ export function createChatsRouter(deps: {
         }
 
         // generate === true
-        const resolution = providers.resolve(settings);
+        const activeConfig = settings.provider.activeConfigId
+          ? repos.providerConfigs.get(settings.provider.activeConfigId)
+          : null;
+        const resolution = providers.resolve(settings, activeConfig);
 
         // Insert user row
         const userRow = repos.messages.insert({
@@ -366,6 +369,7 @@ export function createChatsRouter(deps: {
           settings,
           triggerId: userRow.id,
           capabilities: resolution.provider.capabilities,
+          configPrompt: resolution.configPrompt,
           messages: repos.messages
         });
 

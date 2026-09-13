@@ -10,9 +10,9 @@ export function buildPrompt(ctx: PromptContext): BuiltPrompt {
   const vars = { char: ctx.character.name, user: ctx.persona.name };
   const dialect = getDialect(ctx);
 
-  // 1. Generate Static System Blocks (1, 1b, 2, 3, 4, 5, 6, 6b, 7, 7b)
+  // 1. Generate Static System Blocks (1, 1b, 1c, 2, 3, 4, 5, 6, 6b, 7, 7b)
   const blockReportsMap = new Map<BlockId, BlockReport>();
-  const staticBlockIds: BlockId[] = ['1', '1b', '2', '3', '4', '5', '6', '6b', '7', '7b'];
+  const staticBlockIds: BlockId[] = ['1', '1b', '1c', '2', '3', '4', '5', '6', '6b', '7', '7b'];
   const includedSystemBlocks: string[] = [];
 
   for (const id of staticBlockIds) {

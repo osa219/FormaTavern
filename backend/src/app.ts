@@ -11,6 +11,7 @@ import { ApiError } from './engine/errors';
 import { createCharactersRouter, createTagsRouter } from './routes/characters';
 import { createPersonasRouter } from './routes/personas';
 import { createSettingsRouter } from './routes/settings';
+import { createProviderConfigsRouter } from './routes/providerConfigs';
 import { createChatsRouter } from './routes/chats';
 import { createMessagesRouter } from './routes/messages';
 import { createAssetsRouter } from './routes/assets';
@@ -31,6 +32,7 @@ export function createApp({ repos, hub, providers, assets, options }: AppDeps) {
   const tagsRouter = createTagsRouter(repos);
   const personasRouter = createPersonasRouter(repos);
   const settingsRouter = createSettingsRouter(repos);
+  const providerConfigsRouter = createProviderConfigsRouter({ repos, providers });
   const chatsRouter = createChatsRouter({ repos, hub, providers });
   const messagesRouter = createMessagesRouter({ repos, hub, providers });
   const assetsRouter = createAssetsRouter(assets);
@@ -156,6 +158,7 @@ export function createApp({ repos, hub, providers, assets, options }: AppDeps) {
     .use(tagsRouter)
     .use(personasRouter)
     .use(settingsRouter)
+    .use(providerConfigsRouter)
     .use(chatsRouter)
     .use(messagesRouter)
     .use(assetsRouter);

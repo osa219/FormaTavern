@@ -3,6 +3,7 @@ import type {
   LLMProvider,
   LLMRequest,
   ParseOptions,
+  ProviderConfig,
   StateVector,
   StateField
 } from '@formatavern/shared';
@@ -34,16 +35,24 @@ export interface ProviderResolution {
   provider: LLMProvider;
   model: string;
   contextLength: number;
+  configPrompt?: string;
 }
 
 export interface ProviderRegistry {
-  resolve(settings: {
-    provider?: { id?: 'mock' | 'openrouter' | 'custom' | 'gemini' | 'gemini-interactions'; model?: string };
-    openrouter?: { apiKey?: string };
-    custom?: { baseUrl?: string; apiKey?: string };
-    gemini?: { apiKey?: string };
-    generation?: { contextLength?: number };
-  }): ProviderResolution;
+  resolve(
+    settings: {
+      provider?: {
+        id?: 'mock' | 'openrouter' | 'custom' | 'gemini' | 'gemini-interactions';
+        model?: string;
+        activeConfigId?: string | null;
+      };
+      openrouter?: { apiKey?: string };
+      custom?: { baseUrl?: string; apiKey?: string };
+      gemini?: { apiKey?: string };
+      generation?: { contextLength?: number };
+    },
+    activeConfig?: ProviderConfig | null
+  ): ProviderResolution;
 }
 
 export interface GenerationJob {

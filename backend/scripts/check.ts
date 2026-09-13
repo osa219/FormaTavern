@@ -31,8 +31,8 @@ try {
     console.error(`[check] ERROR: foreign_keys is not 1`);
     hasFailure = true;
   }
-  if (user_version !== 5) {
-    console.error(`[check] ERROR: user_version is ${user_version}, expected 5`);
+  if (user_version !== 6) {
+    console.error(`[check] ERROR: user_version is ${user_version}, expected 6`);
     hasFailure = true;
   }
 
@@ -84,6 +84,17 @@ try {
   if (!chatColNames.includes('active_leaf_id')) {
     console.error(`[check] ERROR: chats table missing required column 'active_leaf_id'`);
     hasFailure = true;
+  }
+
+  const cfgCols = db.query('PRAGMA table_info(provider_configs);').all() as Array<{ name: string }>;
+  const cfgColNames = cfgCols.map((c) => c.name);
+  const requiredCfgCols = ['id', 'name', 'provider_type', 'base_url', 'api_key', 'model', 'custom_prompt'];
+  const missingCfgCols = requiredCfgCols.filter((c) => !cfgColNames.includes(c));
+  if (missingCfgCols.length > 0) {
+    console.error(`[check] ERROR: provider_configs table missing columns: ${missingCfgCols.join(', ')}`);
+    hasFailure = true;
+  } else {
+    console.log(`provider_configs=ok`);
   }
 
   // Audit 1: No streaming rows

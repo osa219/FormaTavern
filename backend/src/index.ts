@@ -8,6 +8,7 @@ import { openDatabase } from './db/connection';
 import { runMigrations } from './db/migrate';
 import { createRepositories } from './db/repositories';
 import { seed } from './db/seeds/seed';
+import { seedProviderConfigs } from './db/seeds/providerConfigs';
 import { recoverStaleGenerations } from './engine/recovery';
 import { GenerationHubImpl } from './engine/hub';
 import { ProviderRegistryImpl } from './engine/providers';
@@ -39,11 +40,15 @@ const recoveryResult = recoverStaleGenerations(repos);
 
 // 5. Seed if empty
 const seedResult = seed(repos);
+const pcSeed = seedProviderConfigs(repos);
 
 const dbFileName = basename(DB_PATH);
 let dbLog = `[db] ${dbFileName}  migrations: ${from} → ${to}`;
 if (seedResult.seeded) {
   dbLog += `  seeded: ${seedResult.characters} characters, ${seedResult.personas} persona`;
+}
+if (pcSeed.seeded) {
+  dbLog += `  provider configs: ${pcSeed.configs} seeded from legacy settings`;
 }
 dbLog += `  recovered ${recoveryResult.recoveredCount} stale generations`;
 console.log(dbLog);

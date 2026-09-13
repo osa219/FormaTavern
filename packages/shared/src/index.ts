@@ -23,6 +23,7 @@ export * from './schemas/api';
 export * from './schemas/chat';
 export * from './schemas/message';
 export * from './schemas/settings';
+export * from './schemas/providerConfig';
 export * from './schemas/shellTheme';
 export * from './types/llm';
 export * from './types/chatStream';

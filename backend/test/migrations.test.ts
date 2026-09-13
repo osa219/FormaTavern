@@ -9,13 +9,13 @@ describe('Database Migrations', () => {
     inst?.cleanup();
   });
 
-  it('runs migrations on fresh database from v0 to v5 and alters schema', () => {
+  it('runs migrations on fresh database from v0 to v6 and alters schema', () => {
     inst = openTestDb(':memory:');
     const res = runMigrations(inst.db);
-    expect(res).toEqual({ from: 0, to: 5 });
+    expect(res).toEqual({ from: 0, to: 6 });
 
     const { user_version } = inst.db.query('PRAGMA user_version;').get() as { user_version: number };
-    expect(user_version).toBe(5);
+    expect(user_version).toBe(6);
 
     const msgCols = inst.db.query('PRAGMA table_info(messages);').all() as Array<{ name: string }>;
     const msgColMap = new Set(msgCols.map((c) => c.name));
@@ -54,16 +54,22 @@ describe('Database Migrations', () => {
       .get() as { value: string };
     expect(searchSetting).not.toBeNull();
     expect(['"fts5"', '"like"']).toContain(searchSetting.value);
+
+    const cfgCols = inst.db.query('PRAGMA table_info(provider_configs);').all() as Array<{ name: string }>;
+    const cfgColMap = new Set(cfgCols.map((c) => c.name));
+    for (const col of ['id', 'name', 'provider_type', 'base_url', 'api_key', 'model', 'custom_prompt']) {
+      expect(cfgColMap.has(col)).toBe(true);
+    }
   });
 
   it('is idempotent on subsequent migration runs', () => {
     inst = openTestDb(':memory:');
     runMigrations(inst.db);
     const second = runMigrations(inst.db);
-    expect(second).toEqual({ from: 5, to: 5 });
+    expect(second).toEqual({ from: 6, to: 6 });
   });
 
-  it('upgrades v2 database to v5 and backfills active_leaf_id and tags', () => {
+  it('upgrades v2 database to v6 and backfills active_leaf_id and tags', () => {
     inst = openTestDb(':memory:');
     // Run v1 and v2
     const v2Only = migrations.slice(0, 2);
@@ -93,9 +99,9 @@ describe('Database Migrations', () => {
       [now + 1]
     );
 
-    // Run full migrations (upgrades to v5)
+    // Run full migrations (upgrades to v6)
     const upgrade = runMigrations(inst.db);
-    expect(upgrade).toEqual({ from: 2, to: 5 });
+    expect(upgrade).toEqual({ from: 2, to: 6 });
 
     const chat1 = inst.db.query(`SELECT active_leaf_id FROM chats WHERE id = 'chat1';`).get() as {
       active_leaf_id: string;
@@ -166,8 +172,8 @@ describe('Database Migrations', () => {
     inst = openTestDb(':memory:');
     runMigrations(inst.db);
 
-    const failingV6: Migration = {
-      version: 6,
+    const failingV7: Migration = {
+      version: 7,
       name: 'failing_migration',
       up: (db) => {
         db.run(`CREATE TABLE test_rollback (id TEXT PRIMARY KEY);`);
@@ -175,12 +181,12 @@ describe('Database Migrations', () => {
       }
     };
 
-    expect(() => runMigrations(inst.db, [...migrations, failingV6])).toThrow(
+    expect(() => runMigrations(inst.db, [...migrations, failingV7])).toThrow(
       'Simulation of unexpected migration failure'
     );
 
     const { user_version } = inst.db.query('PRAGMA user_version;').get() as { user_version: number };
-    expect(user_version).toBe(5);
+    expect(user_version).toBe(6);
 
     const tableCheck = inst.db
       .query(`SELECT name FROM sqlite_master WHERE type='table' AND name='test_rollback';`)
@@ -191,7 +197,7 @@ describe('Database Migrations', () => {
   it('refuses to open if user_version is newer than supported migrations', () => {
     inst = openTestDb(':memory:');
     inst.db.run('PRAGMA user_version = 99;');
-    expect(() => runMigrations(inst.db)).toThrow(/Database is schema v99; this build supports up to v5/);
+    expect(() => runMigrations(inst.db)).toThrow(/Database is schema v99; this build supports up to v6/);
   });
 
   it('rejects non-contiguous migration sequences before running', () => {

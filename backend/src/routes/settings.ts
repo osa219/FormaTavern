@@ -12,7 +12,7 @@ import { ApiError } from '../engine/errors';
 
 type KeySource = 'env' | 'settings' | 'none';
 
-function keyStatus(
+export function keyStatus(
   storedKey: string | undefined,
   envKey: string | undefined
 ): { apiKeySet: boolean; apiKeyHint: string | null; source: KeySource } {

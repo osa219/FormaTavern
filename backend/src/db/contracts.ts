@@ -18,7 +18,10 @@ import type {
   MessageMetadata,
   AppSettings,
   SettingsPatch,
-  ShellTheme
+  ShellTheme,
+  ProviderConfig,
+  ProviderConfigCreate,
+  ProviderConfigPatch
 } from '@formatavern/shared';
 
 export interface CharacterRepository {
@@ -174,12 +177,22 @@ export interface SettingsRepository {
   putShellTheme(doc: ShellTheme): ShellTheme;
 }
 
+export interface ProviderConfigRepository {
+  list(): ProviderConfig[];
+  get(id: string): ProviderConfig | null;
+  count(): number;
+  create(input: ProviderConfigCreate): ProviderConfig | 'name_taken';
+  patch(id: string, input: ProviderConfigPatch): ProviderConfig | 'missing' | 'name_taken';
+  remove(id: string): boolean;
+}
+
 export interface Repositories {
   characters: CharacterRepository;
   personas: PersonaRepository;
   chats: ChatRepository;
   messages: MessageRepository;
   settings: SettingsRepository;
+  providerConfigs: ProviderConfigRepository;
   schemaVersion(): number;
   transaction<T>(fn: () => T): T;
 }

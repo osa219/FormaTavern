@@ -65,6 +65,12 @@ export class SQLiteSettingsRepository implements SettingsRepository {
       if (p.provider !== undefined) {
         const current = this.loadSubObject('provider');
         const merged = { ...current, ...p.provider };
+        if (merged.activeConfigId === null || merged.activeConfigId === '') {
+          delete merged.activeConfigId;
+        }
+        if (merged.model !== undefined && merged.model.trim() === '') {
+          delete merged.model;
+        }
         upsertStmt.run('provider', JSON.stringify(merged), now);
       }
 

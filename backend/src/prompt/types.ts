@@ -27,6 +27,7 @@ export interface PromptContext {
   activeNpcs?: Array<{ displayName: string; voice?: string }>;
   lorebookEntries?: string[];
   preamble?: string;
+  configPrompt?: string;
   budget: {
     contextLength: number;
     reservedCompletion: number;
@@ -43,6 +44,7 @@ export interface PromptContext {
 export type BlockId =
   | '1'
   | '1b'
+  | '1c'
   | '2'
   | '3'
   | '4'
@@ -59,6 +61,7 @@ export type BlockId =
 export const CANONICAL_BLOCK_IDS: readonly BlockId[] = [
   '1',
   '1b',
+  '1c',
   '2',
   '3',
   '4',

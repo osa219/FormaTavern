@@ -3,9 +3,10 @@
   import Kbd from '../ui/Kbd.svelte';
   import Spinner from '../ui/Spinner.svelte';
   import { settingsStore } from '$lib/state/settings.svelte';
+  import { providerConfigsStore } from '$lib/state/providerConfigs.svelte';
   import { prefs } from '$lib/state/prefs.svelte';
   import { shellTheme } from '$lib/state/shellTheme.svelte';
-  import type { SettingsPatch, ShellTheme } from '@formatavern/shared';
+  import type { ProviderConfigView, SettingsPatch, ShellTheme } from '@formatavern/shared';
   import { HOOKS } from '@formatavern/shared';
   import CustomCssPanel from '../studio/CustomCssPanel.svelte';
 
@@ -23,16 +24,125 @@
   const ACCENT_PRESETS = ['#38bdf8', '#818cf8', '#a855f7', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#10b981', '#14b8a6'];
   const RADIUS_PRESETS = ['0px', '0.5rem', '1rem', '1.5rem', '2rem'];
 
-  // OpenRouter key draft
-  let apiKeyDraft = $state('');
-  let apiKeySavedNotice = $state(false);
+  // Provider configuration editor drafts
+  let editingId = $state<string | null>(null);
+  let isNewEditor = $state(false);
+  let draftName = $state('');
+  let draftType = $state<ProviderConfigView['providerType']>('openrouter');
+  let draftBaseUrl = $state('');
+  let draftKey = $state('');
+  let draftModel = $state('');
+  let draftPrompt = $state('');
+  let editorError = $state<string | null>(null);
+  let confirmDeleteId = $state<string | null>(null);
+  let configsRequested = $state(false);
 
-  // Custom provider drafts
-  let customBaseUrlDraft = $state('');
-  let customKeyDraft = $state('');
+  const CONFIG_TYPE_LABELS: Record<ProviderConfigView['providerType'], string> = {
+    openrouter: 'OpenRouter',
+    custom: 'Custom OpenAI-compatible',
+    gemini: 'Gemini (OpenAI-compatible)',
+    'gemini-interactions': 'Gemini Native (Interactions API)'
+  };
 
-  // Gemini key draft
-  let geminiKeyDraft = $state('');
+  const MODEL_PLACEHOLDERS: Record<ProviderConfigView['providerType'], string> = {
+    openrouter: 'e.g. anthropic/claude-3.5-sonnet',
+    custom: 'e.g. llama3.1 (model id on your server)',
+    gemini: 'e.g. gemini-3.5-flash',
+    'gemini-interactions': 'e.g. gemini-3.5-flash'
+  };
+
+  function configSubtitle(cfg: ProviderConfigView): string {
+    const model = cfg.model ?? 'default model';
+    if (cfg.providerType === 'custom') {
+      let host = cfg.baseUrl ?? 'no URL yet';
+      try {
+        if (cfg.baseUrl) host = new URL(cfg.baseUrl).host;
+      } catch { /* keep raw value */ }
+      return `${model} · ${host}`;
+    }
+    return `${model} · ${CONFIG_TYPE_LABELS[cfg.providerType]}`;
+  }
+
+  function openNewConfig() {
+    editingId = null;
+    isNewEditor = true;
+    draftName = '';
+    draftType = 'openrouter';
+    draftBaseUrl = '';
+    draftKey = '';
+    draftModel = '';
+    draftPrompt = '';
+    editorError = null;
+    confirmDeleteId = null;
+  }
+
+  function openEditConfig(cfg: ProviderConfigView) {
+    editingId = cfg.id;
+    isNewEditor = false;
+    draftName = cfg.name;
+    draftType = cfg.providerType;
+    draftBaseUrl = cfg.baseUrl ?? '';
+    draftKey = '';
+    draftModel = cfg.model ?? '';
+    draftPrompt = cfg.customPrompt ?? '';
+    editorError = null;
+    confirmDeleteId = null;
+  }
+
+  function closeEditor() {
+    editingId = null;
+    isNewEditor = false;
+    editorError = null;
+    confirmDeleteId = null;
+  }
+
+  function editorAsPatch(): { name?: string; baseUrl?: string | null; apiKey?: string | null; model?: string | null; customPrompt?: string | null } {
+    const patch: { name?: string; baseUrl?: string | null; apiKey?: string | null; model?: string | null; customPrompt?: string | null } = {};
+    if (draftName.trim()) patch.name = draftName.trim();
+    if (draftType === 'custom') {
+      patch.baseUrl = draftBaseUrl.trim() ? draftBaseUrl.trim() : null;
+    }
+    if (draftKey.trim()) patch.apiKey = draftKey.trim();
+    patch.model = draftModel.trim() ? draftModel.trim() : null;
+    patch.customPrompt = draftPrompt.trim() ? draftPrompt.trim() : null;
+    return patch;
+  }
+
+  async function saveEditor() {
+    editorError = null;
+    if (!draftName.trim()) {
+      editorError = 'Give the configuration a name.';
+      return;
+    }
+    if (isNewEditor) {
+      const created = await providerConfigsStore.create({
+        name: draftName.trim(),
+        providerType: draftType,
+        ...(draftType === 'custom' && draftBaseUrl.trim() ? { baseUrl: draftBaseUrl.trim() } : {}),
+        ...(draftKey.trim() ? { apiKey: draftKey.trim() } : {}),
+        ...(draftModel.trim() ? { model: draftModel.trim() } : {}),
+        ...(draftPrompt.trim() ? { customPrompt: draftPrompt.trim() } : {})
+      });
+      if (created) closeEditor();
+    } else if (editingId) {
+      const ok = await providerConfigsStore.patch(editingId, editorAsPatch());
+      if (ok) closeEditor();
+      else editorError = 'Save failed — see the message above.';
+    }
+  }
+
+  async function deleteEditorConfig() {
+    if (!editingId) return;
+    if (confirmDeleteId !== editingId) {
+      confirmDeleteId = editingId;
+      setTimeout(() => {
+        if (confirmDeleteId === editingId) confirmDeleteId = null;
+      }, 4000);
+      return;
+    }
+    const ok = await providerConfigsStore.remove(editingId);
+    if (ok) closeEditor();
+  }
 
   // Surface Accent Tint draft
   let tintDraft = $state<number>(0);
@@ -76,80 +186,21 @@
     }
   });
 
+  $effect(() => {
+    if (open && activeTab === 'provider' && !editingId && !isNewEditor && !configsRequested) {
+      configsRequested = true;
+      providerConfigsStore.load();
+    }
+    if (!open && configsRequested) {
+      configsRequested = false;
+    }
+  });
+
   function queuePatch(patch: SettingsPatch, delay = 400) {
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
       settingsStore.patch(patch);
     }, delay);
-  }
-
-  async function handleSaveApiKey() {
-    if (!apiKeyDraft.trim()) return;
-    await settingsStore.patch({
-      openrouter: { apiKey: apiKeyDraft.trim() }
-    });
-    apiKeyDraft = '';
-    apiKeySavedNotice = true;
-    setTimeout(() => {
-      apiKeySavedNotice = false;
-    }, 2500);
-  }
-
-  async function handleClearApiKey() {
-    await settingsStore.patch({
-      openrouter: { apiKey: null }
-    });
-    apiKeyDraft = '';
-  }
-
-  async function handleSaveCustomBaseUrl() {
-    if (!customBaseUrlDraft.trim()) return;
-    await settingsStore.patch({
-      custom: { baseUrl: customBaseUrlDraft.trim() }
-    });
-    customBaseUrlDraft = '';
-    apiKeySavedNotice = true;
-    setTimeout(() => {
-      apiKeySavedNotice = false;
-    }, 2500);
-  }
-
-  async function handleSaveCustomKey() {
-    if (!customKeyDraft.trim()) return;
-    await settingsStore.patch({
-      custom: { apiKey: customKeyDraft.trim() }
-    });
-    customKeyDraft = '';
-    apiKeySavedNotice = true;
-    setTimeout(() => {
-      apiKeySavedNotice = false;
-    }, 2500);
-  }
-
-  async function handleClearCustomKey() {
-    await settingsStore.patch({
-      custom: { apiKey: null }
-    });
-    customKeyDraft = '';
-  }
-
-  async function handleSaveGeminiKey() {
-    if (!geminiKeyDraft.trim()) return;
-    await settingsStore.patch({
-      gemini: { apiKey: geminiKeyDraft.trim() }
-    });
-    geminiKeyDraft = '';
-    apiKeySavedNotice = true;
-    setTimeout(() => {
-      apiKeySavedNotice = false;
-    }, 2500);
-  }
-
-  async function handleClearGeminiKey() {
-    await settingsStore.patch({
-      gemini: { apiKey: null }
-    });
-    geminiKeyDraft = '';
   }
 
   function handleCancel(e: Event) {
@@ -440,35 +491,40 @@
         </div>
       {/if}
     {:else if activeTab === 'provider'}
+      {@const activeConfigId = s.provider.activeConfigId ?? null}
       <div class="flex flex-col gap-4">
-        <!-- Provider Selector -->
-        <div>
-          <label for="provider-select" class="mb-1 block font-medium text-(--chrome-text)">
-            LLM Provider
-          </label>
-          <select
-            id="provider-select"
-            value={s.provider.id}
-            onchange={(e) => settingsStore.patch({ provider: { id: e.currentTarget.value as any } })}
-            class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text) focus:border-accent focus:outline-none"
+        {#if editingId !== null || isNewEditor}
+          <!-- Config editor is rendered below; list hidden while editing -->
+        {:else}
+        <!-- Mock Engine (built-in, no key) -->
+        <button
+          type="button"
+          onclick={() => providerConfigsStore.useMock()}
+          class="flex items-center gap-3 rounded-xl border p-3 text-left transition-colors hover:bg-(--chrome-line)/30 {activeConfigId === null
+            ? 'border-accent bg-(--chrome-line)/20'
+            : 'border-(--chrome-line) bg-(--chrome-bg)/50'}"
+        >
+          <span
+            class="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border {activeConfigId === null ? 'border-accent' : 'border-(--chrome-text)/40'}"
           >
-            <option value="mock">Mock Engine (Offline fixtures)</option>
-            <option value="openrouter">OpenRouter (Online LLMs)</option>
-            <option value="custom">Custom OpenAI-compatible (Base URL)</option>
-            <option value="gemini">Gemini (Google AI Studio)</option>
-            <option value="gemini-interactions">Gemini Native (Interactions API)</option>
-          </select>
-        </div>
+            {#if activeConfigId === null}
+              <span class="h-2 w-2 rounded-full bg-accent"></span>
+            {/if}
+          </span>
+          <span>
+            <span class="block font-medium text-(--chrome-text)">Mock Engine</span>
+            <span class="block text-[11px] text-(--chrome-text)/60">Offline fixtures · no key needed</span>
+          </span>
+        </button>
 
-        <!-- Model Name / Preset -->
-        <div>
-          <label for="model-input" class="mb-1 block font-medium text-(--chrome-text)">
-            Model
-          </label>
-          {#if s.provider.id === 'mock'}
+        {#if activeConfigId === null}
+          <div>
+            <label for="mock-model-input" class="mb-1 block font-medium text-(--chrome-text)">
+              Mock script
+            </label>
             <select
-              id="model-input"
-              value={s.provider.model ?? 'mock:envelope-directive'}
+              id="mock-model-input"
+              value={s.provider.model?.startsWith('mock:') ? s.provider.model : 'mock:envelope-directive'}
               onchange={(e) => settingsStore.patch({ provider: { model: e.currentTarget.value } })}
               class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text) focus:border-accent focus:outline-none"
             >
@@ -479,168 +535,225 @@
               <option value="mock:persona-violation">mock:persona-violation (Truncation test)</option>
               <option value="mock:error">mock:error (Error state test)</option>
             </select>
+          </div>
+        {/if}
+
+        <!-- Saved configurations -->
+        <div>
+          <div class="mb-1 flex items-center justify-between">
+            <span class="font-medium text-(--chrome-text)">Provider configurations</span>
+            <button
+              type="button"
+              onclick={openNewConfig}
+              class="rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1 text-[11px] font-semibold text-(--chrome-text) transition-colors hover:bg-(--chrome-line)/40"
+            >
+              + New
+            </button>
+          </div>
+          {#if providerConfigsStore.loading && providerConfigsStore.configs.length === 0}
+            <div class="flex h-16 items-center justify-center">
+              <Spinner size={18} class="text-(--chrome-text)/50" />
+            </div>
+          {:else if providerConfigsStore.configs.length === 0}
+            {#if providerConfigsStore.error}
+              <div class="flex flex-col items-center gap-2 rounded-xl border border-red-900/50 p-3 text-center">
+                <p class="text-[11px] text-red-400">{providerConfigsStore.error}</p>
+                <button
+                  type="button"
+                  onclick={() => providerConfigsStore.load()}
+                  class="rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1 text-[11px] font-semibold text-(--chrome-text) transition-colors hover:bg-(--chrome-line)/40"
+                >
+                  Retry
+                </button>
+              </div>
+            {:else}
+              <p class="rounded-xl border border-dashed border-(--chrome-line) p-3 text-[11px] text-(--chrome-text)/60">
+                No configurations yet. Add one for OpenRouter, a local server, or Gemini — each keeps its own key, model, and prompt.
+              </p>
+            {/if}
           {:else}
-            <input
-              id="model-input"
-              type="text"
-              value={s.provider.model ?? ''}
-              placeholder={s.provider.id === 'gemini' || s.provider.id === 'gemini-interactions'
-                ? 'e.g. gemini-3.5-flash'
-                : s.provider.id === 'custom'
-                  ? 'e.g. llama3.1 (model id on your server)'
-                  : 'e.g. anthropic/claude-3.5-sonnet or meta-llama/llama-3.3-70b-instruct'}
-              oninput={(e) => queuePatch({ provider: { model: e.currentTarget.value } })}
-              class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text) focus:border-accent focus:outline-none"
-            />
+            <div class="flex flex-col gap-2">
+              {#each providerConfigsStore.configs as cfg (cfg.id)}
+                <div
+                  class="flex items-center gap-3 rounded-xl border p-3 transition-colors {cfg.id === activeConfigId
+                    ? 'border-accent bg-(--chrome-line)/20'
+                    : 'border-(--chrome-line) bg-(--chrome-bg)/50'}"
+                >
+                  <button
+                    type="button"
+                    onclick={() => providerConfigsStore.activate(cfg.id)}
+                    class="flex min-w-0 flex-1 items-center gap-3 text-left"
+                    aria-label="Use {cfg.name}"
+                  >
+                    <span
+                      class="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border {cfg.id === activeConfigId ? 'border-accent' : 'border-(--chrome-text)/40'}"
+                    >
+                      {#if cfg.id === activeConfigId}
+                        <span class="h-2 w-2 rounded-full bg-accent"></span>
+                      {/if}
+                    </span>
+                    <span class="min-w-0">
+                      <span class="block truncate font-medium text-(--chrome-text)">{cfg.name}</span>
+                      <span class="block truncate font-mono text-[11px] text-(--chrome-text)/60">{configSubtitle(cfg)}</span>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onclick={() => openEditConfig(cfg)}
+                    class="shrink-0 rounded-lg px-2 py-1 text-[11px] font-semibold text-(--chrome-text)/60 transition-colors hover:bg-(--chrome-line)/40 hover:text-(--chrome-text)"
+                  >
+                    Edit
+                  </button>
+                </div>
+              {/each}
+            </div>
           {/if}
         </div>
-
-        <!-- OpenRouter API Key -->
-        {#if s.provider.id === 'openrouter'}
-          <div class="rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 p-4">
-            <div class="mb-2 flex items-center justify-between">
-              <span class="font-medium text-(--chrome-text)">API Key</span>
-              <span class="text-[11px] text-(--chrome-text)/60">
-                Current: {s.openrouter.apiKeyHint ?? 'Not set'} ({s.openrouter.source})
-              </span>
-            </div>
-            <div class="flex gap-2">
-              <input
-                type="password"
-                bind:value={apiKeyDraft}
-                placeholder="Enter new OpenRouter key (sk-or-...)"
-                class="flex-1 rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text) focus:border-accent focus:outline-none"
-              />
-              <button
-                type="button"
-                onclick={handleSaveApiKey}
-                disabled={!apiKeyDraft.trim()}
-                class="rounded-xl bg-accent px-3.5 py-2 font-semibold text-accent-contrast transition-colors hover:bg-accent/90 disabled:opacity-50"
-              >
-                Save
-              </button>
-              {#if s.openrouter.apiKeySet}
-                <button
-                  type="button"
-                  onclick={handleClearApiKey}
-                  class="rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text)/60 transition-colors hover:bg-red-950/40 hover:text-red-300"
-                >
-                  Clear Key
-                </button>
-              {/if}
-            </div>
-            {#if apiKeySavedNotice}
-              <p class="mt-2 text-[11px] text-accent">API key saved securely.</p>
-            {/if}
-          </div>
         {/if}
 
-        <!-- Custom provider endpoint + key -->
-        {#if s.provider.id === 'custom'}
+        {#if editingId !== null || isNewEditor}
+          {@const editingCfg = editingId
+            ? (providerConfigsStore.configs.find((c) => c.id === editingId) ?? null)
+            : null}
           <div class="rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 p-4">
-            <div class="mb-2 flex items-center justify-between">
-              <span class="font-medium text-(--chrome-text)">Base URL</span>
-              <span class="text-[11px] text-(--chrome-text)/60">
-                Current: {s.custom.baseUrl ?? 'Not set'}
-              </span>
+            <div class="mb-3 font-medium text-(--chrome-text)">
+              {isNewEditor ? 'New configuration' : `Editing: ${editingCfg?.name ?? ''}`}
             </div>
-            <div class="flex gap-2">
+            <label for="cfg-name" class="mb-1 block font-medium text-(--chrome-text)">Name</label>
+            <input
+              id="cfg-name"
+              type="text"
+              maxlength="64"
+              bind:value={draftName}
+              placeholder="e.g. OpenRouter 1"
+              class="mb-3 w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text) focus:border-accent focus:outline-none"
+            />
+            {#if isNewEditor}
+              <label for="cfg-type" class="mb-1 block font-medium text-(--chrome-text)">Provider type</label>
+              <select
+                id="cfg-type"
+                bind:value={draftType}
+                class="mb-3 w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text) focus:border-accent focus:outline-none"
+              >
+                <option value="openrouter">OpenRouter</option>
+                <option value="custom">Custom OpenAI-compatible</option>
+                <option value="gemini">Gemini (OpenAI-compatible)</option>
+                <option value="gemini-interactions">Gemini Native (Interactions API)</option>
+              </select>
+            {:else}
+              <p class="mb-3 text-[11px] text-(--chrome-text)/60">
+                Type: {editingCfg ? CONFIG_TYPE_LABELS[editingCfg.providerType] : ''}
+              </p>
+            {/if}
+            {#if draftType === 'custom'}
+              <label for="cfg-url" class="mb-1 block font-medium text-(--chrome-text)">Base URL</label>
               <input
+                id="cfg-url"
                 type="url"
-                bind:value={customBaseUrlDraft}
-                placeholder="e.g. http://localhost:11434/v1"
-                class="flex-1 rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 font-mono text-(--chrome-text) focus:border-accent focus:outline-none"
+                bind:value={draftBaseUrl}
+                placeholder="https://openrouter.ai/api/v1 — /chat/completions is added automatically"
+                class="mb-3 w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 font-mono text-(--chrome-text) focus:border-accent focus:outline-none"
               />
-              <button
-                type="button"
-                onclick={handleSaveCustomBaseUrl}
-                disabled={!customBaseUrlDraft.trim()}
-                class="rounded-xl bg-accent px-3.5 py-2 font-semibold text-accent-contrast transition-colors hover:bg-accent/90 disabled:opacity-50"
-              >
-                Save
-              </button>
-            </div>
-            <div class="mb-2 mt-4 flex items-center justify-between">
-              <span class="font-medium text-(--chrome-text)">API Key <span class="font-normal text-(--chrome-text)/60">(optional — leave empty for local servers)</span></span>
-              <span class="text-[11px] text-(--chrome-text)/60">
-                Current: {s.custom.apiKeyHint ?? 'Not set'} ({s.custom.source})
-              </span>
-            </div>
-            <div class="flex gap-2">
-              <input
-                type="password"
-                bind:value={customKeyDraft}
-                placeholder="Optional key for this endpoint"
-                class="flex-1 rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text) focus:border-accent focus:outline-none"
-              />
-              <button
-                type="button"
-                onclick={handleSaveCustomKey}
-                disabled={!customKeyDraft.trim()}
-                class="rounded-xl bg-accent px-3.5 py-2 font-semibold text-accent-contrast transition-colors hover:bg-accent/90 disabled:opacity-50"
-              >
-                Save
-              </button>
-              {#if s.custom.apiKeySet}
-                <button
-                  type="button"
-                  onclick={handleClearCustomKey}
-                  class="rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text)/60 transition-colors hover:bg-red-950/40 hover:text-red-300"
-                >
-                  Clear Key
-                </button>
+            {/if}
+            <div class="mb-1 flex items-center justify-between">
+              <label for="cfg-key" class="font-medium text-(--chrome-text)">
+                API Key{#if draftType === 'custom'} <span class="font-normal text-(--chrome-text)/60">(optional)</span>{/if}
+              </label>
+              {#if editingCfg}
+                <span class="text-[11px] text-(--chrome-text)/60">
+                  Current: {editingCfg.apiKeyHint ?? 'Not set'} ({editingCfg.source})
+                </span>
               {/if}
             </div>
-            {#if apiKeySavedNotice}
-              <p class="mt-2 text-[11px] text-accent">Custom endpoint saved.</p>
+            <input
+              id="cfg-key"
+              type="password"
+              bind:value={draftKey}
+              placeholder={editingCfg?.apiKeySet ? '•••••• (set) — enter a new key to replace' : 'Enter key'}
+              class="mb-3 w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text) focus:border-accent focus:outline-none"
+            />
+            <label for="cfg-model" class="mb-1 block font-medium text-(--chrome-text)">Model</label>
+            <input
+              id="cfg-model"
+              type="text"
+              bind:value={draftModel}
+              placeholder={MODEL_PLACEHOLDERS[draftType]}
+              class="mb-3 w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text) focus:border-accent focus:outline-none"
+            />
+            <label for="cfg-prompt" class="mb-1 block font-medium text-(--chrome-text)">Custom prompt</label>
+            <textarea
+              id="cfg-prompt"
+              bind:value={draftPrompt}
+              rows={3}
+              maxlength="2000"
+              placeholder="Extra instructions sent with every request using this config."
+              class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) p-3 font-mono text-xs text-(--chrome-text) focus:border-accent focus:outline-none"
+            ></textarea>
+            <p class="mb-3 text-[11px] text-(--chrome-text)/60">
+              Sent with every request while this configuration is active, right below the global prompt. Plain instructions only — no envelope blocks.
+            </p>
+            {#if editorError}
+              <p class="mb-2 text-[11px] text-red-400">{editorError}</p>
             {/if}
+            {#if editingId && providerConfigsStore.lastTest?.id === editingId}
+              {@const tres = providerConfigsStore.lastTest.result}
+              {#if tres.ok}
+                <p class="mb-2 text-[11px] text-accent">Connection OK{tres.latencyMs !== undefined ? ` · ${tres.latencyMs}ms` : ''}.</p>
+              {:else}
+                <p class="mb-2 text-[11px] text-red-400">Test failed{tres.code ? ` (${tres.code})` : ''}: {tres.message ?? 'unknown error'}</p>
+              {/if}
+            {/if}
+            <div class="flex flex-wrap gap-2">
+              {#if editingId}
+                <button
+                  type="button"
+                  onclick={() => editingId && providerConfigsStore.test(editingId)}
+                  disabled={providerConfigsStore.testingId === editingId}
+                  class="rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text)/80 transition-colors hover:bg-(--chrome-line)/40 disabled:opacity-50"
+                >
+                  {providerConfigsStore.testingId === editingId ? 'Testing…' : 'Test'}
+                </button>
+                <button
+                  type="button"
+                  onclick={async () => {
+                    const cfg = editingId ? providerConfigsStore.configs.find((c) => c.id === editingId) : null;
+                    if (cfg) {
+                      const copy = await providerConfigsStore.duplicate(cfg);
+                      if (copy) openEditConfig(copy);
+                    }
+                  }}
+                  class="rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text)/80 transition-colors hover:bg-(--chrome-line)/40"
+                >
+                  Duplicate
+                </button>
+                <button
+                  type="button"
+                  onclick={deleteEditorConfig}
+                  class="rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text)/60 transition-colors hover:bg-red-950/40 hover:text-red-300"
+                >
+                  {confirmDeleteId === editingId ? 'Confirm delete?' : 'Delete'}
+                </button>
+              {/if}
+              <span class="flex-1"></span>
+              <button
+                type="button"
+                onclick={closeEditor}
+                class="rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3.5 py-2 text-(--chrome-text)/80 transition-colors hover:bg-(--chrome-line)/40"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onclick={saveEditor}
+                disabled={!draftName.trim() || providerConfigsStore.saving}
+                class="rounded-xl bg-accent px-3.5 py-2 font-semibold text-accent-contrast transition-colors hover:bg-accent/90 disabled:opacity-50"
+              >
+                Save
+              </button>
+            </div>
           </div>
         {/if}
 
-        <!-- Gemini API Key -->
-        {#if s.provider.id === 'gemini' || s.provider.id === 'gemini-interactions'}
-          <div class="rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 p-4">
-            <div class="mb-2 flex items-center justify-between">
-              <span class="font-medium text-(--chrome-text)">API Key</span>
-              <span class="text-[11px] text-(--chrome-text)/60">
-                Current: {s.gemini.apiKeyHint ?? 'Not set'} ({s.gemini.source})
-              </span>
-            </div>
-            <p class="mb-2 text-[11px] text-(--chrome-text)/60">
-              Get an Auth key from Google AI Studio. {s.provider.id === 'gemini-interactions'
-                ? 'Uses the native Interactions API.'
-                : 'Uses the OpenAI-compatible endpoint.'}
-            </p>
-            <div class="flex gap-2">
-              <input
-                type="password"
-                bind:value={geminiKeyDraft}
-                placeholder="Enter new Gemini key (AI…)"
-                class="flex-1 rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text) focus:border-accent focus:outline-none"
-              />
-              <button
-                type="button"
-                onclick={handleSaveGeminiKey}
-                disabled={!geminiKeyDraft.trim()}
-                class="rounded-xl bg-accent px-3.5 py-2 font-semibold text-accent-contrast transition-colors hover:bg-accent/90 disabled:opacity-50"
-              >
-                Save
-              </button>
-              {#if s.gemini.apiKeySet}
-                <button
-                  type="button"
-                  onclick={handleClearGeminiKey}
-                  class="rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text)/60 transition-colors hover:bg-red-950/40 hover:text-red-300"
-                >
-                  Clear Key
-                </button>
-              {/if}
-            </div>
-            {#if apiKeySavedNotice}
-              <p class="mt-2 text-[11px] text-accent">API key saved securely.</p>
-            {/if}
-          </div>
-        {/if}
       </div>
     {:else if activeTab === 'generation'}
       <div class="flex flex-col gap-4">
