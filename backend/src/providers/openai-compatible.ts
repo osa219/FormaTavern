@@ -27,6 +27,7 @@ export interface OpenAICompatibleConfig {
   idleTimeoutMs?: number;
   allowExtendedSampling?: boolean; // default false: top_k/min_p/repetition_penalty dropped
   usageAccounting?: UsageAccounting; // default 'stream_options'
+  errorLabel?: string; // default 'Upstream'; used in error message prefixes
 }
 
 /**
@@ -71,6 +72,7 @@ export class OpenAICompatibleProvider implements LLMProvider {
   protected excludeKeys: string[];
   protected allowExtendedSampling: boolean;
   protected usageAccounting: UsageAccounting;
+  protected errorLabel: string;
 
   constructor(cfg: OpenAICompatibleConfig) {
     if (!cfg.baseUrl || cfg.baseUrl.trim() === '') {
@@ -87,6 +89,7 @@ export class OpenAICompatibleProvider implements LLMProvider {
     this.excludeKeys = [...(cfg.excludeKeys ?? [])];
     this.allowExtendedSampling = cfg.allowExtendedSampling ?? false;
     this.usageAccounting = cfg.usageAccounting ?? 'stream_options';
+    this.errorLabel = cfg.errorLabel ?? 'Upstream';
   }
 
   protected scrub(msg: string): string {
@@ -230,7 +233,7 @@ export class OpenAICompatibleProvider implements LLMProvider {
 
       yield {
         type: 'error',
-        message: this.scrub(`Upstream ${status}: ${errMsg}`),
+        message: this.scrub(`${this.errorLabel} ${status}: ${errMsg}`),
         recoverable
       };
       return;
@@ -241,7 +244,7 @@ export class OpenAICompatibleProvider implements LLMProvider {
       yield {
         type: 'error',
         message: this.scrub(
-          `Upstream 200: unexpected content-type "${contentType}" (expected text/event-stream)`
+          `${this.errorLabel} 200: unexpected content-type "${contentType}" (expected text/event-stream)`
         ),
         recoverable: true
       };
@@ -251,7 +254,7 @@ export class OpenAICompatibleProvider implements LLMProvider {
     if (!res.body) {
       yield {
         type: 'error',
-        message: 'Upstream 200: response body is null',
+        message: `${this.errorLabel} 200: response body is null`,
         recoverable: true
       };
       return;
