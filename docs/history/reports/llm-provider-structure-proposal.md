@@ -1,6 +1,6 @@
 # LLM Provider Structure Proposal: OpenAI Base with OpenRouter, Custom, and Gemini Presets
 
-**Status:** Implemented (P1 `b9b0e09`, P2 `4c55ccd`, P3 `cf2af57`, P4 `fff60d9`). Walkthroughs: `llm-provider-p1/p2/p3/p4-walkthrough.md`.
+**Status:** Implemented (P1 `b9b0e09`, P2 `4c55ccd`, P3 `cf2af57`, P4 `fff60d9`). Walkthrough: `llm-provider-walkthrough.md`.
 **Date:** 2026-09-13 UTC
 **Scope:** Backend API structure only. No UI mockups, no migration run.
 **Reference code:** `SillyTavern` cloned at `S:\WorkSpace\Git Workspace\SillyTavern` (branch `release`, commit `8172dcd0e`), compared against `FormaTavern` at `v0.5.0` line.
