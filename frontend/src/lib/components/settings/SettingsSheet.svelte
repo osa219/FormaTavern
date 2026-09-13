@@ -607,7 +607,9 @@
               </span>
             </div>
             <p class="mb-2 text-[11px] text-(--chrome-text)/60">
-              Get an Auth key from Google AI Studio. Uses the OpenAI-compatible endpoint.
+              Get an Auth key from Google AI Studio. {s.provider.id === 'gemini-interactions'
+                ? 'Uses the native Interactions API.'
+                : 'Uses the OpenAI-compatible endpoint.'}
             </p>
             <div class="flex gap-2">
               <input
