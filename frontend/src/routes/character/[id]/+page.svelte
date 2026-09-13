@@ -111,7 +111,7 @@
     <div class="flex items-center gap-2">
       <a
         href="/personas"
-        class="flex items-center gap-1.5 rounded-lg border border-neutral-800 bg-neutral-850 px-3 py-1.5 text-xs text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
+        class="flex items-center gap-1.5 rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-3 py-1.5 text-xs text-(--chrome-text)/80 hover:border-accent/40 hover:text-(--chrome-text) transition-colors"
       >
         <Icon name="user" size={13} />
         <span>Personas</span>

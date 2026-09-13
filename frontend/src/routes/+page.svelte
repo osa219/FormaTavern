@@ -151,9 +151,10 @@
       {#if isDev}
         <a
           href="/dev"
-          class="hidden sm:flex items-center gap-1.5 rounded-xl border border-neutral-800 bg-neutral-850 px-3 py-1.5 text-xs text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
+          class="hidden sm:flex items-center gap-1.5 rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-1.5 text-xs text-(--chrome-text)/80 hover:text-(--chrome-text) hover:border-accent/40 transition-colors"
+          title="Developer Diagnostics"
         >
-          <Icon name="sparkles" size={13} />
+          <Icon name="sparkles" size={13} class="text-accent" />
           <span>Dev</span>
         </a>
       {/if}

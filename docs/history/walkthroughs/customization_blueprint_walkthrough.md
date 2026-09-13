@@ -382,6 +382,12 @@ Following Slice 7 and visual verification across companion pages, two UX and the
   - Automatically harmonizes all range sliders across Settings, Studio, and HUD popovers across both dark and light custom themes.
   - Added automated assertion in [`frontend/unit/surfaces.test.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/unit/surfaces.test.ts).
 
+### 14. Keyboard Shortcut Badges (`<kbd>`) & Foyer Navigation Harmonization
+- **Issue:** The `<kbd>` keyboard shortcut badges in `Kbd.svelte` were hardcoded to `bg-neutral-900 border-neutral-700 text-neutral-300`, rendering as solid black boxes on light custom themes; the `Dev` diagnostics button on the Foyer header and `Personas` link on the character showcase retained hardcoded `bg-neutral-850 border-neutral-800` styling.
+- **Resolution:**
+  - Migrated [`Kbd.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/ui/Kbd.svelte) to semantic chrome tokens (`border-(--chrome-line) bg-(--chrome-surface) text-(--chrome-text)`), rendering realistic, themed keycaps on both dark and light surfaces.
+  - Harmonized the `Dev` button in [`+page.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/routes/+page.svelte) and the `Personas` link in [`character/[id]/+page.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/routes/character/%5Bid%5D/+page.svelte) with `border-(--chrome-line) bg-(--chrome-surface) text-(--chrome-text)/80 hover:border-accent/40`, styling the sparkles icon with `text-accent`.
+
 ---
 
 ## Test Suite Status
@@ -393,6 +399,7 @@ Following Slice 7 and visual verification across companion pages, two UX and the
   - `frontend`: 180 passed, 0 failed.
   - Total: 543 passed, 0 failed.
 - **`bun run db:check`**: Clean integrity (`wal`, `foreign_keys=1`, `user_version=5`, `fts_parity=ok (3/3)`).
+
 
 
 
