@@ -119,6 +119,12 @@ export class GeminiInteractionsProvider implements LLMProvider {
     if (req.temperature !== undefined) {
       bodyPayload.generation_config = { temperature: req.temperature };
     }
+    if (req.reasoning !== 'off' && req.reasoningEffort !== undefined) {
+      bodyPayload.generation_config = {
+        ...bodyPayload.generation_config,
+        thinking_level: req.reasoningEffort
+      };
+    }
 
     let res: Response;
     try {

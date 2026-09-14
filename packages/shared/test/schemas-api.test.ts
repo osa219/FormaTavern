@@ -109,6 +109,62 @@ describe('Shared API & DTO Schemas', () => {
     expect(Value.Check(SettingsPatchSchema, { provider: { id: 'bogus' } })).toBe(false);
   });
 
+  it('SettingsPatchSchema bounds generation sampling fields (TopK/Rep/Freq)', () => {
+    // Top K int 0–100
+    expect(Value.Check(SettingsPatchSchema, { generation: { topK: 40 } })).toBe(true);
+    expect(Value.Check(SettingsPatchSchema, { generation: { topK: 0 } })).toBe(true);
+    expect(Value.Check(SettingsPatchSchema, { generation: { topK: 100 } })).toBe(true);
+    expect(Value.Check(SettingsPatchSchema, { generation: { topK: -1 } })).toBe(false);
+    expect(Value.Check(SettingsPatchSchema, { generation: { topK: 101 } })).toBe(false);
+    expect(Value.Check(SettingsPatchSchema, { generation: { topK: 1.5 } })).toBe(false);
+
+    // Repetition penalty 1.0–2.0
+    expect(Value.Check(SettingsPatchSchema, { generation: { repetitionPenalty: 1 } })).toBe(true);
+    expect(Value.Check(SettingsPatchSchema, { generation: { repetitionPenalty: 1.5 } })).toBe(true);
+    expect(Value.Check(SettingsPatchSchema, { generation: { repetitionPenalty: 2 } })).toBe(true);
+    expect(Value.Check(SettingsPatchSchema, { generation: { repetitionPenalty: 0.9 } })).toBe(false);
+    expect(Value.Check(SettingsPatchSchema, { generation: { repetitionPenalty: 2.1 } })).toBe(false);
+
+    // Frequency penalty -2.0–2.0
+    expect(Value.Check(SettingsPatchSchema, { generation: { frequencyPenalty: 0 } })).toBe(true);
+    expect(Value.Check(SettingsPatchSchema, { generation: { frequencyPenalty: -2 } })).toBe(true);
+    expect(Value.Check(SettingsPatchSchema, { generation: { frequencyPenalty: 2 } })).toBe(true);
+    expect(Value.Check(SettingsPatchSchema, { generation: { frequencyPenalty: -2.1 } })).toBe(false);
+    expect(Value.Check(SettingsPatchSchema, { generation: { frequencyPenalty: 2.1 } })).toBe(false);
+
+    // Reasoning toggle (on | off | null in patch)
+    expect(Value.Check(SettingsPatchSchema, { generation: { reasoning: 'on' } })).toBe(true);
+    expect(Value.Check(SettingsPatchSchema, { generation: { reasoning: 'off' } })).toBe(true);
+    expect(Value.Check(SettingsPatchSchema, { generation: { reasoning: null } })).toBe(true);
+    expect(Value.Check(SettingsPatchSchema, { generation: { reasoning: 'auto' } })).toBe(false);
+    expect(Value.Check(SettingsPatchSchema, { generation: { reasoning: 'none' } })).toBe(false);
+
+    // Reasoning effort (low | medium | high | null in patch; minimal/max rejected)
+    expect(Value.Check(SettingsPatchSchema, { generation: { reasoningEffort: 'low' } })).toBe(true);
+    expect(Value.Check(SettingsPatchSchema, { generation: { reasoningEffort: 'medium' } })).toBe(true);
+    expect(Value.Check(SettingsPatchSchema, { generation: { reasoningEffort: 'high' } })).toBe(true);
+    expect(Value.Check(SettingsPatchSchema, { generation: { reasoningEffort: null } })).toBe(true);
+    expect(Value.Check(SettingsPatchSchema, { generation: { reasoningEffort: 'minimal' } })).toBe(false);
+    expect(Value.Check(SettingsPatchSchema, { generation: { reasoningEffort: 'max' } })).toBe(false);
+    expect(Value.Check(SettingsPatchSchema, { generation: { reasoningEffort: 'xhigh' } })).toBe(false);
+
+    // Stored schema mirrors the same bounds
+    expect(Value.Check(AppSettingsSchema, {
+      ...DEFAULT_SETTINGS,
+      generation: { ...DEFAULT_SETTINGS.generation, frequencyPenalty: 0.5, reasoning: 'on', reasoningEffort: 'high' }
+    })).toBe(true);
+    expect(Value.Check(AppSettingsSchema, {
+      ...DEFAULT_SETTINGS,
+      generation: { ...DEFAULT_SETTINGS.generation, frequencyPenalty: 5 }
+    })).toBe(false);
+
+    // Absent stays absent (existing users unaffected)
+    expect(DEFAULT_SETTINGS.generation).not.toHaveProperty('frequencyPenalty');
+    expect(DEFAULT_SETTINGS.generation).not.toHaveProperty('topK');
+    expect(DEFAULT_SETTINGS.generation).not.toHaveProperty('reasoning');
+    expect(DEFAULT_SETTINGS.generation).not.toHaveProperty('reasoningEffort');
+  });
+
   it('DEFAULT_SETTINGS matches documented architectural defaults', () => {
     expect(DEFAULT_SETTINGS.provider).toEqual({ id: 'mock' });
     expect(DEFAULT_SETTINGS.openrouter).toEqual({});

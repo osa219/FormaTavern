@@ -34,6 +34,8 @@ export class OpenRouterProvider extends OpenAICompatibleProvider {
       },
       usageAccounting: 'openrouter',
       allowExtendedSampling: true,
+      allowReasoningOff: true,
+      reasoningOnEnabled: true,
       errorLabel: 'OpenRouter'
     });
   }

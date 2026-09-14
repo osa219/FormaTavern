@@ -432,6 +432,9 @@ export function createChatsRouter(deps: {
             topK: settings.generation.topK,
             minP: settings.generation.minP,
             repetitionPenalty: settings.generation.repetitionPenalty,
+            frequencyPenalty: settings.generation.frequencyPenalty,
+            reasoning: settings.generation.reasoning,
+            reasoningEffort: settings.generation.reasoningEffort,
             maxTokens: settings.generation.maxTokens
           },
           promptTokensEstimated: built.tokens.total,

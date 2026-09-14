@@ -4,6 +4,15 @@
   import Spinner from '../ui/Spinner.svelte';
   import { settingsStore } from '$lib/state/settings.svelte';
   import { providerConfigsStore } from '$lib/state/providerConfigs.svelte';
+  import { rangeFill } from '$lib/actions/rangeFill';
+  import {
+    topPDisplay,
+    topKDisplay,
+    repetitionPenaltyDisplay,
+    frequencyPenaltyDisplay,
+    reasoningDisplay,
+    reasoningEffortDisplay
+  } from '$lib/settings/generation';
   import { prefs } from '$lib/state/prefs.svelte';
   import { shellTheme } from '$lib/state/shellTheme.svelte';
   import type { ProviderConfigView, SettingsPatch, ShellTheme } from '@formatavern/shared';
@@ -262,16 +271,6 @@
     </button>
     <button
       type="button"
-      onclick={() => (activeTab = 'appearance')}
-      class="border-b-2 px-3.5 py-2 transition-colors hover:text-(--chrome-text)"
-      class:border-accent={activeTab === 'appearance'}
-      class:text-(--chrome-text)={activeTab === 'appearance'}
-      class:border-transparent={activeTab !== 'appearance'}
-    >
-      Appearance
-    </button>
-    <button
-      type="button"
       onclick={() => (activeTab = 'generation')}
       class="border-b-2 px-3.5 py-2 transition-colors hover:text-(--chrome-text)"
       class:border-accent={activeTab === 'generation'}
@@ -279,6 +278,16 @@
       class:border-transparent={activeTab !== 'generation'}
     >
       Generation
+    </button>
+    <button
+      type="button"
+      onclick={() => (activeTab = 'appearance')}
+      class="border-b-2 px-3.5 py-2 transition-colors hover:text-(--chrome-text)"
+      class:border-accent={activeTab === 'appearance'}
+      class:text-(--chrome-text)={activeTab === 'appearance'}
+      class:border-transparent={activeTab !== 'appearance'}
+    >
+      Appearance
     </button>
     <button
       type="button"
@@ -770,12 +779,38 @@
             max="2"
             step="0.05"
             value={s.generation.temperature}
+            use:rangeFill={s.generation.temperature}
             oninput={(e) => {
               const val = parseFloat(e.currentTarget.value);
               queuePatch({ generation: { temperature: val } });
             }}
             class="w-full accent-accent"
           />
+        </div>
+
+        <!-- Thinking -->
+        <div>
+          <div class="mb-1 flex justify-between text-(--chrome-text) font-medium">
+            <label for="thinking-toggle">Thinking</label>
+            <span class="font-mono text-(--chrome-text)/60">{reasoningDisplay(s.generation.reasoning)}</span>
+          </div>
+          <div id="thinking-toggle" class="inline-flex rounded-lg border border-(--chrome-line) bg-(--chrome-surface)/40 p-0.5 text-xs">
+            {#each (['Default', 'On', 'Off'] as const) as opt}
+              <button
+                type="button"
+                class="rounded-md px-3 py-1 font-medium transition-colors {reasoningDisplay(s.generation.reasoning) === opt ? 'bg-(--chrome-surface) text-(--chrome-text) shadow-sm' : 'text-(--chrome-text)/60 hover:text-(--chrome-text)'}"
+                onclick={() => {
+                  const val = opt === 'Default' ? null : (opt.toLowerCase() as 'on' | 'off');
+                  queuePatch({ generation: { reasoning: val } });
+                }}
+              >
+                {opt}
+              </button>
+            {/each}
+          </div>
+          <p class="mt-1 text-[11px] text-(--chrome-text)/60">
+            Applies to reasoning models; ignored otherwise. Off is best-effort — Gemini models always think a little.
+          </p>
         </div>
 
         <!-- Max Tokens -->
@@ -791,6 +826,7 @@
             max="8192"
             step="64"
             value={s.generation.maxTokens}
+            use:rangeFill={s.generation.maxTokens}
             oninput={(e) => {
               const val = parseInt(e.currentTarget.value, 10);
               queuePatch({ generation: { maxTokens: val } });
@@ -821,25 +857,124 @@
           />
         </div>
 
-        <!-- Top P -->
-        <div>
-          <div class="mb-1 flex justify-between text-(--chrome-text) font-medium">
-            <label for="top-p">Top P (Nucleus Sampling)</label>
-            <span class="font-mono text-(--chrome-text)/60">{s.generation.topP ?? 1}</span>
+        <!-- Advanced settings -->
+        <div class="border-t border-(--chrome-line) pt-3">
+          <div class="mb-3 font-medium text-(--chrome-text)">Advanced settings</div>
+          <div class="flex flex-col gap-4">
+            <!-- Top K -->
+            <div>
+              <div class="mb-1 flex justify-between text-(--chrome-text) font-medium">
+                <label for="top-k">Top K</label>
+                <span class="font-mono text-(--chrome-text)/60">{topKDisplay(s.generation.topK)}</span>
+              </div>
+              <input
+                id="top-k"
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value={topKDisplay(s.generation.topK)}
+                use:rangeFill={topKDisplay(s.generation.topK)}
+                oninput={(e) => {
+                  const val = parseInt(e.currentTarget.value, 10);
+                  queuePatch({ generation: { topK: val } });
+                }}
+                class="w-full accent-accent"
+              />
+              <p class="mt-1 text-[11px] text-(--chrome-text)/60">0 = off (not sent).</p>
+            </div>
+
+            <!-- Top P -->
+            <div>
+              <div class="mb-1 flex justify-between text-(--chrome-text) font-medium">
+                <label for="top-p">Top P (Nucleus Sampling)</label>
+                <span class="font-mono text-(--chrome-text)/60">{topPDisplay(s.generation.topP)}</span>
+              </div>
+              <input
+                id="top-p"
+                type="range"
+                min="0.05"
+                max="1"
+                step="0.05"
+                value={topPDisplay(s.generation.topP)}
+                use:rangeFill={topPDisplay(s.generation.topP)}
+                oninput={(e) => {
+                  const val = parseFloat(e.currentTarget.value);
+                  queuePatch({ generation: { topP: val } });
+                }}
+                class="w-full accent-accent"
+              />
+            </div>
+
+            <!-- Repetition Penalty -->
+            <div>
+              <div class="mb-1 flex justify-between text-(--chrome-text) font-medium">
+                <label for="rep-penalty">Repetition Penalty</label>
+                <span class="font-mono text-(--chrome-text)/60">{repetitionPenaltyDisplay(s.generation.repetitionPenalty)}</span>
+              </div>
+              <input
+                id="rep-penalty"
+                type="range"
+                min="1"
+                max="2"
+                step="0.05"
+                value={repetitionPenaltyDisplay(s.generation.repetitionPenalty)}
+                use:rangeFill={repetitionPenaltyDisplay(s.generation.repetitionPenalty)}
+                oninput={(e) => {
+                  const val = parseFloat(e.currentTarget.value);
+                  queuePatch({ generation: { repetitionPenalty: val } });
+                }}
+                class="w-full accent-accent"
+              />
+              <p class="mt-1 text-[11px] text-(--chrome-text)/60">1.0 = neutral (upstream no-op).</p>
+            </div>
+
+            <!-- Frequency Penalty -->
+            <div>
+              <div class="mb-1 flex justify-between text-(--chrome-text) font-medium">
+                <label for="freq-penalty">Frequency Penalty</label>
+                <span class="font-mono text-(--chrome-text)/60">{frequencyPenaltyDisplay(s.generation.frequencyPenalty)}</span>
+              </div>
+              <input
+                id="freq-penalty"
+                type="range"
+                min="-2"
+                max="2"
+                step="0.05"
+                value={frequencyPenaltyDisplay(s.generation.frequencyPenalty)}
+                use:rangeFill={frequencyPenaltyDisplay(s.generation.frequencyPenalty)}
+                oninput={(e) => {
+                  const val = parseFloat(e.currentTarget.value);
+                  queuePatch({ generation: { frequencyPenalty: val } });
+                }}
+                class="w-full accent-accent"
+              />
+              <p class="mt-1 text-[11px] text-(--chrome-text)/60">0.0 = neutral (upstream no-op).</p>
+            </div>
+
+            <!-- Thinking level -->
+            <div>
+              <div class="mb-1 flex justify-between text-(--chrome-text) font-medium">
+                <label for="thinking-level">Thinking level</label>
+                <span class="font-mono text-(--chrome-text)/60">{reasoningEffortDisplay(s.generation.reasoningEffort)}</span>
+              </div>
+              <div id="thinking-level" class="inline-flex rounded-lg border border-(--chrome-line) bg-(--chrome-surface)/40 p-0.5 text-xs">
+                {#each (['Default', 'Low', 'Medium', 'High'] as const) as opt}
+                  <button
+                    type="button"
+                    class="rounded-md px-2.5 py-1 font-medium transition-colors {reasoningEffortDisplay(s.generation.reasoningEffort) === opt ? 'bg-(--chrome-surface) text-(--chrome-text) shadow-sm' : 'text-(--chrome-text)/60 hover:text-(--chrome-text)'}"
+                    onclick={() => {
+                      const val = opt === 'Default' ? null : (opt.toLowerCase() as 'low' | 'medium' | 'high');
+                      queuePatch({ generation: { reasoningEffort: val } });
+                    }}
+                  >
+                    {opt}
+                  </button>
+                {/each}
+              </div>
+              <p class="mt-1 text-[11px] text-(--chrome-text)/60">Sent whenever set unless Thinking is Off.</p>
+            </div>
           </div>
-          <input
-            id="top-p"
-            type="range"
-            min="0.05"
-            max="1"
-            step="0.05"
-            value={s.generation.topP ?? 1}
-            oninput={(e) => {
-              const val = parseFloat(e.currentTarget.value);
-              queuePatch({ generation: { topP: val } });
-            }}
-            class="w-full accent-accent"
-          />
         </div>
       </div>
     {:else if activeTab === 'narrative'}
@@ -972,6 +1107,7 @@
             max="15"
             step="1"
             bind:value={tintDraft}
+            use:rangeFill={tintDraft}
             oninput={(e) => {
               const val = Number(e.currentTarget.value);
               tintDraft = val;
@@ -1023,6 +1159,7 @@
             max="1"
             step="0.05"
             value={shellTheme.theme.scrim ? parseFloat(shellTheme.theme.scrim) : 0.8}
+            use:rangeFill={shellTheme.theme.scrim ? parseFloat(shellTheme.theme.scrim) : 0.8}
             disabled={prefs.forceSolidChrome}
             oninput={(e) => {
               const val = e.currentTarget.value;

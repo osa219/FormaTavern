@@ -20,6 +20,7 @@ export class CustomProvider extends OpenAICompatibleProvider {
       defaultModel: cfg.defaultModel ?? 'default',
       fetch: cfg.fetch,
       idleTimeoutMs: cfg.idleTimeoutMs,
+      allowReasoningOff: true,
       errorLabel: 'Custom provider'
     });
   }

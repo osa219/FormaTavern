@@ -100,6 +100,8 @@
         {npcs}
         {fx}
         isLast={i === lastIndex && !session.live}
+        reasoning={msg.metadata?.reasoning}
+        reasoningDurationMs={msg.metadata?.reasoningDurationMs}
         onRetry={() => session.regenerate(msg.id)}
       >
         {#snippet toolbar()}
@@ -132,6 +134,8 @@
         {fx}
         streaming={true}
         isLast={true}
+        reasoning={session.live.reasoning}
+        isThinking={session.live.isThinking}
       />
     {/if}
   </div>

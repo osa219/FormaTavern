@@ -18,6 +18,9 @@ export interface LLMRequest {
   topK?: number;
   minP?: number;
   repetitionPenalty?: number;
+  frequencyPenalty?: number;
+  reasoning?: 'on' | 'off';
+  reasoningEffort?: 'low' | 'medium' | 'high';
   stop?: string[];
   maxTokens?: number;
   assistantPrefill?: string;

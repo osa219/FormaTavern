@@ -66,6 +66,7 @@ export const MessageMetadataSchema = Type.Object({
     patch: StateVectorSchema
   }))),
   reasoning: Type.Optional(Type.String()),
+  reasoningDurationMs: Type.Optional(Type.Integer()),
   error: Type.Optional(Type.Object({
     message: Type.String(),
     recoverable: Type.Boolean()

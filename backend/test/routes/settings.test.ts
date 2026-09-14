@@ -376,5 +376,105 @@ describe('routes/settings', () => {
       expect(capturedBody?.model).toBe('llama3.1');
       expect(capturedBody?.stream).toBe(true);
     });
+
+    it('forwards generation.frequencyPenalty into the upstream body (0 included)', async () => {
+      let capturedBody: any = null;
+      const fakeFetch = async (_url: any, init: any) => {
+        capturedBody = JSON.parse(init.body);
+        return new Response('data: [DONE]\n\n', {
+          headers: { 'Content-Type': 'text/event-stream' }
+        });
+      };
+
+      const { app, repos } = setupTestApp({ customFetch: fakeFetch });
+      const setupRes = await app.handle(
+        new Request('http://127.0.0.1/api/settings', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            provider: { id: 'custom', model: 'llama3.1' },
+            custom: { baseUrl: 'http://localhost:11434/v1' },
+            generation: { frequencyPenalty: 0 }
+          })
+        })
+      );
+      expect(setupRes.status).toBe(200);
+
+      const chat = repos.chats.create({
+        id: 'c-freq-fwd',
+        title: 'Freq Forward',
+        primaryCharacterId: 'eldrin-the-mage',
+        activePersonaId: 'persona-default',
+        metadata: { envelopeDialect: 'directive', narrativeMode: 'narrative' }
+      });
+
+      const sendRes = await app.handle(
+        new Request(`http://127.0.0.1/api/chats/${chat.id}/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: 'Hello freq' })
+        })
+      );
+      expect(sendRes.status).toBe(200);
+      for (let i = 0; i < 100 && capturedBody === null; i++) {
+        await new Promise((r) => setTimeout(r, 20));
+      }
+      expect(capturedBody?.frequency_penalty).toBe(0);
+    });
+
+    it('rejects out-of-range generation sampling patches with 422', async () => {
+      const { app } = setupTestApp();
+      for (const body of [
+        { generation: { topK: 101 } },
+        { generation: { repetitionPenalty: 0.5 } },
+        { generation: { frequencyPenalty: 2.5 } }
+      ]) {
+        const res = await app.handle(
+          new Request('http://127.0.0.1/api/settings', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          })
+        );
+        expect(res.status).toBe(422);
+      }
+    });
+
+    it('patches and clears reasoning and reasoningEffort with null without corrupting settings', async () => {
+      const { app } = setupTestApp();
+
+      // 1. Patch reasoning 'on' and reasoningEffort 'high'
+      const patch1 = await app.handle(
+        new Request('http://127.0.0.1/api/settings', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            generation: { reasoning: 'on', reasoningEffort: 'high' }
+          })
+        })
+      );
+      expect(patch1.status).toBe(200);
+      const json1 = (await patch1.json()) as any;
+      expect(json1.generation.reasoning).toBe('on');
+      expect(json1.generation.reasoningEffort).toBe('high');
+
+      // 2. Clear with null
+      const patch2 = await app.handle(
+        new Request('http://127.0.0.1/api/settings', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            generation: { reasoning: null, reasoningEffort: null }
+          })
+        })
+      );
+      expect(patch2.status).toBe(200);
+      const json2 = (await patch2.json()) as any;
+      expect(json2.generation.reasoning).toBeUndefined();
+      expect(json2.generation.reasoningEffort).toBeUndefined();
+      // Ensure existing defaults (e.g. temperature) were NOT wiped or reset due to corrupted schema check
+      expect(json2.generation.temperature).toBe(0.8);
+      expect(json2.generation.maxTokens).toBe(1024);
+    });
   });
 });

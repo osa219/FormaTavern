@@ -22,9 +22,16 @@ export const AppSettingsSchema = Type.Object({
     maxTokens: Type.Integer({ minimum: 16, maximum: 32_000, default: 1024 }),
     contextLength: Type.Integer({ minimum: 1024, default: 16_384 }),
     topP: Type.Optional(Type.Number()),
-    topK: Type.Optional(Type.Integer()),
+    topK: Type.Optional(Type.Integer({ minimum: 0, maximum: 100 })),
     minP: Type.Optional(Type.Number()),
-    repetitionPenalty: Type.Optional(Type.Number())
+    repetitionPenalty: Type.Optional(Type.Number({ minimum: 1, maximum: 2 })),
+    frequencyPenalty: Type.Optional(Type.Number({ minimum: -2, maximum: 2 })),
+    reasoning: Type.Optional(Type.Union([Type.Literal('on'), Type.Literal('off')])),
+    reasoningEffort: Type.Optional(Type.Union([
+      Type.Literal('low'),
+      Type.Literal('medium'),
+      Type.Literal('high')
+    ]))
   }, { default: { temperature: 0.8, maxTokens: 1024, contextLength: 16_384 } }),
   narrative: Type.Object({
     defaultMode: Type.Union([Type.Literal('classic'), Type.Literal('narrative')], { default: 'narrative' }),
@@ -69,7 +76,14 @@ export const SettingsViewSchema = Type.Object({
     topP: Type.Optional(Type.Number()),
     topK: Type.Optional(Type.Integer()),
     minP: Type.Optional(Type.Number()),
-    repetitionPenalty: Type.Optional(Type.Number())
+    repetitionPenalty: Type.Optional(Type.Number()),
+    frequencyPenalty: Type.Optional(Type.Number()),
+    reasoning: Type.Optional(Type.Union([Type.Literal('on'), Type.Literal('off')])),
+    reasoningEffort: Type.Optional(Type.Union([
+      Type.Literal('low'),
+      Type.Literal('medium'),
+      Type.Literal('high')
+    ]))
   }),
   narrative: Type.Object({
     defaultMode: Type.Union([Type.Literal('classic'), Type.Literal('narrative')]),
@@ -104,9 +118,17 @@ export const SettingsPatchSchema = Type.Object({
     maxTokens: Type.Integer({ minimum: 16, maximum: 32_000 }),
     contextLength: Type.Integer({ minimum: 1024 }),
     topP: Type.Optional(Type.Number()),
-    topK: Type.Optional(Type.Integer()),
+    topK: Type.Optional(Type.Integer({ minimum: 0, maximum: 100 })),
     minP: Type.Optional(Type.Number()),
-    repetitionPenalty: Type.Optional(Type.Number())
+    repetitionPenalty: Type.Optional(Type.Number({ minimum: 1, maximum: 2 })),
+    frequencyPenalty: Type.Optional(Type.Number({ minimum: -2, maximum: 2 })),
+    reasoning: Type.Optional(Type.Union([Type.Literal('on'), Type.Literal('off'), Type.Null()])),
+    reasoningEffort: Type.Optional(Type.Union([
+      Type.Literal('low'),
+      Type.Literal('medium'),
+      Type.Literal('high'),
+      Type.Null()
+    ]))
   }))),
   narrative: Type.Optional(Type.Partial(Type.Object({
     defaultMode: Type.Union([Type.Literal('classic'), Type.Literal('narrative')]),

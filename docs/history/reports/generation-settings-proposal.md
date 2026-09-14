@@ -1,6 +1,6 @@
 # Generation Settings Proposal: Advanced Sampling + Settings UI Polish
 
-**Status:** Proposal — for review, no code changes yet.
+**Status:** Implemented. Walkthrough: `generation-settings-walkthrough.md`.
 **Date:** 2026-09-13 UTC
 **Scope:** Global generation parameters (new advanced sliders), Provider↔Generation tab adjacency, filled slider tracks. No provider-protocol changes; no per-config overrides (see `provider-configurations-proposal.md` §1).
 **Reference:** Janitor AI generation/advanced-settings panel (Temperature, Max tokens, Context size, Top K, Top P, Rep./Freq. penalty with filled-track sliders).

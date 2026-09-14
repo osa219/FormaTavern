@@ -1,5 +1,22 @@
 import { parseEnvelope, type ParseOptions, type ParseResult } from '@formatavern/shared';
 
+export interface LiveReasoning {
+  reasoning: string | null;
+  isThinking: boolean;
+}
+
+export function extractLiveReasoning(buffer: string): LiveReasoning {
+  if (!buffer) return { reasoning: null, isThinking: false };
+  const match = buffer.match(/<(?:think|thinking|reasoning)\b[^>]*>([\s\S]*?)(?:<\/(?:think|thinking|reasoning)>|$)/i);
+  if (!match) return { reasoning: null, isThinking: false };
+  const hasCloser = /<\/(?:think|thinking|reasoning)>/i.test(match[0]);
+  const text = match[1].trim();
+  return {
+    reasoning: text.length > 0 ? text : null,
+    isThinking: !hasCloser
+  };
+}
+
 /**
  * rAF-throttled envelope stream parser buffer (Invariant U3, U4).
  * Holds raw incoming stream chunks in a non-reactive buffer, parsing
@@ -12,7 +29,7 @@ export class StreamController {
 
   constructor(
     private opts: () => ParseOptions,
-    private commit: (r: ParseResult, chars: number) => void
+    private commit: (r: ParseResult, chars: number, liveReasoning?: LiveReasoning) => void
   ) {}
 
   push(text: string) {
@@ -34,7 +51,8 @@ export class StreamController {
     if (!this.dirty) return;
     this.dirty = false;
     const r = parseEnvelope(this.buffer, { ...this.opts(), streaming: true });
-    this.commit(r, this.buffer.length);
+    const liveReasoning = extractLiveReasoning(this.buffer);
+    this.commit(r, this.buffer.length, liveReasoning);
   };
 
   flush() {

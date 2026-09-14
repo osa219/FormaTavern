@@ -316,4 +316,168 @@ describe('OpenAICompatibleProvider', () => {
   it('requires a baseUrl', () => {
     expect(() => new OpenAICompatibleProvider({ baseUrl: '   ' })).toThrow();
   });
+
+  it('sends frequency_penalty in the base body (unconditional, including 0)', async () => {
+    let capturedBase: any;
+    let capturedZero: any;
+    let capturedOpenRouter: any;
+    const baseFetch: FetchFn = async (_url, init) => {
+      capturedBase = JSON.parse(init?.body as string);
+      return sse(['data: [DONE]\n\n']);
+    };
+    const zeroFetch: FetchFn = async (_url, init) => {
+      capturedZero = JSON.parse(init?.body as string);
+      return sse(['data: [DONE]\n\n']);
+    };
+
+    await collect(
+      new OpenAICompatibleProvider({ baseUrl: 'http://h/v1', fetch: baseFetch }).generate({
+        history: [{ role: 'user' as const, content: 'hi' }],
+        frequencyPenalty: 0.5
+      })
+    );
+    expect(capturedBase.frequency_penalty).toBe(0.5);
+
+    await collect(
+      new OpenAICompatibleProvider({ baseUrl: 'http://h/v1', fetch: zeroFetch }).generate({
+        history: [{ role: 'user' as const, content: 'hi' }],
+        frequencyPenalty: 0
+      })
+    );
+    expect(capturedZero.frequency_penalty).toBe(0);
+
+    const orFetch: FetchFn = async (_url, init) => {
+      capturedOpenRouter = JSON.parse(init?.body as string);
+      return sse(['data: [DONE]\n\n']);
+    };
+    const { OpenRouterProvider } = await import('../../src/providers/openrouter');
+    await collect(
+      new OpenRouterProvider({ apiKey: FAKE_KEY, fetch: orFetch }).generate({
+        history: [{ role: 'user' as const, content: 'hi' }],
+        frequencyPenalty: -1
+      })
+    );
+    expect(capturedOpenRouter.frequency_penalty).toBe(-1);
+  });
+
+  it('omits top_k when 0 (llama convention), sends it when non-zero with opt-in', async () => {
+    let capturedZero: any;
+    let capturedNonZero: any;
+    const zeroFetch: FetchFn = async (_url, init) => {
+      capturedZero = JSON.parse(init?.body as string);
+      return sse(['data: [DONE]\n\n']);
+    };
+    const nonZeroFetch: FetchFn = async (_url, init) => {
+      capturedNonZero = JSON.parse(init?.body as string);
+      return sse(['data: [DONE]\n\n']);
+    };
+
+    await collect(
+      new OpenAICompatibleProvider({
+        baseUrl: 'http://h/v1',
+        fetch: zeroFetch,
+        allowExtendedSampling: true
+      }).generate({ history: [{ role: 'user' as const, content: 'hi' }], topK: 0 })
+    );
+    expect('top_k' in capturedZero).toBe(false);
+
+    await collect(
+      new OpenAICompatibleProvider({
+        baseUrl: 'http://h/v1',
+        fetch: nonZeroFetch,
+        allowExtendedSampling: true
+      }).generate({ history: [{ role: 'user' as const, content: 'hi' }], topK: 40 })
+    );
+    expect(capturedNonZero.top_k).toBe(40);
+  });
+
+  it('maps reasoning and reasoningEffort according to provider presets and precedence', async () => {
+    let captured: any;
+    const fakeFetch: FetchFn = async (_url, init) => {
+      captured = JSON.parse(init?.body as string);
+      return sse(['data: [DONE]\n\n']);
+    };
+
+    const { OpenRouterProvider } = await import('../../src/providers/openrouter');
+    const { CustomProvider, GeminiProvider } = await import('../../src/providers/presets');
+
+    const openrouter = new OpenRouterProvider({ apiKey: FAKE_KEY, fetch: fakeFetch });
+    const custom = new CustomProvider({ baseUrl: 'http://localhost:11434/v1', fetch: fakeFetch });
+    const geminiCompat = new GeminiProvider({ apiKey: FAKE_KEY, fetch: fakeFetch });
+    const strictBase = new OpenAICompatibleProvider({ baseUrl: 'http://h/v1', fetch: fakeFetch });
+
+    // 1. OpenRouter
+    // 1a. Off sends reasoning_effort: 'none'
+    await collect(openrouter.generate({ history: [], reasoning: 'off' }));
+    expect(captured.reasoning_effort).toBe('none');
+    expect(captured.reasoning).toBeUndefined();
+
+    // 1b. Off suppresses level (Off wins)
+    await collect(openrouter.generate({ history: [], reasoning: 'off', reasoningEffort: 'high' }));
+    expect(captured.reasoning_effort).toBe('none');
+
+    // 1c. On alone sends reasoning: { enabled: true }
+    await collect(openrouter.generate({ history: [], reasoning: 'on' }));
+    expect(captured.reasoning).toEqual({ enabled: true });
+    expect(captured.reasoning_effort).toBeUndefined();
+
+    // 1d. Level alone sends reasoning_effort: level
+    await collect(openrouter.generate({ history: [], reasoningEffort: 'low' }));
+    expect(captured.reasoning_effort).toBe('low');
+    expect(captured.reasoning).toBeUndefined();
+
+    // 1e. On + level sends reasoning_effort: level
+    await collect(openrouter.generate({ history: [], reasoning: 'on', reasoningEffort: 'high' }));
+    expect(captured.reasoning_effort).toBe('high');
+    expect(captured.reasoning).toBeUndefined();
+
+    // 2. Custom (Ollama / vLLM)
+    // 2a. Off sends reasoning_effort: 'none'
+    await collect(custom.generate({ history: [], reasoning: 'off' }));
+    expect(captured.reasoning_effort).toBe('none');
+
+    // 2b. Off suppresses level
+    await collect(custom.generate({ history: [], reasoning: 'off', reasoningEffort: 'medium' }));
+    expect(captured.reasoning_effort).toBe('none');
+
+    // 2c. On alone sends nothing (server default auto-thinks)
+    await collect(custom.generate({ history: [], reasoning: 'on' }));
+    expect(captured.reasoning_effort).toBeUndefined();
+    expect(captured.reasoning).toBeUndefined();
+
+    // 2d. Level sends reasoning_effort
+    await collect(custom.generate({ history: [], reasoningEffort: 'medium' }));
+    expect(captured.reasoning_effort).toBe('medium');
+
+    // 3. Gemini compat (/v1beta/openai/)
+    // 3a. Off omitted (cannot disable)
+    await collect(geminiCompat.generate({ history: [], reasoning: 'off' }));
+    expect(captured.reasoning_effort).toBeUndefined();
+    expect(captured.reasoning).toBeUndefined();
+
+    // 3b. Off suppresses level, still omitted
+    await collect(geminiCompat.generate({ history: [], reasoning: 'off', reasoningEffort: 'high' }));
+    expect(captured.reasoning_effort).toBeUndefined();
+
+    // 3c. On alone omitted
+    await collect(geminiCompat.generate({ history: [], reasoning: 'on' }));
+    expect(captured.reasoning_effort).toBeUndefined();
+
+    // 3d. Level passes through
+    await collect(geminiCompat.generate({ history: [], reasoningEffort: 'medium' }));
+    expect(captured.reasoning_effort).toBe('medium');
+
+    // 4. Strict base (no flags)
+    // 4a. Off omitted
+    await collect(strictBase.generate({ history: [], reasoning: 'off' }));
+    expect(captured.reasoning_effort).toBeUndefined();
+
+    // 4b. On alone omitted
+    await collect(strictBase.generate({ history: [], reasoning: 'on' }));
+    expect(captured.reasoning_effort).toBeUndefined();
+
+    // 4c. Level passes through
+    await collect(strictBase.generate({ history: [], reasoningEffort: 'high' }));
+    expect(captured.reasoning_effort).toBe('high');
+  });
 });

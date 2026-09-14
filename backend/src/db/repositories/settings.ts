@@ -115,8 +115,14 @@ export class SQLiteSettingsRepository implements SettingsRepository {
       // 3. generation
       if (p.generation !== undefined) {
         const current = this.loadSubObject('generation');
-        const merged = { ...current, ...p.generation };
-        upsertStmt.run('generation', JSON.stringify(merged), now);
+        for (const [k, v] of Object.entries(p.generation)) {
+          if (v === null) {
+            delete current[k];
+          } else if (v !== undefined) {
+            current[k] = v;
+          }
+        }
+        upsertStmt.run('generation', JSON.stringify(current), now);
       }
 
       // 4. narrative

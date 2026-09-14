@@ -27,6 +27,8 @@ export interface LiveTurn {
   ttftMs: number | null;
   phase: 'connecting' | 'streaming' | 'finishing';
   resumedFrom: number;
+  reasoning?: string | null;
+  isThinking?: boolean;
 }
 
 export interface SessionDeps {
@@ -400,13 +402,15 @@ export class ChatSession {
         dialect: this.chat?.metadata.envelopeDialect ?? 'directive',
         npcs: this.chat?.metadata.npcs ? Object.keys(this.chat.metadata.npcs) : []
       }),
-      (r, chars) => {
+      (r, chars, liveReasoning) => {
         if (this.live) {
           this.live.segments = r.segments;
           this.live.heldBack = r.heldBack;
           this.live.warnings = r.warnings.map((w) => w.code);
           this.live.truncatedAt = r.truncatedAt;
           this.live.chars = chars;
+          this.live.reasoning = liveReasoning?.reasoning ?? null;
+          this.live.isThinking = liveReasoning?.isThinking ?? false;
           if (this.live.ttftMs === null) {
             this.live.ttftMs = Date.now() - this.live.startedAt;
           }

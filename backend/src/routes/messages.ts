@@ -166,6 +166,9 @@ export function createMessagesRouter(deps: {
           topK: settings.generation.topK,
           minP: settings.generation.minP,
           repetitionPenalty: settings.generation.repetitionPenalty,
+          frequencyPenalty: settings.generation.frequencyPenalty,
+          reasoning: settings.generation.reasoning,
+          reasoningEffort: settings.generation.reasoningEffort,
           maxTokens: settings.generation.maxTokens
         },
         promptTokensEstimated: built.tokens.total,
@@ -281,6 +284,9 @@ export function createMessagesRouter(deps: {
           topK: settings.generation.topK,
           minP: settings.generation.minP,
           repetitionPenalty: settings.generation.repetitionPenalty,
+          frequencyPenalty: settings.generation.frequencyPenalty,
+          reasoning: settings.generation.reasoning,
+          reasoningEffort: settings.generation.reasoningEffort,
           maxTokens: settings.generation.maxTokens
         },
         promptTokensEstimated: built.tokens.total,

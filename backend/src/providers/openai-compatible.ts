@@ -26,6 +26,8 @@ export interface OpenAICompatibleConfig {
   fetch?: FetchFn;
   idleTimeoutMs?: number;
   allowExtendedSampling?: boolean; // default false: top_k/min_p/repetition_penalty dropped
+  allowReasoningOff?: boolean; // default false: 'off' toggle omitted
+  reasoningOnEnabled?: boolean; // default false: 'on' toggle sends reasoning: { enabled: true }
   usageAccounting?: UsageAccounting; // default 'stream_options'
   errorLabel?: string; // default 'Upstream'; used in error message prefixes
 }
@@ -71,6 +73,8 @@ export class OpenAICompatibleProvider implements LLMProvider {
   protected extraBody: Record<string, any>;
   protected excludeKeys: string[];
   protected allowExtendedSampling: boolean;
+  protected allowReasoningOff: boolean;
+  protected reasoningOnEnabled: boolean;
   protected usageAccounting: UsageAccounting;
   protected errorLabel: string;
 
@@ -88,6 +92,8 @@ export class OpenAICompatibleProvider implements LLMProvider {
     this.extraBody = { ...(cfg.extraBody ?? {}) };
     this.excludeKeys = [...(cfg.excludeKeys ?? [])];
     this.allowExtendedSampling = cfg.allowExtendedSampling ?? false;
+    this.allowReasoningOff = cfg.allowReasoningOff ?? false;
+    this.reasoningOnEnabled = cfg.reasoningOnEnabled ?? false;
     this.usageAccounting = cfg.usageAccounting ?? 'stream_options';
     this.errorLabel = cfg.errorLabel ?? 'Upstream';
   }
@@ -162,13 +168,24 @@ export class OpenAICompatibleProvider implements LLMProvider {
 
     if (req.temperature !== undefined) bodyPayload.temperature = req.temperature;
     if (req.topP !== undefined) bodyPayload.top_p = req.topP;
+    if (req.frequencyPenalty !== undefined) bodyPayload.frequency_penalty = req.frequencyPenalty;
     if (this.allowExtendedSampling) {
-      if (req.topK !== undefined) bodyPayload.top_k = req.topK;
+      if (req.topK !== undefined && req.topK !== 0) bodyPayload.top_k = req.topK;
       if (req.minP !== undefined) bodyPayload.min_p = req.minP;
       if (req.repetitionPenalty !== undefined) bodyPayload.repetition_penalty = req.repetitionPenalty;
     }
     if (stop !== undefined && stop.length > 0) bodyPayload.stop = stop;
     if (req.maxTokens !== undefined) bodyPayload.max_tokens = req.maxTokens;
+
+    const thinking = req.reasoning;
+    const level = req.reasoningEffort;
+    if (thinking === 'off') {
+      if (this.allowReasoningOff) bodyPayload.reasoning_effort = 'none';
+    } else if (level !== undefined) {
+      bodyPayload.reasoning_effort = level;
+    } else if (thinking === 'on' && this.reasoningOnEnabled) {
+      bodyPayload.reasoning = { enabled: true };
+    }
 
     if (this.usageAccounting === 'openrouter') {
       bodyPayload.usage = { include: true };

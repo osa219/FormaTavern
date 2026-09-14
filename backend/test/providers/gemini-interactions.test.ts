@@ -163,4 +163,33 @@ describe('GeminiInteractionsProvider', () => {
     expect(events).toEqual([{ type: 'done', finishReason: 'aborted' }]);
     expect(() => new GeminiInteractionsProvider({ apiKey: '  ' })).toThrow();
   });
+
+  it('maps reasoningEffort to generation_config.thinking_level unless reasoning is off', async () => {
+    let capturedBody: any;
+    const fakeFetch: FetchFn = async (_url, init) => {
+      capturedBody = JSON.parse(init?.body as string);
+      return sse(['data: {"event_type":"interaction.completed"}\n\n']);
+    };
+    const provider = new GeminiInteractionsProvider({ apiKey: FAKE_KEY, fetch: fakeFetch });
+
+    // Level alone sets thinking_level
+    await collect(provider.generate({ history: [], reasoningEffort: 'low' }));
+    expect(capturedBody.generation_config?.thinking_level).toBe('low');
+
+    // On + level sets thinking_level
+    await collect(provider.generate({ history: [], reasoning: 'on', reasoningEffort: 'high' }));
+    expect(capturedBody.generation_config?.thinking_level).toBe('high');
+
+    // Off suppresses level (omitted)
+    await collect(provider.generate({ history: [], reasoning: 'off', reasoningEffort: 'high' }));
+    expect(capturedBody.generation_config?.thinking_level).toBeUndefined();
+
+    // Off alone omits
+    await collect(provider.generate({ history: [], reasoning: 'off' }));
+    expect(capturedBody.generation_config?.thinking_level).toBeUndefined();
+
+    // On alone omits
+    await collect(provider.generate({ history: [], reasoning: 'on' }));
+    expect(capturedBody.generation_config?.thinking_level).toBeUndefined();
+  });
 });

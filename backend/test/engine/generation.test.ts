@@ -484,4 +484,78 @@ describe('runGeneration', () => {
     const finalRow = repos.messages.get(assistantId);
     expect(finalRow!.content.startsWith(prefix)).toBe(true);
   });
+
+  it('persists reasoning in message metadata and calculates duration', async () => {
+    const assistantId = createAssistantRow('asst-think');
+    const thinkProvider = {
+      id: 'custom-think',
+      capabilities: { chatCompletion: true, textCompletion: false, listModels: false },
+      async *generate() {
+        yield { type: 'token' as const, text: '<think>' };
+        yield { type: 'token' as const, text: 'Step 1: calculate.' };
+        yield { type: 'token' as const, text: '</think>\n' };
+        yield { type: 'token' as const, text: '::: speech\nThe answer is 42.' };
+        yield { type: 'done' as const, finishReason: 'stop' as const };
+      }
+    };
+
+    const job: GenerationJob = {
+      chatId: 'chat-1',
+      assistantId,
+      parentId: null,
+      provider: thinkProvider as any,
+      model: 'think-model',
+      request: { history: [] },
+      promptTokensEstimated: 10,
+      droppedTurns: 0,
+      parseOptions: defaultParseOptions,
+      previousState: {},
+      flushIntervalMs: 20
+    };
+
+    await runGeneration(job, { repos, hub });
+
+    const finalRow = repos.messages.get(assistantId);
+    expect(finalRow).not.toBeNull();
+    expect(finalRow!.status).toBe('complete');
+    expect(finalRow!.metadata.reasoning).toBe('Step 1: calculate.');
+    expect(finalRow!.metadata.reasoningDurationMs).toBeGreaterThanOrEqual(0);
+  });
+
+  it('truncates reasoning in metadata at 16,000 characters with marker', async () => {
+    const assistantId = createAssistantRow('asst-think-long');
+    const longThink = 'a'.repeat(20_000);
+    const thinkProvider = {
+      id: 'custom-think-long',
+      capabilities: { chatCompletion: true, textCompletion: false, listModels: false },
+      async *generate() {
+        yield { type: 'token' as const, text: `<think>${longThink}</think>\n` };
+        yield { type: 'token' as const, text: 'Done.' };
+        yield { type: 'done' as const, finishReason: 'stop' as const };
+      }
+    };
+
+    const job: GenerationJob = {
+      chatId: 'chat-1',
+      assistantId,
+      parentId: null,
+      provider: thinkProvider as any,
+      model: 'think-model',
+      request: { history: [] },
+      promptTokensEstimated: 10,
+      droppedTurns: 0,
+      parseOptions: defaultParseOptions,
+      previousState: {},
+      flushIntervalMs: 20
+    };
+
+    await runGeneration(job, { repos, hub });
+
+    const finalRow = repos.messages.get(assistantId);
+    expect(finalRow).not.toBeNull();
+    expect(finalRow!.status).toBe('complete');
+    expect(finalRow!.metadata.reasoning?.startsWith('a'.repeat(100))).toBe(true);
+    expect(finalRow!.metadata.reasoning?.length).toBe(16_000 + '\n\n[Reasoning truncated]'.length);
+    expect(finalRow!.metadata.reasoning?.endsWith('[Reasoning truncated]')).toBe(true);
+  });
 });

@@ -36,6 +36,9 @@ export async function runGeneration(
   let dirty = false;
   let lastFlushAt = startTime;
   let flushTimer: any = null;
+  let thinkStartTime: number | undefined;
+  let thinkEndTime: number | undefined;
+  let thinkOpen = false;
 
   const runAgencyCheck = (): boolean => {
     if (agencyAborted || truncatedUpstream) return false;
@@ -106,6 +109,18 @@ export async function runGeneration(
           handle.updateSnapshot(buffer);
           handle.emit({ type: 'token', text: ev.text });
 
+          // Scan only the fresh token, not the whole buffer: provider-emitted
+          // <think> markers arrive as their own tokens and model-owned tags
+          // arrive inside content deltas. A tag split across two frames just
+          // yields no duration; persistence comes from parseEnvelope anyway.
+          if (!thinkOpen && (ev.text.includes('<think') || ev.text.includes('<thinking') || ev.text.includes('<reasoning'))) {
+            thinkOpen = true;
+            thinkStartTime = nowFn();
+          }
+          if (thinkOpen && thinkEndTime === undefined && (ev.text.includes('</think>') || ev.text.includes('</thinking>') || ev.text.includes('</reasoning>'))) {
+            thinkEndTime = nowFn();
+          }
+
           if (ev.text.includes('\n')) {
             runAgencyCheck();
           }
@@ -146,6 +161,14 @@ export async function runGeneration(
     }
 
     try {
+      if (thinkOpen && thinkEndTime === undefined) {
+        thinkEndTime = nowFn();
+      }
+      const reasoningDurationMs =
+        thinkStartTime !== undefined && thinkEndTime !== undefined
+          ? Math.max(0, thinkEndTime - thinkStartTime)
+          : undefined;
+
       // 1. Final parse
       const result = parseEnvelope(buffer, { ...job.parseOptions, streaming: false });
 
@@ -198,6 +221,12 @@ export async function runGeneration(
       };
 
       // 5. Metadata
+      let finalReasoning: string | undefined;
+      if (result.reasoning && result.reasoning.trim().length > 0) {
+        const raw = result.reasoning.trim();
+        finalReasoning = raw.length > 16_000 ? raw.slice(0, 16_000) + '\n\n[Reasoning truncated]' : raw;
+      }
+
       const existingMeta = existingRow?.metadata ?? {};
       const metadata: MessageMetadata = {
         ...existingMeta,
@@ -210,6 +239,8 @@ export async function runGeneration(
         },
         stateSource: stateRes.source,
         stateWarnings: stateRes.warnings.length > 0 ? stateRes.warnings : undefined,
+        reasoning: finalReasoning ?? existingMeta.reasoning,
+        reasoningDurationMs: finalReasoning ? (reasoningDurationMs ?? existingMeta.reasoningDurationMs) : undefined,
         error: streamError ?? existingMeta.error
       };
 
