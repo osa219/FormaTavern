@@ -96,4 +96,19 @@ describe('Architecture & Boundary Police (Invariant U2, U3, U6)', () => {
       }
     }
   });
+
+  it('keeps the chat message-log scroll chain intact: main must be flex-col so the log flex-1 root constrains and the inner log scrolls', () => {
+    const viewport = readFileSync(join(SRC_DIR, 'lib/components/chat/ChatViewport.svelte'), 'utf-8');
+    const mainMatch = viewport.match(/<main\b[^>]*>/);
+    expect(mainMatch).not.toBeNull();
+    const mainTag = mainMatch![0];
+    expect(mainTag).toMatch(/\bflex\b/);
+    expect(mainTag).toMatch(/\bflex-col\b/);
+    expect(mainTag).toMatch(/\bmin-h-0\b/);
+    expect(mainTag).toMatch(/\boverflow-hidden\b/);
+
+    const log = readFileSync(join(SRC_DIR, 'lib/components/chat/MessageLog.svelte'), 'utf-8');
+    expect(log).toContain('flex-1 min-h-0');
+    expect(log).toMatch(/overflow-y-auto/);
+  });
 });

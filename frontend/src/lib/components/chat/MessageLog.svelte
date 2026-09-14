@@ -7,6 +7,7 @@
   import JumpToLatest from './JumpToLatest.svelte';
   import type { MessageWithTree } from '@formatavern/shared';
   import { HOOKS } from '@formatavern/shared';
+  import type { Segment } from '@formatavern/shared';
 
   let {
     session,
@@ -70,6 +71,18 @@
   const activeLeafId = $derived(session.activeLeafId);
   const lastIndex = $derived(session.messages.length - 1);
   const fx = $derived(session.character?.style?.fx?.bubble ?? 'none');
+
+  function displaySegments(msg: MessageWithTree): Segment[] {
+    if (msg.segments && msg.segments.length > 0) return msg.segments;
+    const text = msg.content?.trim() ?? '';
+    if (!text) return [];
+    const role = msg.narrativeRole ?? msg.role;
+    if (role === 'narrator') return [{ kind: 'narrator', text }];
+    if (role === 'npc') return [{ kind: 'npc', name: msg.senderName ?? undefined, text }];
+    if (role === 'character' || msg.role === 'assistant')
+      return [{ kind: 'character', name: msg.senderName ?? undefined, text }];
+    return [{ kind: 'persona', name: msg.senderName ?? undefined, text }];
+  }
 </script>
 
 <div class="relative flex-1 min-h-0 w-full">
@@ -93,7 +106,7 @@
     <!-- Persisted Active Branch Turns -->
     {#each session.messages as msg, i (msg.id)}
       <MessageTurn
-        segments={msg.segments ?? []}
+        segments={displaySegments(msg)}
         status={msg.status}
         narrativeRole={msg.narrativeRole}
         {primaryName}

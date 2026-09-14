@@ -26,6 +26,18 @@ $tmp = "C:\Users\osama\AppData\Local\Temp\opencode\edge-probe"
   --screenshot="$tmp\page.png" "http://127.0.0.1:5173/<route>" 2>&1
 ```
 
+## 1b. Shoot two heights before concluding anything about "missing" content
+
+Capture the same route tall AND short (e.g. `--window-size=1440,2600`, then
+`1440,900`). The contrast discriminates two totally different bugs:
+
+- tall shows everything, short clips with **no scrollbar** → the content is
+  unreachable, not missing: suspect the scroll chain (a non-scrollable log
+  inside an `overflow-hidden` clipper), not the component. Check whether ANY
+  scroller exists before debugging data or paint.
+- tall also hides it → genuinely absent (data/DOM/paint problem — continue
+  with §3).
+
 Read screenshots back with the `read` tool — it renders images. Parse DOM dumps with a
 `bun` one-liner script file (never inline `bun -e` with quotes on PowerShell).
 
@@ -37,6 +49,14 @@ as-is at `/<name>.html`) and screenshot it. Each probe changes ONE variable:
 - plain `background-image: url(...)` → proves serving + paint work
 - exact dumped markup replica → proves the bug is in the markup, not Svelte/data
 - remove overlay / z-index / filter one at a time → isolates the killer property
+- **A/B skeletons side by side in ONE probe** → current layout chain vs candidate
+  fix, same tall content, one screenshot decides (e.g. block `main` vs `flex-col`
+  `main`: clipped-without-scrollbar vs scrollbar-proves-scrollable)
+- **make probes self-reporting** → embed a small script that writes live
+  measurements (`scrollHeight`/`clientHeight`/`scrollTop`, per-element rects and
+  `contentVisibility`) into visible page text. Then a screenshot alone carries
+  the numbers — no console access needed, and a human can verify with one
+  screenshot of the probe URL.
 
 **Delete every probe from `frontend/static/` before finishing** — that dir ships to prod.
 
@@ -47,6 +67,11 @@ Theme-not-showing? Check each link; stop at the first broken one:
 1. DB: readonly query via `bun:sqlite` (`new Database('formatavern.db', { readonly: true })`).
 2. API direct: `fetch('http://127.0.0.1:3000/api/...')` via `bun`.
 3. API via the exact browser path: same fetch against `:5173` (Vite proxy).
+   Quarantine "two servers" first: `Get-NetTCPConnection -LocalPort 3000,5173 -State Listen`
+   must show one listener per port, and the Vite `proxy.target` must match the
+   backend you queried in step 2.
+3b. In-app state counts (e.g. a `?dev=1` overlay): state-has-N vs painted-M splits
+   "unreachable/unpainted" from "missing data" without touching the console.
 4. Asset bytes: status code AND `Content-Type` for `/assets/...` on both ports.
 5. Rendered DOM: is the element/attribute present after hydration?
 6. Paint: screenshot. DOM-present ≠ painted (stacking, overflow, opacity).
@@ -75,6 +100,20 @@ Theme-not-showing? Check each link; stop at the first broken one:
   backdrop had never rendered once. For rendering invariants, add a static
   boundary-police test in `frontend/unit/boundaries.test.ts` (source-scan style, e.g.
   "every file rendering `<Backdrop` must contain `isolate`").
+- **`content-visibility: auto` placeholder signature.** Rect height exactly equal to
+  `contain-intrinsic-size` (e.g. every row `h=96` for `auto 6rem`) with correct text
+  in the DOM means the browser skipped rendering, not that data is missing. Real
+  heights + real text + still invisible means look at clipping and the scroll
+  chain, not at the component.
+- **A missing scrollbar is itself the finding.** `flex-1`/`min-h-0` on a child is
+  inert without a flex parent; `height: 100%` against an auto-height parent
+  resolves to auto, so `overflow-y: auto` never engages and an `overflow-hidden`
+  ancestor clips everything past the fold — wheel does nothing, `scrollToBottom`
+  is a no-op, zero console errors. If a growing list has no scrollbar, walk the
+  grid/flex chain from the viewport down before anything else.
+- **Watchers break on mapped/subst drives.** `... will not be watched` warnings mean
+  Vite can keep serving stale transforms even across a hard reload. Restart the
+  dev servers to quarantine staleness before concluding the code is wrong.
 
 ## 5. Definition of done for a UI fix
 

@@ -14,6 +14,7 @@ import {
   type ChatView,
   type MessageWithTree,
   type ParseOptions,
+  type Segment,
   type SendMessageBody,
   type StateOverride,
   type StatePatchBody
@@ -27,6 +28,20 @@ import { runGeneration } from '../engine/generation';
 import { buildPrompt } from '../prompt/builder';
 import { PromptBudgetError } from '../prompt/types';
 import { sseResponse } from './sse';
+
+function buildUserSegments(
+  narrativeRole: string,
+  senderName: string | null,
+  content: string
+): Segment[] {
+  const text = content ?? '';
+  if (text.trim().length === 0) return [];
+  if (narrativeRole === 'narrator') return [{ kind: 'narrator', text }];
+  if (narrativeRole === 'npc') return [{ kind: 'npc', name: senderName ?? undefined, text }];
+  if (narrativeRole === 'character')
+    return [{ kind: 'character', name: senderName ?? undefined, text }];
+  return [{ kind: 'persona', name: senderName ?? undefined, text }];
+}
 
 export function toChatView(chat: ChatRow, hub: GenerationHub, messageCount?: number): ChatView {
   return {
@@ -331,6 +346,7 @@ export function createChatsRouter(deps: {
               senderId: persona.id,
               senderName: userSenderName,
               content: sendBody.message ?? '',
+              segments: buildUserSegments(userNarrativeRole, userSenderName, sendBody.message ?? ''),
               status: 'complete',
               metadata: sendBody.directorNote ? { directorNote: sendBody.directorNote } : {}
             });
@@ -357,6 +373,7 @@ export function createChatsRouter(deps: {
           senderId: persona.id,
           senderName: userSenderName,
           content: sendBody.message ?? '',
+          segments: buildUserSegments(userNarrativeRole, userSenderName, sendBody.message ?? ''),
           status: 'complete',
           metadata: sendBody.directorNote ? { directorNote: sendBody.directorNote } : {}
         });

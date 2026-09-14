@@ -328,8 +328,8 @@
     }}
   />
 
-  <!-- Message Log (Scroll container) -->
-  <main class="relative min-h-0 w-full overflow-hidden">
+  <!-- Message Log (Scroll container: flex column so the log root's flex-1 constrains its height and the inner log can scroll) -->
+  <main class="relative flex min-h-0 w-full flex-col overflow-hidden">
     <MessageLog
       {session}
       onEditTurn={(turn) => {
