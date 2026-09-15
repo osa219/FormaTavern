@@ -3,6 +3,7 @@ import {
   ChatCreateSchema,
   ChatListQuerySchema,
   ChatPatchSchema,
+  PromptPreviewBodySchema,
   SendMessageBodySchema,
   StatePatchBodySchema,
   defaultState,
@@ -14,19 +15,20 @@ import {
   type ChatView,
   type MessageWithTree,
   type ParseOptions,
+  type PromptPreviewBody,
   type Segment,
   type SendMessageBody,
   type StateOverride,
   type StatePatchBody
 } from '@formatavern/shared';
-import type { ChatRow, Repositories } from '../db/contracts';
+import type { ChatRow, MessageRow, Repositories } from '../db/contracts';
 import { newId } from '../db/ids';
 import type { GenerationHub, GenerationJob, ProviderRegistry } from '../engine/contracts';
 import { assembleContext } from '../engine/context';
 import { ApiError } from '../engine/errors';
 import { runGeneration } from '../engine/generation';
 import { buildPrompt } from '../prompt/builder';
-import { PromptBudgetError } from '../prompt/types';
+import { PromptBudgetError, type BuiltPrompt } from '../prompt/types';
 import { sseResponse } from './sse';
 
 function buildUserSegments(
@@ -287,6 +289,88 @@ export function createChatsRouter(deps: {
 
       return repos.messages.pageActiveBranch(chat.id, chat.activeLeafId, { before, limit });
     })
+    .post(
+      '/:id/prompt-preview',
+      ({ params, body }): BuiltPrompt => {
+        // Dry run: same assembleContext() + buildPrompt() path as send, no writes, no LLM call.
+        const previewBody = body as PromptPreviewBody;
+        const chat = repos.chats.get(params.id);
+        if (!chat) {
+          throw new ApiError('not_found', 404, `Chat ${params.id} not found`);
+        }
+
+        const character = repos.characters.get(chat.primaryCharacterId);
+        if (!character) {
+          throw new ApiError('not_found', 404, `Character ${chat.primaryCharacterId} not found`);
+        }
+
+        const persona = repos.personas.get(chat.activePersonaId);
+        if (!persona) {
+          throw new ApiError('not_found', 404, `Persona ${chat.activePersonaId} not found`);
+        }
+
+        const settings = repos.settings.getAll();
+        const activeConfig = settings.provider.activeConfigId
+          ? repos.providerConfigs.get(settings.provider.activeConfigId)
+          : null;
+        const resolution = providers.resolve(settings, activeConfig);
+
+        let pathRows: MessageRow[] = chat.activeLeafId ? repos.messages.path(chat.activeLeafId) : [];
+        let triggerId = chat.activeLeafId ?? 'preview-root';
+
+        // Optional unsent draft (explicit Preview only): appended as a synthetic
+        // row so history + director note reflect exactly what sending would do.
+        const draft = previewBody.draft;
+        const hasDraft =
+          draft !== undefined &&
+          ((draft.message !== undefined && draft.message.trim().length > 0) ||
+            (draft.directorNote !== undefined && draft.directorNote.trim().length > 0));
+        if (hasDraft) {
+          const draftRole = draft.narrativeRole ?? 'persona';
+          const synthetic: MessageRow = {
+            id: newId(),
+            chatId: chat.id,
+            parentId: chat.activeLeafId,
+            senderId: persona.id,
+            senderName: draft.senderName?.trim() || (draftRole === 'persona' ? persona.name : null),
+            role: draftRole === 'persona' ? 'user' : 'assistant',
+            narrativeRole: draftRole,
+            content: draft.message ?? '',
+            segments: [],
+            state: null,
+            status: 'complete',
+            createdAt: Date.now(),
+            metrics: null,
+            metadata: draft.directorNote ? { directorNote: draft.directorNote } : {}
+          };
+          pathRows = [...pathRows, synthetic];
+          triggerId = synthetic.id;
+        }
+
+        const ctx = assembleContext({
+          chat,
+          character,
+          persona,
+          settings,
+          triggerId,
+          capabilities: resolution.provider.capabilities,
+          configPrompt: resolution.configPrompt,
+          pathRows
+        });
+
+        try {
+          return buildPrompt(ctx);
+        } catch (err) {
+          if (err instanceof PromptBudgetError) {
+            throw new ApiError('prompt_budget_exceeded', 413, err.message, err.report);
+          }
+          throw err;
+        }
+      },
+      {
+        body: PromptPreviewBodySchema
+      }
+    )
     .post(
       '/:id/messages',
       ({ params, body, set }): Response | { message: unknown } => {

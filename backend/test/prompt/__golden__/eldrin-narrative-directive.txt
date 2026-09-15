@@ -78,7 +78,7 @@ A wayfarer seeking ancient knowledge.
     },
     {
       "role": "user",
-      "content": ":::narrator\nLightning strikes the glass spire with deafening force.\n:::\n\nReply using the directive block format and end with a state block.\n\n[Standing direction: Speak with archaic gravity.]\n[Director's note for this turn: Focus on the vibrating lens.]\nReply using the directive block format and end with a state block."
+      "content": ":::narrator\nLightning strikes the glass spire with deafening force.\n:::\n\n[Standing direction: Speak with archaic gravity.]\n[Director's note for this turn: Focus on the vibrating lens.]\nReply using the directive block format and end with a state block."
     }
   ],
   "stop": [

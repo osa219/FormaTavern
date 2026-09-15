@@ -230,6 +230,22 @@ describe('PromptBuilder', () => {
     expect(lastUserMsg.content).toContain('Reply using the directive block format and end with a state block.');
   });
 
+  it('attaches the closing instruction exactly once (no double bottom attach)', () => {
+    const built = buildPrompt(makeContext());
+    for (const msg of built.history) {
+      expect(msg.content.match(/Reply using the directive block format/g)?.length ?? 0).toBeLessThanOrEqual(1);
+    }
+    const lastUserMsg = built.history[built.history.length - 1];
+    expect(lastUserMsg.content.match(/Reply using the directive block format/g)?.length).toBe(1);
+    // Canonical 9a, 9b, 9c order in the final message
+    const idx9a = lastUserMsg.content.indexOf('[Standing direction:');
+    const idx9b = lastUserMsg.content.indexOf("[Director's note for this turn:");
+    const idx9c = lastUserMsg.content.indexOf('Reply using the directive block format');
+    expect(idx9a).toBeGreaterThanOrEqual(0);
+    expect(idx9b).toBeGreaterThan(idx9a);
+    expect(idx9c).toBeGreaterThan(idx9b);
+  });
+
   it('handles ending on assistant by appending synthetic [Continue the scene.]', () => {
     const assistantOnlyHistory: HistoryTurn[] = [
       {

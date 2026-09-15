@@ -375,7 +375,7 @@ describe('Shared Schema Validation', () => {
       });
     });
 
-    describe('Graduation Batch 1 schemas (Slice 5: decor, fx, labels)', () => {
+    describe('CharacterTheme schemas (decor layers, fx motion presets, labels)', () => {
       it('validates CharacterTheme with decor layers (≤ 2 layers) and fx motion presets', () => {
         const theme = {
           font: { family: 'Cinzel', size: '1rem', lineHeight: '1.7' },

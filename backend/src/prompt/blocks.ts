@@ -48,9 +48,10 @@ export function generateBlock(id: BlockId, ctx: PromptContext): string | null {
       }
 
       let stateDesc = 'End every reply with a state block exactly as shown above.';
-      if (ctx.character.stateSchema) {
+      const schemaFields = ctx.character.stateSchema ? Object.entries(ctx.character.stateSchema) : [];
+      if (schemaFields.length > 0) {
         const fieldLines: string[] = [];
-        for (const [key, field] of Object.entries(ctx.character.stateSchema)) {
+        for (const [key, field] of schemaFields) {
           if (field.type === 'enum') {
             fieldLines.push(`- ${key}: one of ${field.values.join(', ')} (default ${field.default})`);
           } else if (field.type === 'int') {

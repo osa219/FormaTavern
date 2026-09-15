@@ -16,6 +16,7 @@
   import TopBar from '../nav/TopBar.svelte';
   import MessageLog from './MessageLog.svelte';
   import Composer from '../composer/Composer.svelte';
+  import type { PromptDraft } from '$lib/prompt/preview';
   import NavDrawer from '../nav/NavDrawer.svelte';
   import LoreDrawer from './LoreDrawer.svelte';
   import SettingsSheet from '../settings/SettingsSheet.svelte';
@@ -34,6 +35,8 @@
   let ready = $state(false);
   let navOpen = $state(false);
   let loreOpen = $state(false);
+  let loreTab = $state<'about' | 'voice' | 'you' | 'state' | 'prompt'>('about');
+  let promptDraft = $state<PromptDraft | null>(null);
   let settingsOpen = $state(false);
   let directorOpen = $state(false);
   let editingTurn = $state<MessageWithTree | null>(null);
@@ -178,9 +181,20 @@
   }
 
   function handleStandingDirectionChange(dir: string) {
+    // Optimistic local update first: the director field is uncontrolled, so any
+    // re-render before the PATCH lands would overwrite the typed text with the
+    // stale prop (typed text "disappears" while the server already has it).
+    if (session.chat) {
+      session.chat.metadata = { ...session.chat.metadata, standingDirection: dir };
+    }
     api.api.chats({ id: session.chatId }).patch({
       metadata: { standingDirection: dir }
-    });
+    }).then(
+      () => {},
+      (err: any) => {
+        toasts.error(toUiError(err).message);
+      }
+    );
   }
 
   function closeActiveOverlay(): boolean {
@@ -321,6 +335,7 @@
       settingsOpen = false;
       navOpen = false;
       directorOpen = false;
+      if (!loreOpen) loreTab = 'about';
       loreOpen = !loreOpen;
     }}
     onOverrideState={(patch) => {
@@ -353,6 +368,14 @@
       onSend={(payload) => session.send(payload)}
       onStop={() => session.stop()}
       onStandingChange={handleStandingDirectionChange}
+      onPreview={(draft) => {
+        promptDraft = draft;
+        loreTab = 'prompt';
+        settingsOpen = false;
+        navOpen = false;
+        directorOpen = false;
+        loreOpen = true;
+      }}
     />
   </footer>
 
@@ -444,9 +467,15 @@
       {personas}
       currentState={session.currentState}
       busy={session.busy}
+      initialTab={loreTab}
+      {promptDraft}
       onClose={() => (loreOpen = false)}
       onSwitchPersona={handleSwitchPersona}
       onOpenStateOverride={() => (directorOpen = true)}
+      onEditSettings={() => {
+        loreOpen = false;
+        settingsOpen = true;
+      }}
     />
   {/if}
 </div>

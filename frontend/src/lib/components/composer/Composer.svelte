@@ -17,7 +17,8 @@
     directorOpen = $bindable(false),
     onSend,
     onStop,
-    onStandingChange
+    onStandingChange,
+    onPreview
   }: {
     busy?: boolean;
     personaName?: string;
@@ -33,6 +34,12 @@
     }) => void;
     onStop: () => void;
     onStandingChange: (dir: string) => void;
+    onPreview?: (draft: {
+      message?: string;
+      directorNote?: string;
+      narrativeRole?: NarrativeRole;
+      senderName?: string;
+    }) => void;
   } = $props();
 
   let messageText = $state<string>('');
@@ -113,6 +120,23 @@
             Note attached
           </span>
         {/if}
+        <button
+          type="button"
+          onclick={() =>
+            onPreview?.({
+              message: messageText || undefined,
+              directorNote: directorNote || undefined,
+              narrativeRole,
+              senderName: narrativeRole === 'npc' ? npcName || undefined : undefined
+            })}
+          disabled={!canSend}
+          class="flex items-center gap-1 rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs text-neutral-400 hover:text-neutral-200 transition-colors disabled:opacity-40"
+          title="Preview prompt with this draft"
+          aria-label="Preview prompt with this draft"
+        >
+          <Icon name="sparkles" size={13} />
+          <span>Preview</span>
+        </button>
         <button
           type="button"
           onclick={() => (directorOpen = !directorOpen)}

@@ -126,6 +126,19 @@ export const MessagePatchSchema = Type.Union([
 ]);
 export type MessagePatch = Static<typeof MessagePatchSchema>;
 
+export const PromptPreviewDraftSchema = Type.Object({
+  message: Type.Optional(Type.String()),
+  directorNote: Type.Optional(Type.String()),
+  narrativeRole: Type.Optional(NarrativeRoleSchema),
+  senderName: Type.Optional(Type.String({ maxLength: 120 }))
+});
+export type PromptPreviewDraft = Static<typeof PromptPreviewDraftSchema>;
+
+export const PromptPreviewBodySchema = Type.Object({
+  draft: Type.Optional(PromptPreviewDraftSchema)
+});
+export type PromptPreviewBody = Static<typeof PromptPreviewBodySchema>;
+
 export const StatePatchBodySchema = Type.Object({
   state: StateVectorSchema
 });

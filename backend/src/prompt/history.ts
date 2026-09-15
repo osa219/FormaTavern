@@ -94,38 +94,32 @@ export function serializeHistory(ctx: PromptContext): HistoryResult {
 
   let assistantPrefill: string | undefined;
 
-  // Handle Continuation
+  // Handle Continuation (bottom blocks are attached once by the builder after budget fitting)
   if (ctx.continuation) {
     const partial = stripOutOfBand(ctx.continuation.partial);
     if (ctx.provider.prefill) {
       assistantPrefill = applyMacros(partial, vars);
-      // Bottom blocks go on the last user message
-      attachBottomToLastUser(filtered, bottomText, vars);
     } else {
       // Without prefill: partial is pushed as last assistant turn
       filtered.push({
         role: 'assistant',
         content: applyMacros(partial, vars)
       });
-      // Synthetic user nudge carries bottom blocks
-      const nudge = CONTINUATION_NO_PREFILL_NUDGE + (bottomText ? '\n\n' + bottomText : '');
+      // Synthetic user nudge; the builder attaches bottom blocks to it
       filtered.push({
         role: 'user',
-        content: applyMacros(nudge, vars)
+        content: applyMacros(CONTINUATION_NO_PREFILL_NUDGE, vars)
       });
     }
   } else {
     // Normal turn
     if (filtered.length === 0 || filtered[filtered.length - 1].role === 'assistant') {
-      // Ending on assistant or empty: append synthetic continue scene
-      const synthetic = SYNTHETIC_CONTINUE_SCENE + (bottomText ? '\n\n' + bottomText : '');
+      // Ending on assistant or empty: append synthetic continue scene.
+      // Bottom blocks are attached once by the builder after budget fitting.
       filtered.push({
         role: 'user',
-        content: applyMacros(synthetic, vars)
+        content: applyMacros(SYNTHETIC_CONTINUE_SCENE, vars)
       });
-    } else {
-      // Attach to last user turn
-      attachBottomToLastUser(filtered, bottomText, vars);
     }
   }
 
@@ -144,25 +138,4 @@ export function serializeHistory(ctx: PromptContext): HistoryResult {
     skippedTurns,
     warnings
   };
-}
-
-function attachBottomToLastUser(
-  messages: MessagePayload[],
-  bottomText: string,
-  vars: { char: string; user: string }
-) {
-  if (!bottomText) return;
-
-  for (let i = messages.length - 1; i >= 0; i--) {
-    if (messages[i].role === 'user') {
-      messages[i].content += '\n\n' + applyMacros(bottomText, vars);
-      return;
-    }
-  }
-
-  // If no user message found, push synthetic
-  messages.push({
-    role: 'user',
-    content: SYNTHETIC_CONTINUE_SCENE + '\n\n' + applyMacros(bottomText, vars)
-  });
 }

@@ -38,6 +38,7 @@ export const HOOKS = {
     narrator: 'ft-narrator',
     composer: 'ft-composer',
     loreDrawer: 'ft-lore-drawer',
+    promptPreview: 'ft-prompt-preview',
     swipeCarousel: 'ft-swipe-carousel',
     turnToolbar: 'ft-turn-toolbar',
     streamCaret: 'ft-stream-caret',

@@ -3,6 +3,8 @@
   import { HOOKS } from '@formatavern/shared';
   import ShowcaseBody from '$lib/components/showcase/ShowcaseBody.svelte';
   import Icon from '$lib/components/ui/Icon.svelte';
+  import PromptTab from './PromptTab.svelte';
+  import type { PromptDraft } from '$lib/prompt/preview';
 
   let {
     open,
@@ -12,9 +14,12 @@
     personas = [],
     currentState = {},
     busy = false,
+    initialTab = 'about',
+    promptDraft = null,
     onClose,
     onSwitchPersona,
-    onOpenStateOverride
+    onOpenStateOverride,
+    onEditSettings
   }: {
     open: boolean;
     character: CharacterCard;
@@ -23,13 +28,24 @@
     personas?: Persona[];
     currentState?: StateVector;
     busy?: boolean;
+    initialTab?: LoreTab;
+    promptDraft?: PromptDraft | null;
     onClose: () => void;
     onSwitchPersona: (personaId: string) => Promise<void>;
     onOpenStateOverride?: () => void;
+    onEditSettings?: () => void;
   } = $props();
 
-  type LoreTab = 'about' | 'voice' | 'you' | 'state';
+  type LoreTab = 'about' | 'voice' | 'you' | 'state' | 'prompt';
+  // Note: only the drawer's *content* unmounts on close (`{#if open}` below) —
+  // this component (and its state) persists. So the entry point owns the tab:
+  // every open syncs to it (a mount-time seed silently keeps the last tab,
+  // which broke the composer's Preview jump).
   let activeTab = $state<LoreTab>('about');
+
+  $effect(() => {
+    if (open) activeTab = initialTab;
+  });
   let switching = $state(false);
 
   async function handleSelectPersona(e: Event) {
@@ -87,7 +103,8 @@
           { id: 'about', label: 'About' },
           { id: 'voice', label: 'Voice' },
           { id: 'you', label: 'You (Persona)' },
-          { id: 'state', label: 'State' }
+          { id: 'state', label: 'State' },
+          { id: 'prompt', label: 'Prompt' }
         ] as tab (tab.id)}
           <button
             type="button"
@@ -251,6 +268,19 @@
               </div>
             {/if}
           </div>
+
+        <!-- PROMPT TAB -->
+        {:else if activeTab === 'prompt'}
+          {#if chat}
+            <PromptTab
+              chatId={chat.id}
+              draft={promptDraft}
+              onEditSettings={() => onEditSettings?.()}
+              onEditVoice={() => (activeTab = 'voice')}
+            />
+          {:else}
+            <p class="text-xs text-neutral-500 italic">Open a chat to preview its prompt.</p>
+          {/if}
         {/if}
       </div>
     </div>

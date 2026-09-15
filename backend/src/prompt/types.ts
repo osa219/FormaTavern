@@ -81,6 +81,8 @@ export interface BlockReport {
   included: boolean;
   tokens: number;
   reason?: string;
+  /** Full rendered text of the block (present when included). Powers read-only prompt previews. */
+  text?: string;
 }
 
 export interface BuiltPrompt {

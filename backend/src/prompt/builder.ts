@@ -23,14 +23,16 @@ export function buildPrompt(ctx: PromptContext): BuiltPrompt {
       blockReportsMap.set(id, {
         id,
         included: true,
-        tokens: c.tokens
+        tokens: c.tokens,
+        text: content
       });
       includedSystemBlocks.push(content);
     } else {
       blockReportsMap.set(id, {
         id,
         included: false,
-        tokens: 0
+        tokens: 0,
+        reason: skipReason(id, ctx)
       });
     }
   }
@@ -50,14 +52,16 @@ export function buildPrompt(ctx: PromptContext): BuiltPrompt {
       blockReportsMap.set(id, {
         id,
         included: true,
-        tokens: c.tokens
+        tokens: c.tokens,
+        text: content
       });
       bottomParts.push(content);
     } else {
       blockReportsMap.set(id, {
         id,
         included: false,
-        tokens: 0
+        tokens: 0,
+        reason: skipReason(id, ctx)
       });
     }
   }
@@ -65,11 +69,11 @@ export function buildPrompt(ctx: PromptContext): BuiltPrompt {
   const bottomText = bottomParts.join('\n');
   const bottomTokens = bottomText ? countTokens(bottomText).tokens : 0;
 
-  // 3. Serialize History (Block 8) without bottom blocks attached yet
-  const historyRes = serializeHistory({ ...ctx, chat: { ...ctx.chat, standingDirection: undefined }, directorNote: undefined });
+  // 3. Serialize History (Block 8). serializeHistory returns plain messages
+  // with no bottom blocks attached; step 5 attaches them exactly once.
+  const historyRes = serializeHistory(ctx);
   warnings.push(...historyRes.warnings);
 
-  // In serializeHistory with empty bottom, messages are plain history
   const rawHistoryMessages = historyRes.messages;
   let rawHistoryTokens = 0;
   for (const m of rawHistoryMessages) {
@@ -92,11 +96,25 @@ export function buildPrompt(ctx: PromptContext): BuiltPrompt {
   });
   warnings.push(...fitRes.warnings);
 
-  // 5. Attach bottom blocks (9a, 9b, 9c) to the last user message of the fitted history
+  // 5. Attach bottom blocks (9a, 9b, 9c) to the last user message of the fitted history.
+  // This is the single attach point: serializeHistory returns plain messages.
   const finalHistory = fitRes.fittedMessages;
   if (bottomText.length > 0) {
     attachBottomBlocks(finalHistory, bottomText, vars);
   }
+
+  // 5b. Block 8 reports history exactly as sent: post-fit turns and tokens.
+  blockReportsMap.set('8', {
+    id: '8',
+    included: finalHistory.length > 0,
+    tokens: fitRes.historyTokens,
+    reason:
+      finalHistory.length > 0
+        ? undefined
+        : ctx.history.length === 0
+          ? 'no history yet'
+          : 'all history dropped over budget'
+  });
 
   // 6. Stop sequences
   const stop = buildStopSequences(dialect, ctx.persona.name);
@@ -123,6 +141,44 @@ export function buildPrompt(ctx: PromptContext): BuiltPrompt {
     },
     warnings
   };
+}
+
+const CLASSIC_MODE_REASON = 'classic mode (narrative blocks off)';
+
+function skipReason(id: BlockId, ctx: PromptContext): string {
+  const mode = ctx.chat.narrativeMode ?? 'classic';
+  switch (id) {
+    case '1':
+      return 'empty preamble';
+    case '1b':
+      return mode !== 'narrative' ? CLASSIC_MODE_REASON : 'empty narrative template';
+    case '1c':
+      return 'no provider prompt configured';
+    case '2':
+      return 'character description blank';
+    case '3':
+      return 'character personality blank';
+    case '4':
+      return 'scenario blank';
+    case '5':
+      return 'no example dialogue';
+    case '6':
+      return 'no lorebook entries';
+    case '6b':
+      return mode !== 'narrative' ? CLASSIC_MODE_REASON : 'no side characters present';
+    case '7':
+      return 'no persona';
+    case '7b':
+      return mode !== 'narrative' ? CLASSIC_MODE_REASON : 'no scene state';
+    case '9a':
+      return 'no standing direction';
+    case '9b':
+      return 'no director note for this turn';
+    case '9c':
+      return mode !== 'narrative' ? CLASSIC_MODE_REASON : 'empty closing instruction';
+    default:
+      return 'empty';
+  }
 }
 
 function attachBottomBlocks(
