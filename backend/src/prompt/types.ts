@@ -4,6 +4,7 @@ import type {
   ChatMetadata,
   StateVector,
   MessagePayload,
+  Segment,
   Dialect
 } from '@formatavern/shared';
 
@@ -101,6 +102,16 @@ export interface BuiltPrompt {
     droppedTurns: number;
   };
   warnings: string[];
+}
+
+export interface CharacterPromptPreview {
+  prompt: BuiltPrompt;
+  greeting: {
+    text: string;
+    segments: Segment[];
+    warnings: string[];
+    adherent: boolean;
+  } | null;
 }
 
 export class PromptBudgetError extends Error {

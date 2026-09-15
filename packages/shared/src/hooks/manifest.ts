@@ -15,7 +15,8 @@ export const HOOKS = {
     recentStories: 'ft-recent-stories',
     settings: 'ft-settings',
     personas: 'ft-personas',
-    studio: 'ft-studio'
+    studio: 'ft-studio',
+    studioPrompt: 'ft-studio-prompt'
   },
   character: {
     hero: 'ft-hero',

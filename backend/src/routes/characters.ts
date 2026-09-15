@@ -4,19 +4,30 @@ import {
   CharacterCreateSchema,
   CharacterPatchSchema,
   CharacterListQuerySchema,
+  CharacterPromptPreviewBodySchema,
+  DEFAULT_CHARACTER_THEME,
+  parseEnvelope,
   type CharacterCard,
-  type CharacterSummary
+  type CharacterPromptPreviewBody,
+  type CharacterSummary,
+  type ChatMetadata,
+  type Persona
 } from '@formatavern/shared';
 import type { Repositories } from '../db/contracts';
 import type { AssetStore } from '../assets/contracts';
+import type { ProviderRegistry } from '../engine/contracts';
+import { assembleContext } from '../engine/context';
 import { ApiError } from '../engine/errors';
+import { buildPrompt } from '../prompt/builder';
+import { PromptBudgetError, type BuiltPrompt, type CharacterPromptPreview } from '../prompt/types';
 
 export interface CharactersRouterDeps {
   repos: Repositories;
   assets?: AssetStore;
+  providers: ProviderRegistry;
 }
 
-export function createCharactersRouter({ repos, assets }: CharactersRouterDeps) {
+export function createCharactersRouter({ repos, assets, providers }: CharactersRouterDeps) {
   return new Elysia({ prefix: '/characters' })
     .get(
       '',
@@ -61,6 +72,99 @@ export function createCharactersRouter({ repos, assets }: CharactersRouterDeps) 
             draftFolder: t.Optional(t.String())
           })
         ])
+      }
+    )
+    .post(
+      '/prompt-preview',
+      ({ body }): CharacterPromptPreview => {
+        // Dry run for an unsaved Studio draft card: static blocks only
+        // (no history, no NPCs, no scene block), same builder as send.
+        const input = body as CharacterPromptPreviewBody;
+        const draft = input.card ?? {};
+
+        const settings = repos.settings.getAll();
+        const character: CharacterCard = {
+          id: 'preview-draft',
+          name: draft.name?.trim() || 'Character',
+          description: draft.description ?? '',
+          personality: draft.personality ?? '',
+          scenario: draft.scenario ?? '',
+          firstMessage: draft.firstMessage ?? '',
+          exampleDialogue: draft.exampleDialogue,
+          style: draft.style ?? DEFAULT_CHARACTER_THEME,
+          stateSchema: draft.stateSchema,
+          stateBindings: draft.stateBindings,
+          initialState: draft.initialState,
+          tags: draft.tags,
+          creator: draft.creator,
+          showcase: draft.showcase,
+          customCss: draft.customCss,
+          tagline: draft.tagline
+        };
+
+        const persona: Persona =
+          (input.personaId ? repos.personas.get(input.personaId) : repos.personas.getDefault()) ?? {
+            id: 'preview-persona',
+            name: 'Traveler',
+            description: '',
+            isDefault: true
+          };
+
+        const chatMeta: ChatMetadata = {
+          narrativeMode: settings.narrative.defaultMode,
+          envelopeDialect: settings.narrative.defaultDialect
+        };
+
+        const activeConfig = settings.provider.activeConfigId
+          ? repos.providerConfigs.get(settings.provider.activeConfigId)
+          : null;
+        const resolution = providers.resolve(settings, activeConfig);
+
+        const ctx = assembleContext({
+          chat: { metadata: chatMeta },
+          character,
+          persona,
+          settings,
+          triggerId: 'preview-root',
+          capabilities: resolution.provider.capabilities,
+          configPrompt: resolution.configPrompt,
+          pathRows: []
+        });
+
+        let prompt: BuiltPrompt;
+        try {
+          // No scene block at Studio level: scene state is per-chat runtime.
+          prompt = buildPrompt({ ...ctx, sceneState: undefined });
+        } catch (err) {
+          if (err instanceof PromptBudgetError) {
+            throw new ApiError('prompt_budget_exceeded', 413, err.message, err.report);
+          }
+          throw err;
+        }
+
+        const greetingText = character.firstMessage.trim();
+        const greeting = greetingText
+          ? (() => {
+              const parsed = parseEnvelope(greetingText, {
+                primaryCharacter: character.name,
+                dialect: chatMeta.envelopeDialect ?? 'directive',
+                knownNames: [character.name],
+                personaName: persona.name,
+                streaming: false
+              });
+              return {
+                text: greetingText,
+                segments: parsed.segments,
+                warnings: parsed.warnings.map((w) => w.code),
+                adherent: parsed.adherent
+              };
+            })()
+          : null;
+
+        return { prompt, greeting };
+      },
+      {
+        body: CharacterPromptPreviewBodySchema
       }
     )
     .patch(

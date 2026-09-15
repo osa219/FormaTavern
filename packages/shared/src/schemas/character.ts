@@ -56,6 +56,22 @@ export const CharacterCreateSchema = Type.Composite([
 ]);
 export type CharacterCreate = Static<typeof CharacterCreateSchema>;
 
+/**
+ * Lenient draft-card input for the Studio prompt preview. Unlike create,
+ * every field is optional and blank strings are accepted: they fall back to
+ * neutral defaults server-side so an unsaved, half-filled card still previews.
+ */
+export const CharacterPromptPreviewBodySchema = Type.Object({
+  card: Type.Optional(
+    Type.Composite([
+      Type.Omit(Type.Partial(CharacterCreateSchema), ['id', 'name']),
+      Type.Object({ name: Type.Optional(Type.String({ maxLength: 120 })) })
+    ])
+  ),
+  personaId: Type.Optional(Id)
+});
+export type CharacterPromptPreviewBody = Static<typeof CharacterPromptPreviewBodySchema>;
+
 export const CharacterPatchSchema = Type.Composite([
   Type.Partial(Type.Omit(CharacterCardSchema, ['id', 'createdAt', 'updatedAt', 'customCss'])),
   Type.Object({

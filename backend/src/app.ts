@@ -28,7 +28,7 @@ export interface AppDeps {
 }
 
 export function createApp({ repos, hub, providers, assets, options }: AppDeps) {
-  const charactersRouter = createCharactersRouter({ repos, assets });
+  const charactersRouter = createCharactersRouter({ repos, assets, providers });
   const tagsRouter = createTagsRouter(repos);
   const personasRouter = createPersonasRouter(repos);
   const settingsRouter = createSettingsRouter(repos);

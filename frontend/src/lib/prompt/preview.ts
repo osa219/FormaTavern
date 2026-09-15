@@ -41,6 +41,26 @@ export function isPreviewData(value: unknown): value is PreviewData {
   return typeof v.systemPrompt === 'string' && Array.isArray(v.history) && Array.isArray(v.blocks);
 }
 
+/** Greeting parse section of the Studio draft preview. */
+export interface GreetingPreview {
+  text: string;
+  segments: Array<{ kind: string; name?: string; text: string }>;
+  warnings: string[];
+  adherent: boolean;
+}
+
+/** Shape of the characters prompt-preview dry run (static prompt, no history). */
+export interface StudioPreviewData {
+  prompt: PreviewData;
+  greeting: GreetingPreview | null;
+}
+
+export function isStudioPreviewData(value: unknown): value is StudioPreviewData {
+  if (typeof value !== 'object' || value === null) return false;
+  const v = value as Record<string, unknown>;
+  return isPreviewData(v.prompt);
+}
+
 /** Display names for canonical block ids (fixed order comes from the backend). */
 export const BLOCK_LABELS: Record<string, string> = {
   '1': 'Preamble (global)',

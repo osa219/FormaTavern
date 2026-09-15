@@ -13,6 +13,7 @@
   import StatePanel from './StatePanel.svelte';
   import BindingsPanel from './BindingsPanel.svelte';
   import GalleryManager from './GalleryManager.svelte';
+  import StudioPromptPanel from './StudioPromptPanel.svelte';
   import CustomCssPanel from './CustomCssPanel.svelte';
   import LivePreview from './LivePreview.svelte';
   import ConfirmDialog from '$lib/components/dialogs/ConfirmDialog.svelte';
@@ -20,7 +21,7 @@
 
   let { draft }: { draft: CharacterDraft } = $props();
 
-  type StudioTab = 'identity' | 'voice' | 'showcase' | 'aesthetic' | 'css' | 'state' | 'bindings' | 'gallery';
+  type StudioTab = 'identity' | 'voice' | 'showcase' | 'aesthetic' | 'css' | 'state' | 'bindings' | 'gallery' | 'prompt';
   let activeTab = $state<StudioTab>('identity');
   let saving = $state(false);
   let discardConfirmOpen = $state(false);
@@ -148,7 +149,8 @@
           { id: 'css', label: 'Custom CSS' },
           { id: 'state', label: 'State' },
           { id: 'bindings', label: 'Bindings' },
-          { id: 'gallery', label: 'Gallery' }
+          { id: 'gallery', label: 'Gallery' },
+          { id: 'prompt', label: 'Prompt' }
         ] as tab}
           <button
             type="button"
@@ -180,6 +182,8 @@
           <BindingsPanel {draft} />
         {:else if activeTab === 'gallery'}
           <GalleryManager {draft} />
+        {:else if activeTab === 'prompt'}
+          <StudioPromptPanel {draft} />
         {/if}
       </div>
     </div>
