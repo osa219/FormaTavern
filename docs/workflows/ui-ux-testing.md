@@ -16,9 +16,11 @@ $tmp = "C:\Users\osama\AppData\Local\Temp\opencode\edge-probe"
   --virtual-time-budget=8000 --window-size=1440,1200 `
   --screenshot="$tmp\page.png" "http://127.0.0.1:5173/<route>"
 
-# Rendered DOM (what Svelte actually mounted, after effects settle)
+# Rendered DOM (what Svelte actually mounted, after effects settle).
+# Pipe through Out-File — a bare `> file 2>$null` redirect has produced 0-byte
+# dumps in this host (see §4). Never trust a 0-byte dump; re-run before concluding.
 & $edge --headless --disable-gpu --no-sandbox --user-data-dir="$tmp\profileM" `
-  --virtual-time-budget=8000 --dump-dom "http://127.0.0.1:5173/<route>" 2>$null
+  --virtual-time-budget=8000 --dump-dom "http://127.0.0.1:5173/<route>" | Out-File "$tmp\page.html" -Encoding utf8
 
 # Console (JS errors, warnings — the decisive signal more than once)
 & $edge --headless --disable-gpu --no-sandbox --user-data-dir="$tmp\profileK" `
@@ -114,6 +116,22 @@ Theme-not-showing? Check each link; stop at the first broken one:
 - **Watchers break on mapped/subst drives.** `... will not be watched` warnings mean
   Vite can keep serving stale transforms even across a hard reload. Restart the
   dev servers to quarantine staleness before concluding the code is wrong.
+- **Headless Edge enforces a ~496px minimum layout width.** Requesting
+  `--window-size=390,844` still lays out at ~496px (`innerWidth` reports 496)
+  while the screenshot bitmap stays 390 wide — so right-edge content (e.g. a
+  top-right edit pencil) is cropped out of the IMAGE while the DOM looks
+  perfect. It mimics "DOM-present but not painted" exactly. Rule: never
+  conclude paint from a sub-500px capture; put `innerWidth` in the
+  self-reporting probe readout and shoot narrow captures at ≥500px instead.
+- **`--dump-dom` output needs `Out-File`, not `>` redirection.** A bare
+  `> file 2>$null` yielded 0-byte dumps twice in a row here (indistinguishable
+  from the fresh-profile flake below); piping the same command through
+  `Out-File -Encoding utf8` produced 155KB. A 0-byte dump is a tooling signal,
+  not a page signal — change the capture line before retrying.
+- **Screenshot files flush just after process exit.** `Get-Item` immediately
+  after Edge exits can report "does not exist" for a screenshot Edge itself
+  just confirmed writing ("N bytes written"). Re-check existence instead of
+  re-running the capture.
 
 ## 5. Definition of done for a UI fix
 

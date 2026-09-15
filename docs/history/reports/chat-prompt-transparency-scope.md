@@ -1,6 +1,6 @@
 # Chat Frontend + Prompt Transparency Scope
 
-**Status:** §2–§3 implemented and user-verified; §4–§7 agreed, not started; §8 scoped, deferred.
+**Status:** §2–§3 implemented and user-verified; §7 implemented and agent-verified (human check pending); §4–§6 agreed, not started; §8 scoped, deferred.
 **Date:** 2026-09-14 UTC
 **Scope:** Chat page frontend readability, user-turn persistence, narrative template leakage, prompt preview per chat and per character. No streaming, parser, or storage engine changes beyond what is listed; no visual redesign beyond readability fixes.
 **Reference:** Screenshots of `test` chat showing Guide-only history with leaked `[state]` text, and empty `test` Studio card.
@@ -93,6 +93,8 @@ Existing edit points stay as-is: global preamble (Block 1), provider `custom_pro
 ---
 
 ## §7 — Inline per-segment editing (Janitor parity)
+
+**Status:** Done — implemented, agent-verified headlessly (suites + DOM/screenshot probes); human in-browser check pending.
 
 **Agreed:** per-bubble inline edit in place, no modal for the common case. Reference: JanitorAI chat — pencil per bubble (top-right on hover), click turns that bubble into a textarea, check/cross commits/cancels.
 
