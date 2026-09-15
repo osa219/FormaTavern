@@ -1,6 +1,6 @@
-# Chat Prompt Transparency Walkthrough: User Turns + Template Leak (Batch 1) + Inline Segment Editing (Batch 2) + Chat Prompt Preview (Batch 3)
+# Chat Prompt Transparency Walkthrough: User Turns + Template Leak (Batch 1) + Inline Segment Editing (Batch 2) + Chat Prompt Preview (Batch 3) + Studio Prompt Preview (Batch 4)
 
-As-built record for [`docs/history/reports/chat-prompt-transparency-scope.md`](../reports/chat-prompt-transparency-scope.md) §2–§3 (Batch 1, built in the order: user-segment persistence → scroll-chain fix → template neutralization), §7 (Batch 2: inline per-segment editing), and §5 (Batch 3: chat prompt preview). Scope §§4, §6 untouched; §8 remains scoped (not implemented) and deferred. Batch 1 commits: `051244c` (chat fixes), `5f4719d` (prompt fix); scope-doc status updates in `4718320`. Batch 2 commits: `c9bc1b8` (feat), `e3b49ce` (docs). Batch 3 (uncommitted at time of writing): §5 implementation + tests + a prompt-assembly bug fix found through the preview; scope-doc §5 status update.
+As-built record for [`docs/history/reports/chat-prompt-transparency-scope.md`](../reports/chat-prompt-transparency-scope.md) §2–§3 (Batch 1, built in the order: user-segment persistence → scroll-chain fix → template neutralization), §7 (Batch 2: inline per-segment editing), §5 (Batch 3: chat prompt preview), and §6 (Batch 4: Studio prompt preview). Scope §4 untouched; §8 remains scoped (not implemented) and deferred. Batch 1 commits: `051244c` (chat fixes), `5f4719d` (prompt fix); scope-doc status updates in `4718320`. Batch 2 commits: `c9bc1b8` (feat), `e3b49ce` (docs). Batch 3 commits: `83b0c7d` (feat), `c97d77c` (docs). Batch 4 (uncommitted at time of writing): §6 implementation + tests; scope-doc §6 status update.
 
 ## 1. What changed
 
@@ -103,3 +103,27 @@ As-built record for scope §5, built in the order: shared draft schema → build
 * **Block 8 expanded to "Skipped - empty" despite green dot + tokens.** Real UI bug: block 8 is included but carries no inline `text` (its content *is* the history section), so it fell into the skipped branch. Fix: block 8's body now points at `History as sent` with turn/token counts.
 * **Copy-block "takes other things" — not reproduced, integrity proven.** Live-API check: block 1b's text (716 chars) appears in the system prompt exactly once, so per-block copy moves exactly that block. 1b is legitimately large (format guide + example + agency clause + state instructions) — likely surprise at its size, or confusion with the Full-system-prompt copy button one section down. Awaiting a paste sample to close this out.
 * **Bonus wart found during the copy check:** schemaless cards printed a dangling `State schema fields:` header with no fields in 1b. Fixed (`blocks.ts` falls back to the generic mood/scene line when the schema has no entries); golden untouched (Eldrin has fields).
+
+---
+
+## Batch 4 — §6 Studio prompt preview
+
+As-built record for scope §6, built in the order: lenient draft schema → characters `prompt-preview` route → Studio panel + tab → shared `PromptBlocks` extraction → tests. Read-only aggregate as proposed (scope §9 Q4's inline-editing alternative not taken); the empty-card banner names the Voice tab in text, no cross-tab jump.
+
+### 1. What changed
+
+* **Dry-run endpoint (`backend/src/routes/characters.ts`)** — `POST /api/characters/prompt-preview` with `{ card?, personaId? }` (`CharacterPromptPreviewBodySchema` in shared `character.ts`). Builds a full card server-side with neutral defaults (blank name → `Character`, missing strings → `''`, default theme) so half-filled unsaved drafts preview; persona defaults to the default persona with a `Traveler` literal fallback. Same builder as send over empty history; scene state forced off (per-chat runtime, so 7b skips with reason); greeting parsed with `parseEnvelope` against the draft name. `CharactersRouterDeps` gains `providers` (wired in `app.ts`).
+* **Lenient-name lesson:** `Type.Partial` keeps `minLength` on provided-but-empty strings, so a Studio draft (`name: ''`) 422'd against the first schema cut. The schema omits `name` from the partial and re-adds it without `minLength`; the handler's blank-fallback does the rest. Only `name` needed relaxing (all other card strings have no minimum).
+* **Studio UI (`StudioPromptPanel.svelte`, new; 9th `StudioShell` tab)** — debounced live resolve (500 ms) keyed on prompt-relevant card fields only, so style/showcase edits don't refetch; `Updating…` indicator plus manual Refresh; empty-core banner (2–5 blank) pointing at the Voice tab; greeting section (segment chips, clean/needs-state badge, warnings, raw text, or a no-greeting note). New `ft-studio-prompt` hook, manifest count 35 → 36.
+* **Shared presentational `PromptBlocks.svelte`** — the budget bar / warnings / block list / history / system / prefill / stops half of `PromptTab`, reused unchanged by both surfaces (one visual language for prompt internals; the open P3 theming question covers both). `PromptTab` slimmed to its fetch shell; suites confirm no behavior change. Shared `preview.ts` gains the `GreetingPreview` / `StudioPreviewData` shapes and guard.
+
+### 2. Verification
+
+* Suites: backend 252/252 (249 + 3 character-preview), frontend 202/202 (199 + 3 studio-panel), shared 193/193; `svelte-check` clean; `db:check` clean.
+* Live API against the real dev DB: full draft 200 (9 static blocks, greeting parses to one clean `character` segment, history single synthetic turn with one closing), empty card 200 (2–5 skipped with reasons, greeting null), blank body 200.
+* Headless Studio DOM/screenshot check pending: the frontend dev server was down at verification time, so the Studio tab button + panel paint are covered by SSR mount tests + the live API only.
+
+### 3. Deviations and fixes during implementation
+
+* **Stale-backend trap, caught live.** The first live probe returned 422 on the empty card while the suite passed — the running backend predated the schema relaxation (mapped-drive watcher miss, now confirmed to bite backend `--watch` too, not just Vite). Restarted the backend from `backend/` the same way it was launched (`bun --watch src/index.ts`) and re-probed green. Lesson: a passing suite plus a failing live probe means restart the server before doubting the code — in that order.
+* **History is one synthetic turn, not empty** (same shape as the §5 empty-chat case): the test initially asserted `[]` and was corrected — the provider needs a user turn, so "no history" still sends `[Continue the scene.]` + bottom blocks.

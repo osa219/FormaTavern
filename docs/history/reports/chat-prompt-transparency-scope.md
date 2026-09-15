@@ -1,6 +1,6 @@
 # Chat Frontend + Prompt Transparency Scope
 
-**Status:** §2–§3 implemented and user-verified; §7–§5 implemented and agent-verified (human check pending); §4, §6 agreed, not started; §8 scoped, deferred.
+**Status:** §2–§3 implemented and user-verified; §7–§5–§6 implemented and agent-verified (human check pending); §4 agreed, not started; §8 scoped, deferred.
 **Date:** 2026-09-14 UTC
 **Scope:** Chat page frontend readability, user-turn persistence, narrative template leakage, prompt preview per chat and per character. No streaming, parser, or storage engine changes beyond what is listed; no visual redesign beyond readability fixes.
 **Reference:** Screenshots of `test` chat showing Guide-only history with leaked `[state]` text, and empty `test` Studio card.
@@ -84,6 +84,8 @@ Existing edit points stay as-is: global preamble (Block 1), provider `custom_pro
 ---
 
 ## §6 — Prompt preview per character (Studio)
+
+**Status:** Done — implemented, agent-verified (suites + live API; headless Studio capture pending, frontend dev server was down). Ships as `POST /api/characters/prompt-preview` with lenient `{ card?, personaId? }`; 9th Studio tab with debounced live resolve, empty-card banner, and greeting parse. Read-only aggregate as proposed.
 
 **Agreed:** smaller Studio-level dry-run answering *what will this card send before any history exists*. No history at this level.
 
