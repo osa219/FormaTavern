@@ -59,7 +59,7 @@
     {/if}
   </div>
 
-  <div class="flex items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
+  <div class="flex items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
     {#if isAssistant}
       {#if !isLeaf}
         <button
@@ -102,8 +102,8 @@
       type="button"
       onclick={onEdit}
       class="flex h-7 w-7 items-center justify-center rounded text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
-      title="Edit turn"
-      aria-label="Edit turn"
+      title="Edit raw turn"
+      aria-label="Edit raw turn"
     >
       <Icon name="edit" size={14} />
     </button>

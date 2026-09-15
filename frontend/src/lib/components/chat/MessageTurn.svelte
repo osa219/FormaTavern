@@ -3,8 +3,10 @@
   import { HOOKS } from '@formatavern/shared';
   import NarratorBlock from './NarratorBlock.svelte';
   import SpeechBubble from './SpeechBubble.svelte';
+  import SegmentEditor from './SegmentEditor.svelte';
   import ErrorSlate from './ErrorSlate.svelte';
   import ReasoningBlock from './ReasoningBlock.svelte';
+  import Icon from '../ui/Icon.svelte';
   import { npcHue } from '$lib/render/npcTint';
   import type { Snippet } from 'svelte';
 
@@ -21,7 +23,13 @@
     isThinking = false,
     toolbar,
     onRetry,
-    fx = 'none'
+    fx = 'none',
+    editable = false,
+    editingIndex = null,
+    editSaving = false,
+    onStartEdit,
+    onSaveEdit,
+    onCancelEdit
   }: {
     segments?: Segment[];
     status?: MessageStatus;
@@ -36,9 +44,17 @@
     toolbar?: Snippet;
     onRetry?: () => void;
     fx?: 'none' | 'breathe' | 'float' | 'glow' | null;
+    editable?: boolean;
+    editingIndex?: number | null;
+    editSaving?: boolean;
+    onStartEdit?: (index: number) => void;
+    onSaveEdit?: (index: number, text: string) => void;
+    onCancelEdit?: () => void;
   } = $props();
 
   const lastIdx = $derived(segments.length - 1);
+  // Inline editing is for settled turns only — never the live stream or an error slate.
+  const canEditSeg = $derived(editable && !streaming && status !== 'streaming' && status !== 'error');
 </script>
 
 <article
@@ -51,19 +67,41 @@
   <ReasoningBlock {reasoning} durationMs={reasoningDurationMs} {isThinking} {streaming} />
 
   {#each segments as seg, i (i)}
-    {#if seg.kind === 'narrator'}
-      <NarratorBlock text={seg.text} live={streaming && i === lastIdx} showSeparator={i > 0} />
-    {:else}
-      <SpeechBubble
-        variant={seg.kind}
-        name={seg.name}
-        {primaryName}
-        hue={seg.kind === 'npc' ? npcHue(seg.name ?? 'NPC', npcs) : null}
-        text={seg.text}
-        live={streaming && i === lastIdx}
-        {fx}
-      />
-    {/if}
+    <div class="group/seg relative w-full">
+      {#if editingIndex === i}
+        <SegmentEditor
+          initial={seg.text}
+          saving={editSaving}
+          onSave={(text) => onSaveEdit?.(i, text)}
+          onCancel={() => onCancelEdit?.()}
+        />
+      {:else}
+        {#if seg.kind === 'narrator'}
+          <NarratorBlock text={seg.text} live={streaming && i === lastIdx} showSeparator={i > 0} />
+        {:else}
+          <SpeechBubble
+            variant={seg.kind}
+            name={seg.name}
+            {primaryName}
+            hue={seg.kind === 'npc' ? npcHue(seg.name ?? 'NPC', npcs) : null}
+            text={seg.text}
+            live={streaming && i === lastIdx}
+            {fx}
+          />
+        {/if}
+        {#if canEditSeg && editingIndex === null}
+          <button
+            type="button"
+            onclick={() => onStartEdit?.(i)}
+            class="absolute top-0 right-1 z-10 flex h-7 w-7 items-center justify-center rounded bg-neutral-900/80 text-neutral-400 opacity-100 shadow-sm backdrop-blur transition-opacity duration-150 hover:bg-neutral-800 hover:text-neutral-200 focus-visible:opacity-100 md:opacity-0 md:group-hover/seg:opacity-100 md:group-focus-within/seg:opacity-100 [@media(hover:none)]:opacity-100"
+            title="Edit segment"
+            aria-label="Edit segment {i + 1}"
+          >
+            <Icon name="edit" size={13} />
+          </button>
+        {/if}
+      {/if}
+    </div>
   {/each}
 
   {#if streaming && segments.length === 0 && !reasoning && !isThinking}

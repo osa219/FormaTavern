@@ -72,6 +72,43 @@
   const lastIndex = $derived(session.messages.length - 1);
   const fx = $derived(session.character?.style?.fx?.bubble ?? 'none');
 
+  // Single active inline segment edit across the whole log (scope §7: first cut).
+  let segEditing = $state<{ messageId: string; index: number } | null>(null);
+  let segSaving = $state(false);
+
+  // A new generation takes over the log — drop any open editor.
+  $effect(() => {
+    if (session.busy) segEditing = null;
+  });
+
+  function canInlineEdit(msg: MessageWithTree): boolean {
+    if (session.busy || segSaving) return false;
+    if (msg.status === 'streaming' || msg.status === 'error') return false;
+    if (msg.id.startsWith('tmp-')) return false;
+    return true;
+  }
+
+  function startSegEdit(msg: MessageWithTree, index: number) {
+    if (!canInlineEdit(msg)) return;
+    segEditing = { messageId: msg.id, index };
+  }
+
+  function cancelSegEdit() {
+    if (!segSaving) segEditing = null;
+  }
+
+  async function saveSegEdit(msg: MessageWithTree, index: number, text: string) {
+    const base = displaySegments(msg);
+    const next = base.map((s, i) => (i === index ? { ...s, text } : s));
+    segSaving = true;
+    try {
+      await session.editSegments(msg.id, next);
+      segEditing = null;
+    } finally {
+      segSaving = false;
+    }
+  }
+
   function displaySegments(msg: MessageWithTree): Segment[] {
     if (msg.segments && msg.segments.length > 0) return msg.segments;
     const text = msg.content?.trim() ?? '';
@@ -116,6 +153,12 @@
         reasoning={msg.metadata?.reasoning}
         reasoningDurationMs={msg.metadata?.reasoningDurationMs}
         onRetry={() => session.regenerate(msg.id)}
+        editable={canInlineEdit(msg)}
+        editingIndex={segEditing?.messageId === msg.id ? segEditing.index : null}
+        editSaving={segEditing?.messageId === msg.id && segSaving}
+        onStartEdit={(index) => startSegEdit(msg, index)}
+        onSaveEdit={(index, text) => saveSegEdit(msg, index, text)}
+        onCancelEdit={cancelSegEdit}
       >
         {#snippet toolbar()}
           <TurnToolbar

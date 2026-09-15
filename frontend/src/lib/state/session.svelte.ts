@@ -312,6 +312,21 @@ export class ChatSession {
     }
   }
 
+  async editSegments(messageId: string, segments: Segment[]): Promise<void> {
+    try {
+      // Eden narrows the MessagePatch union body (kind: never); the backend
+      // runtime-validates via MessagePatchSchema, covered by tree-lifecycle tests.
+      const { error } = await api.api.messages({ id: messageId }).patch({ segments } as any);
+      if (error) {
+        toasts.error(toUiError(error).message);
+        return;
+      }
+      await this.refetchState();
+    } catch (err: any) {
+      toasts.error(toUiError(err).message);
+    }
+  }
+
   async remove(messageId: string): Promise<void> {
     try {
       const { error } = await api.api.messages({ id: messageId }).delete();

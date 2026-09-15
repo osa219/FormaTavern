@@ -346,6 +346,55 @@ describe('routes/messages tree lifecycle', () => {
     expect(invJson.error.code).toBe('serialize_failed');
   });
 
+  it('PATCH message segments: valid per-segment edit re-serializes content (§7 inline editing)', async () => {
+    const { app, repos } = setupTestApp();
+
+    const chat = repos.chats.create({
+      id: 'c-segedit',
+      title: 'Segment Edit',
+      primaryCharacterId: 'eldrin-the-mage',
+      activePersonaId: 'persona-default',
+      metadata: { envelopeDialect: 'directive', narrativeMode: 'narrative' }
+    });
+
+    const A1 = repos.messages.insert({
+      id: '01SEGEDA1',
+      chatId: chat.id,
+      parentId: null,
+      role: 'assistant',
+      narrativeRole: 'character',
+      content: 'Original content',
+      segments: [
+        { kind: 'narrator', text: 'Rain hammers the shutters.' },
+        { kind: 'character', name: 'Eldrin the Mage', text: 'Come in, traveler.' }
+      ],
+      state: { mood: 'calm' },
+      status: 'complete'
+    });
+
+    const res = await app.handle(
+      new Request(`http://127.0.0.1/api/messages/${A1.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          segments: [
+            { kind: 'narrator', text: 'Rain hammers the shutters.' },
+            { kind: 'character', name: 'Eldrin the Mage', text: 'Come in, seeker.' }
+          ]
+        })
+      })
+    );
+
+    expect(res.status).toBe(200);
+    const updated = (await res.json()) as MessageWithTree;
+    expect(updated.segments[1].text).toBe('Come in, seeker.');
+    expect(updated.content).toContain('Come in, seeker.');
+    expect(updated.content).not.toContain('Come in, traveler.');
+    // Segment edits preserve turn state and bump the edited counter.
+    expect(updated.state).toEqual({ mood: 'calm' });
+    expect(updated.metadata.edited?.count).toBe(1);
+  });
+
   it('DELETE message: cascades through subtree, moves activeLeafId to parent, prevents delete if descendant streaming', async () => {
     const { app, repos, hub } = setupTestApp();
 
