@@ -47,7 +47,7 @@ export function generateBlock(id: BlockId, ctx: PromptContext): string | null {
         syntaxDesc = 'Use prefix speaker lines (Speaker: text).';
       }
 
-      let stateDesc = 'End every reply with a state block.';
+      let stateDesc = 'End every reply with a state block exactly as shown above.';
       if (ctx.character.stateSchema) {
         const fieldLines: string[] = [];
         for (const [key, field] of Object.entries(ctx.character.stateSchema)) {
@@ -69,6 +69,7 @@ export function generateBlock(id: BlockId, ctx: PromptContext): string | null {
         syntaxDesc,
         'One turn may contain narrator, {{char}}, and side characters.',
         example,
+        'The example above teaches format only. Never reuse its names, places, or lines — draw every name and place from the character, scenario, and story.',
         AGENCY_CLAUSE,
         stateDesc
       ].join('\n\n');

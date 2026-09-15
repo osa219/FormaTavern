@@ -12,9 +12,13 @@ The morning mist clears over the valley.
 We should press on before the scouts spot us.
 :::
 
-:::npc[Guide]
-The mountain pass is just ahead.
-:::`;
+:::npc[Side character]
+The road ahead looks clear, for now.
+:::
+
+\`\`\`state
+{"mood":"calm"}
+\`\`\``;
 
 export const XML_SYNTAX_EXAMPLE = `<narrator>
 The morning mist clears over the valley.
@@ -24,15 +28,23 @@ The morning mist clears over the valley.
 We should press on before the scouts spot us.
 </character>
 
-<npc name="Guide">
-The mountain pass is just ahead.
-</npc>`;
+<npc name="Side character">
+The road ahead looks clear, for now.
+</npc>
+
+<state>
+{"mood":"calm"}
+</state>`;
 
 export const PREFIX_SYNTAX_EXAMPLE = `Narrator: The morning mist clears over the valley.
 
 {{char}}: We should press on before the scouts spot us.
 
-Guide: The mountain pass is just ahead.`;
+Side character: The road ahead looks clear, for now.
+
+\`\`\`state
+{"mood":"calm"}
+\`\`\``;
 
 export const CONTINUATION_PREFILL_REMINDER =
   'Continue the reply exactly where it stopped, then end with a state block.';

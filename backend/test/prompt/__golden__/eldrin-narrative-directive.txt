@@ -14,13 +14,19 @@ The morning mist clears over the valley.
 We should press on before the scouts spot us.
 :::
 
-:::npc[Guide]
-The mountain pass is just ahead.
+:::npc[Side character]
+The road ahead looks clear, for now.
 :::
+
+```state
+{"mood":"calm"}
+```
+
+The example above teaches format only. Never reuse its names, places, or lines — draw every name and place from the character, scenario, and story.
 
 Never write dialogue, thoughts, feelings, or actions for Traveler. Stop and yield when Traveler must react or decide.
 
-End every reply with a state block.
+End every reply with a state block exactly as shown above.
 State schema fields:
 - mood: one of calm, curious, urgent, furious (default calm)
 - affinity: integer 0–10 (default 5)
