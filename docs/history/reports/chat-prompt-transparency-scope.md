@@ -1,6 +1,6 @@
 # Chat Frontend + Prompt Transparency Scope
 
-**Status:** §2–§3 implemented and user-verified; §7 implemented and agent-verified (human check pending); §4–§6 agreed, not started; §8 scoped, deferred.
+**Status:** §2–§3 implemented and user-verified; §7–§5 implemented and agent-verified (human check pending); §4, §6 agreed, not started; §8 scoped, deferred.
 **Date:** 2026-09-14 UTC
 **Scope:** Chat page frontend readability, user-turn persistence, narrative template leakage, prompt preview per chat and per character. No streaming, parser, or storage engine changes beyond what is listed; no visual redesign beyond readability fixes.
 **Reference:** Screenshots of `test` chat showing Guide-only history with leaked `[state]` text, and empty `test` Studio card.
@@ -71,6 +71,8 @@ Existing edit points stay as-is: global preamble (Block 1), provider `custom_pro
 ---
 
 ## §5 — Prompt preview per chat
+
+**Status:** Done — implemented, agent-verified (suites + live API/proxy + headless DOM/screenshot); human in-browser check pending. Ships as `POST /api/chats/:id/prompt-preview` (not the sketched `GET` — draft text needs a body) with optional `{ draft }` included only via the explicit composer Preview button. Also fixed alongside: bottom blocks were attached twice on every narrative send (closing instruction duplicated) — single attach point now, golden regenerated.
 
 **Agreed:** read-only drawer inspection answering *what would be sent on the next turn*.
 
