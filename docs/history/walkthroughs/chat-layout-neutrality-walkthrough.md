@@ -216,6 +216,76 @@ Complete end-to-end verification, audit production build and bundle sizes, enhan
 3. **Database Integrity**: `bun run db:check` passes with `user_version=7`, `layout_valid=ok (3 checked)`, clean WAL, clean FKs, and clean active leaf state.
 4. **Production Build**: `bun run build` completes successfully in 7.4s with `@sveltejs/adapter-static` generating the production bundle.
 
+---
+
+## Section 7: Post-Blueprint Architectural Horizons: Surface-Scoped Customization & Immersive Studio Chat Frame
+
+### Objective
+Elevate the Custom CSS authoring experience in Character Studio by cleanly separating the two primary customization domains—**Companion Showcase** (`data-ft-surface="character"`) and **Chat Experience** (`data-ft-surface="chat"`). Provide non-conflicting partition storage within existing character cards without schema migrations, eliminate false-alarm cross-surface diagnostics, contextualize all studio authoring tooling (snippets, starter presets, linter, manifest hooks reference), and elevate the Studio Live Preview into an authentic, interactive miniature **Chat Viewport Frame**.
+
+### Architectural Design & Invariants
+
+1. **Deterministic Virtual Surface Partitioning (Invariant C15)**
+   - Stored in a single `card.customCss` column via deterministic boundary delimiters:
+     - `/* === @formatavern/surface: showcase === */`
+     - `/* === @formatavern/surface: chat === */`
+   - Pure parser and serializer implemented in `@formatavern/shared/customCss/partition.ts`:
+     - `splitCustomCss(rawCss)` parses raw CSS into `{ showcase: string, chat: string }`.
+     - Backward compatibility: Unsegmented legacy sheets are intelligently assigned to either showcase or chat based on surface selector heuristics (`.ft-message-log`, `.ft-viewport`, `.ft-composer`, `.ft-turn` allocate to chat; `.ft-hero`, `.ft-showcase-body`, `.ft-action-hub` allocate to showcase).
+     - `joinCustomCss(partitions)` produces a clean, unified document with delimiters only when both surfaces have authored content, or clean single-block content when only one surface is active.
+   - Zero database migration or schema modification required (`user_version = 7` maintained).
+
+2. **Scoped Runtime Style Outlets**
+   - **Showcase View** (`/character/[id]`): Injects only the `showcase` partition into `CustomStyleOutlet` scoped to `[data-ft-surface="character"]`.
+   - **Chat View** (`ChatViewport.svelte`): Injects only the `chat` partition into `CustomStyleOutlet` scoped to `[data-ft-surface="chat"]`.
+   - Ensures rules authored for one surface never leak into or conflict with the other surface at runtime.
+
+3. **Contextual Studio Custom CSS Subtabs**
+   - Implemented within `CustomCssPanel.svelte` as subtabs:
+     - **Companion Showcase** (`targetScope = 'character'`)
+     - **Chat Experience** (`targetScope = 'chat'`)
+   - Switching subtabs completely transforms the panel context:
+     - **Quick Snippet Buttons**: Showcase snippets (`.ft-hero`, `.ft-showcase-body`, `.ft-action-hub`, `--theme-accent`) vs. Chat snippets (`.ft-viewport`, `.ft-message-log`, `.ft-topbar`, `.ft-composer`, `.ft-row`, `.ft-turn-body`, `.ft-avatar`, `--theme-chat-bg`).
+     - **Curated Starter Presets**: Showcase presets (`Terminal`, `Manuscript`, `Window`, `Night Market`) vs. Chat presets (`Illuminated Codex`, `Uniform Rows`, `Split Bubbles`, `Centered Narrator`).
+     - **Target Scope & Diagnostics**: Sanitizer evaluates under the active surface scope. Chat rules targeting `[data-ft-surface="chat"]`, `.ft-viewport`, and `.ft-message-log` evaluate cleanly with 0 dropped rules, resolving the false-alarm cross-surface warning.
+     - **Hooks Reference**: Filters the manifest hooks table to match the active surface.
+
+4. **Immersive Studio Live Aesthetic Preview: Miniature Chat Viewport Frame**
+   - When the author is in the **Chat Experience** CSS subtab (or viewing the Layout tab), the Live Aesthetic Preview transforms from the static Showcase card into a fully articulated miniature Chat Viewport Frame:
+     - **Miniature TopBar** (`.ft-topbar`): Companion avatar, name, and back navigation indicator.
+     - **Chat Canvas & MessageLog** (`[data-ft-surface="chat"] .ft-viewport .ft-message-log`): Production `TurnRow` rendering all 4 voices (Narrator, Companion, User, NPC) with live dynamic theme custom properties, decor layers, and active layout configuration.
+     - **Miniature Composer** (`.ft-composer`): Input bar mockup with action buttons.
+     - Provides instant, zero-latency visual feedback for chat styling and typography changes directly in the studio.
+
+### Key Changes
+- **Shared Domain** ([`packages/shared/src/customCss/partition.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/packages/shared/src/customCss/partition.ts)):
+  - Implemented `splitCustomCss` and `joinCustomCss` with comprehensive edge case and heuristic fallback handling.
+  - Exported through `packages/shared/src/customCss/index.ts` and root `packages/shared/src/index.ts`.
+  - Added unit test suite [`packages/shared/test/customCss/partition.test.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/packages/shared/test/customCss/partition.test.ts) covering splitting, joining, roundtripping, and heuristic classification.
+- **Curated Presets** ([`frontend/src/lib/custom/presets.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/custom/presets.ts)):
+  - Added `surface` property (`'character' | 'chat'`) to all presets.
+  - Added `ILLUMINATED_CODEX_PRESET` (gold illuminated border, parchment background, ornate typography, custom drop caps) for chat authoring.
+  - Exported `SHOWCASE_PRESETS` and `CHAT_PRESETS`.
+- **Custom CSS Panel** ([`frontend/src/lib/components/studio/CustomCssPanel.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/studio/CustomCssPanel.svelte)):
+  - Added surface switcher subtabs with active tab styling and scope description.
+  - Synchronized partition reading and writing into `draft.card.customCss` with roundtrip delimiter preservation.
+  - Split snippet helpers, starter presets, and hooks reference tables by active surface.
+- **Studio Shell Connection** ([`frontend/src/lib/components/studio/StudioShell.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/studio/StudioShell.svelte)):
+  - Added `cssSubtab` state management and passed it to `CustomCssPanel` and `LivePreview`.
+- **Live Preview** ([`frontend/src/lib/components/studio/LivePreview.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/studio/LivePreview.svelte)):
+  - Renders miniature chat viewport frame with `.ft-topbar`, `.ft-viewport`, `.ft-message-log`, and `.ft-composer` when `activeStudioTab === 'css' && activeCssSubtab === 'chat'` or `activeStudioTab === 'layout'`.
+- **Runtime Outlets**:
+  - [`frontend/src/routes/character/[id]/+page.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/routes/character/[id]/+page.svelte): Passes `splitCustomCss(character.customCss).showcase` to `CustomStyleOutlet`.
+  - [`frontend/src/lib/components/chat/ChatViewport.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/chat/ChatViewport.svelte): Passes `splitCustomCss(chat.character?.customCss).chat` to `CustomStyleOutlet`.
+
+### Verification
+- `bun run typecheck`: 0 errors, 0 warnings across all 3 packages (`packages/shared`, `backend`, `frontend`).
+- `bun run test`: 710 passing tests across the monorepo:
+  - `packages/shared`: 211 pass (including partition tests).
+  - `backend`: 273 pass (all routes, repositories, engine).
+  - `frontend`: 226 pass across 32 files (including custom CSS panel subtabs and chat viewport outlet tests).
+- `bun run db:check`: 100% clean schema, foreign keys, and layout audits.
+
 
 
 

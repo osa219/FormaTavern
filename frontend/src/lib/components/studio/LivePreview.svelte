@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { resolveLayout, type CharacterCard, type Segment } from '@formatavern/shared';
+  import { resolveLayout, type CharacterCard, type Segment, splitCustomCss } from '@formatavern/shared';
   import { HOOKS } from '@formatavern/shared';
   import type { CharacterDraft } from '$lib/studio/draft.svelte';
   import { themeToCssVars, serializeVars } from '$lib/theme/cssVars';
@@ -16,10 +16,12 @@
 
   let {
     draft,
-    activeStudioTab = 'identity'
+    activeStudioTab = 'identity',
+    activeCssSubtab = 'character'
   }: {
     draft: CharacterDraft;
     activeStudioTab?: string;
+    activeCssSubtab?: 'character' | 'chat';
   } = $props();
 
   let previewMode = $state<'narrative' | 'classic'>('narrative');
@@ -53,6 +55,8 @@
   const greetingResult = $derived(parseGreeting(draft.card.firstMessage, draft.card.name || 'Companion'));
   const segments = $derived(greetingResult.segments);
 
+  const partitions = $derived(splitCustomCss(draft.card.customCss));
+
   const previewCard = $derived<CharacterCard>({
     id: draft.characterId || 'preview-companion',
     name: draft.card.name || 'Companion',
@@ -72,7 +76,9 @@
   let activeTab = $state<'showcase' | 'greeting' | 'samples'>('showcase');
 
   $effect(() => {
-    if (activeStudioTab === 'css' || activeStudioTab === 'showcase') {
+    if (activeStudioTab === 'css') {
+      activeTab = activeCssSubtab === 'chat' ? 'samples' : 'showcase';
+    } else if (activeStudioTab === 'showcase' || activeStudioTab === 'identity') {
       activeTab = 'showcase';
     } else if (activeStudioTab === 'voice') {
       activeTab = 'greeting';
@@ -80,6 +86,13 @@
       activeTab = 'samples';
     }
   });
+
+  const previewSurface = $derived<'character' | 'chat'>(
+    activeTab === 'showcase' ? 'character' : 'chat'
+  );
+  const activePartitionCss = $derived(
+    previewSurface === 'character' ? partitions.showcase : partitions.chat
+  );
 </script>
 
 <div class="flex flex-col h-full rounded-2xl border border-(--chrome-line) bg-(--chrome-surface)/50 overflow-hidden">
@@ -179,16 +192,16 @@
   <!-- Viewport Root applying author theme CSS variables -->
   <div
     style="{themeVars}; {previewChromeReset}"
-    data-ft-surface="character"
+    data-ft-surface={previewSurface}
     class="relative isolate flex-1 overflow-hidden flex flex-col bg-(--chrome-bg) font-(--theme-font-family) text-(--chrome-text)"
   >
-    <CustomStyleOutlet scope="character" css={draft.card.customCss} />
+    <CustomStyleOutlet scope={previewSurface} css={activePartitionCss} />
     <Backdrop image={previewBg} />
     <DecorLayers layers={decor} fixed={false} />
-    <div class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+
     {#if activeTab === 'showcase'}
-      <!-- Showcase Mode: Hero + Action Hub + Showcase Body + Dialogue Sample -->
-      <div class="space-y-6">
+      <!-- Showcase Mode: Hero + Action Hub + Showcase Body -->
+      <div class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
         <ShowcaseHero character={previewCard} />
 
         <!-- Mock Action Hub with .ft-action-hub hook -->
@@ -216,9 +229,71 @@
             *No showcase markdown authored yet.*
           </div>
         {/if}
+      </div>
+    {:else}
+      <!-- Chat Mode: Miniature Chat Viewport Frame (TopBar + MessageLog + Composer) -->
+      <!-- Miniature TopBar (.ft-topbar) -->
+      <header class="{HOOKS.chrome.topbar} flex h-11 w-full items-center justify-between border-b border-(--chrome-line) bg-(--chrome-surface)/95 px-3 shrink-0 shadow-xs z-10">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <span class="text-xs text-(--chrome-text)/60">←</span>
+          {#if draft.card.avatar}
+            <img src={draft.card.avatar} alt="" class="h-6 w-6 rounded-full object-cover border border-(--chrome-line) shrink-0" />
+          {:else}
+            <div class="flex h-6 w-6 items-center justify-center rounded-full bg-(--chrome-surface) border border-(--chrome-line) text-[10px] font-bold text-(--chrome-text) shrink-0">
+              {(draft.card.name || 'C').charAt(0)}
+            </div>
+          {/if}
+          <span class="font-semibold text-xs text-(--chrome-text) truncate max-w-[140px]">
+            {draft.card.name || 'Companion'}
+          </span>
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <span class="inline-flex items-center gap-1 rounded bg-accent/15 px-2 py-0.5 text-[10px] font-mono text-accent border border-accent/20">
+            <span class="h-1.5 w-1.5 rounded-full bg-accent"></span>
+            <span>ready</span>
+          </span>
+          <span class="rounded border border-(--chrome-line) bg-(--chrome-surface) px-1.5 py-0.5 text-[10px] font-mono text-(--chrome-text)/70">
+            lore
+          </span>
+        </div>
+      </header>
 
-        <div class="space-y-3 pt-2 {HOOKS.chat.messageLog}" {...rootAttrs} style={rootStyle}>
-          <span class="text-[11px] font-semibold uppercase tracking-wider text-(--chrome-text)/60">Dialogue Sample</span>
+      <!-- Scrollable MessageLog Canvas (.ft-message-log) -->
+      <main class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 min-h-0 {HOOKS.chat.messageLog}" {...rootAttrs} style={rootStyle}>
+        {#if activeTab === 'greeting'}
+          {#if segments.length === 0}
+            <div class="flex h-48 flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-800 text-center p-6 text-neutral-500 text-xs">
+              <p>Type a First Message in the Voice tab to preview your opening greeting.</p>
+            </div>
+          {:else}
+            <article class="turn {HOOKS.chat.turn}" data-role="character" data-headers={resolvedLayout.headers}>
+              {#each segments as seg, idx (idx)}
+                <TurnRow
+                  kind={seg.kind}
+                  name={seg.name}
+                  primaryName={draft.card.name || 'Companion'}
+                  hue={seg.kind === 'npc' ? 190 : null}
+                  layout={resolvedLayout}
+                  avatarSrc={seg.kind === 'character' ? draft.card.avatar : null}
+                >
+                  {#if seg.kind === 'narrator'}
+                    <NarratorBlock text={seg.text} />
+                  {:else}
+                    <SpeechBubble
+                      variant={seg.kind}
+                      name={seg.name}
+                      primaryName={draft.card.name || 'Companion'}
+                      text={seg.text}
+                      fx={seg.kind === 'character' ? fx : 'none'}
+                      hue={seg.kind === 'npc' ? 190 : undefined}
+                    />
+                  {/if}
+                </TurnRow>
+              {/each}
+            </article>
+          {/if}
+        {:else}
+          <!-- Turn Samples Mode: Shows all 4 voice variants in layout context -->
           <article class="turn {HOOKS.chat.turn}" data-role="system" data-headers={resolvedLayout.headers}>
             <TurnRow
               kind="narrator"
@@ -228,6 +303,7 @@
               <NarratorBlock text="The chamber falls silent as ancient starlight filters through the dome." />
             </TurnRow>
           </article>
+
           <article class="turn {HOOKS.chat.turn}" data-role="character" data-headers={resolvedLayout.headers}>
             <TurnRow
               kind="character"
@@ -245,108 +321,58 @@
               />
             </TurnRow>
           </article>
-        </div>
-      </div>
-    {:else if activeTab === 'greeting'}
-      {#if segments.length === 0}
-        <div class="flex h-48 flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-800 text-center p-6 text-neutral-500 text-xs">
-          <p>Type a First Message in the Voice tab to preview your opening greeting.</p>
-        </div>
-      {:else}
-        <div class="space-y-4 {HOOKS.chat.messageLog}" {...rootAttrs} style={rootStyle}>
-          <article class="turn {HOOKS.chat.turn}" data-role="character" data-headers={resolvedLayout.headers}>
-            {#each segments as seg, idx (idx)}
-              <TurnRow
-                kind={seg.kind}
-                name={seg.name}
-                primaryName={draft.card.name || 'Companion'}
-                hue={seg.kind === 'npc' ? 190 : null}
-                layout={resolvedLayout}
-                avatarSrc={seg.kind === 'character' ? draft.card.avatar : null}
-              >
-                {#if seg.kind === 'narrator'}
-                  <NarratorBlock text={seg.text} />
-                {:else}
-                  <SpeechBubble
-                    variant={seg.kind}
-                    name={seg.name}
-                    primaryName={draft.card.name || 'Companion'}
-                    text={seg.text}
-                    fx={seg.kind === 'character' ? fx : 'none'}
-                    hue={seg.kind === 'npc' ? 190 : undefined}
-                  />
-                {/if}
-              </TurnRow>
-            {/each}
-          </article>
-        </div>
-      {/if}
-    {:else}
-      <!-- Turn Samples Mode: Shows all 4 voice variants in layout context -->
-      <div class="space-y-4 {HOOKS.chat.messageLog}" {...rootAttrs} style={rootStyle}>
-        <article class="turn {HOOKS.chat.turn}" data-role="system" data-headers={resolvedLayout.headers}>
-          <TurnRow
-            kind="narrator"
-            primaryName={draft.card.name || 'Companion'}
-            layout={resolvedLayout}
-          >
-            <NarratorBlock text="The chamber falls silent as ancient starlight filters through the dome." />
-          </TurnRow>
-        </article>
 
-        <article class="turn {HOOKS.chat.turn}" data-role="character" data-headers={resolvedLayout.headers}>
-          <TurnRow
-            kind="character"
-            primaryName={draft.card.name || 'Companion'}
-            name={draft.card.name || 'Companion'}
-            layout={resolvedLayout}
-            avatarSrc={draft.card.avatar}
-          >
-            <SpeechBubble
-              variant="character"
-              primaryName={draft.card.name || 'Companion'}
-              name={draft.card.name || 'Companion'}
-              text="The celestial alignments are shifting. We must begin before the eclipse reaches totality."
-              {fx}
-            />
-          </TurnRow>
-        </article>
-
-        <article class="turn {HOOKS.chat.turn}" data-role="persona" data-headers={resolvedLayout.headers}>
-          <TurnRow
-            kind="persona"
-            primaryName={draft.card.name || 'Companion'}
-            name="You"
-            layout={resolvedLayout}
-          >
-            <SpeechBubble
-              variant="persona"
+          <article class="turn {HOOKS.chat.turn}" data-role="persona" data-headers={resolvedLayout.headers}>
+            <TurnRow
+              kind="persona"
               primaryName={draft.card.name || 'Companion'}
               name="You"
-              text="I have prepared the focus lenses. Are you ready?"
-            />
-          </TurnRow>
-        </article>
+              layout={resolvedLayout}
+            >
+              <SpeechBubble
+                variant="persona"
+                primaryName={draft.card.name || 'Companion'}
+                name="You"
+                text="I have prepared the focus lenses. Are you ready?"
+              />
+            </TurnRow>
+          </article>
 
-        <article class="turn {HOOKS.chat.turn}" data-role="character" data-headers={resolvedLayout.headers}>
-          <TurnRow
-            kind="npc"
-            primaryName={draft.card.name || 'Companion'}
-            name="Observatory Scribe"
-            hue={190}
-            layout={resolvedLayout}
-          >
-            <SpeechBubble
-              variant="npc"
+          <article class="turn {HOOKS.chat.turn}" data-role="character" data-headers={resolvedLayout.headers}>
+            <TurnRow
+              kind="npc"
               primaryName={draft.card.name || 'Companion'}
               name="Observatory Scribe"
               hue={190}
-              text="Careful with the refraction prism! The crystal cannot be replaced."
-            />
-          </TurnRow>
-        </article>
-      </div>
+              layout={resolvedLayout}
+            >
+              <SpeechBubble
+                variant="npc"
+                primaryName={draft.card.name || 'Companion'}
+                name="Observatory Scribe"
+                hue={190}
+                text="Careful with the refraction prism! The crystal cannot be replaced."
+              />
+            </TurnRow>
+          </article>
+        {/if}
+      </main>
+
+      <!-- Miniature Composer (.ft-composer) -->
+      <footer class="{HOOKS.chat.composer} border-t border-(--chrome-line) bg-(--chrome-surface)/95 p-3 shrink-0 shadow-sm z-10">
+        <div class="flex items-center gap-2 rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/90 px-3 py-2 shadow-inner">
+          <span class="flex-1 text-xs text-(--chrome-text)/40 italic select-none">
+            Speak as Traveler...
+          </span>
+          <button
+            type="button"
+            tabindex="-1"
+            class="rounded-lg bg-accent px-3 py-1 text-xs font-semibold text-accent-contrast shadow-sm select-none opacity-90"
+          >
+            Send
+          </button>
+        </div>
+      </footer>
     {/if}
-    </div>
   </div>
 </div>

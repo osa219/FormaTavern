@@ -23,6 +23,7 @@
   import EditTurnDialog from '../dialogs/EditTurnDialog.svelte';
   import ConfirmDialog from '../dialogs/ConfirmDialog.svelte';
   import CustomStyleOutlet from '../custom/CustomStyleOutlet.svelte';
+  import { splitCustomCss } from '@formatavern/shared';
 
   let {
     session,
@@ -31,6 +32,12 @@
     session: ChatSession;
     themeEngine: ThemeEngine;
   } = $props();
+
+  const chatCss = $derived(
+    session.character?.customCss
+      ? splitCustomCss(session.character.customCss).chat || session.character.customCss
+      : null
+  );
 
   let ready = $state(false);
   let navOpen = $state(false);
@@ -346,7 +353,7 @@
   data-ft-surface="chat"
   class="relative isolate grid h-[100dvh] w-full grid-rows-[auto_1fr_auto] overflow-hidden bg-(--chrome-bg) font-sans text-(--chrome-text) select-text {HOOKS.chat.viewport}"
 >
-  <CustomStyleOutlet scope="chat" css={session.character?.customCss} />
+  <CustomStyleOutlet scope="chat" css={chatCss} />
 
   <!-- Backdrop image / ambient gradient layer -->
   <Backdrop image={themeEngine.backgroundImage} />

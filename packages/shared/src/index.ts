@@ -41,3 +41,4 @@ export * from './theme';
 export * from './hooks/manifest';
 export * from './layout/resolve';
 export * from './layout/presets';
+export * from './customCss/partition';

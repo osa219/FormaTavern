@@ -125,4 +125,29 @@ describe('CustomCssPanel & Studio CSS Integration (Slice 3)', () => {
     expect(rendered.body).toContain('Window');
     expect(rendered.body).toContain('Night Market');
   });
+
+  it('renders Companion Showcase and Chat Experience surface subtabs in studio', () => {
+    const draft = new CharacterDraft();
+    const rendered = render(CustomCssPanel, {
+      props: { draft }
+    });
+
+    expect(rendered.body).toContain('Companion Showcase');
+    expect(rendered.body).toContain('Chat Experience');
+  });
+
+  it('switches to chat surface subtab, displaying chat snippets, presets, and scope badge', () => {
+    const draft = new CharacterDraft();
+    const rendered = render(CustomCssPanel, {
+      props: { draft, activeSurfaceSubtab: 'chat' }
+    });
+
+    expect(rendered.body).toContain('Pure CSS • Scoped to Chat Viewport');
+    expect(rendered.body).toContain('.ft-message-log');
+    expect(rendered.body).toContain('.ft-topbar');
+    expect(rendered.body).toContain('.ft-composer');
+    expect(rendered.body).toContain('.ft-turn-body');
+    expect(rendered.body).toContain('Illuminated Codex');
+    expect(rendered.body).toContain('Uniform Rows');
+  });
 });

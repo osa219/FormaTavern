@@ -1,11 +1,11 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
   import type { CharacterDraft } from '$lib/studio/draft.svelte';
-  import { HOOKS, type SurfaceScope } from '@formatavern/shared';
+  import { HOOKS, type SurfaceScope, splitCustomCss, joinCustomCss, type PartitionedCustomCss } from '@formatavern/shared';
   import { loadCustomCss } from '@formatavern/shared/customCss/loader';
   import type { SanitizeIssue, LintIssue, ChatRestrictionIssue } from '@formatavern/shared/customCss';
   import { toasts } from '$lib/state/toasts.svelte';
-  import { CUSTOM_CSS_PRESETS, type CustomCssPreset } from '$lib/custom/presets';
+  import { SHOWCASE_PRESETS, CHAT_PRESETS, CUSTOM_CSS_PRESETS, type CustomCssPreset } from '$lib/custom/presets';
   import Icon from '$lib/components/ui/Icon.svelte';
   import Spinner from '$lib/components/ui/Spinner.svelte';
 
@@ -14,13 +14,80 @@
     value?: string;
     onchange?: (val: string) => void;
     scope?: SurfaceScope;
+    activeSurfaceSubtab?: 'character' | 'chat';
+    onsubtabchange?: (subtab: 'character' | 'chat') => void;
   }
 
-  let { draft, value, onchange, scope = 'character' }: Props = $props();
+  let {
+    draft,
+    value,
+    onchange,
+    scope = 'character',
+    activeSurfaceSubtab = 'character',
+    onsubtabchange
+  }: Props = $props();
 
   let textarea = $state<HTMLTextAreaElement>();
   let activeTab = $state<'editor' | 'hooks' | 'fonts'>('editor');
   let copiedHook = $state<string | null>(null);
+
+  // Surface Subtab State: defaults to external prop (or 'character') and can be overridden by user action
+  let selectedSubtab = $state<'character' | 'chat' | null>(null);
+
+  $effect(() => {
+    if (activeSurfaceSubtab) {
+      selectedSubtab = null;
+    }
+  });
+
+  const currentSubtab = $derived<'character' | 'chat'>(
+    selectedSubtab ?? activeSurfaceSubtab
+  );
+
+  function setSubtab(sub: 'character' | 'chat') {
+    selectedSubtab = sub;
+    onsubtabchange?.(sub);
+  }
+
+  const isCompanionMode = $derived(Boolean(draft || scope !== 'shell'));
+  const targetScope = $derived<SurfaceScope>(
+    !isCompanionMode ? 'shell' : currentSubtab
+  );
+
+  // Partition extraction & storage
+  const rawUnifiedCode = $derived(draft ? (draft.card.customCss ?? '') : (value ?? ''));
+  const partitions = $derived(splitCustomCss(rawUnifiedCode));
+
+  const code = $derived(
+    !isCompanionMode
+      ? rawUnifiedCode
+      : currentSubtab === 'chat'
+        ? partitions.chat
+        : partitions.showcase
+  );
+
+  function updateCode(newVal: string) {
+    if (!isCompanionMode) {
+      if (draft) {
+        draft.card.customCss = newVal;
+      } else {
+        onchange?.(newVal);
+      }
+      return;
+    }
+
+    const currentParts = splitCustomCss(rawUnifiedCode);
+    const updatedParts: PartitionedCustomCss = {
+      showcase: currentSubtab === 'character' ? newVal : currentParts.showcase,
+      chat: currentSubtab === 'chat' ? newVal : currentParts.chat
+    };
+    const combined = joinCustomCss(updatedParts);
+    if (draft) {
+      draft.card.customCss = combined;
+    } else {
+      onchange?.(combined);
+    }
+  }
 
   // Font Manager State (Slice 5)
   let uploadedFonts = $state<Array<{ name: string; path: string; mime: string; format: string }>>([]);
@@ -53,24 +120,23 @@
     return combined;
   });
 
-  const targetScope = $derived(draft ? 'character' : scope);
-  const code = $derived(draft ? (draft.card.customCss ?? '') : (value ?? ''));
-
-  function updateCode(newVal: string) {
-    if (draft) {
-      draft.card.customCss = newVal;
-    } else {
-      onchange?.(newVal);
-    }
-  }
-
   const MAX_CHARS = 131_072;
-  const charCount = $derived(code.length);
+  const charCount = $derived(rawUnifiedCode.length);
   const percentUsed = $derived(Math.min(100, Math.round((charCount / MAX_CHARS) * 100)));
   const placeholderText = $derived(
     targetScope === 'shell'
       ? `/* Shell custom CSS.\n   Example:\n   .ft-foyer-header {\n     border-bottom: 1px solid var(--theme-accent);\n   }\n*/`
-      : `/* Author custom CSS scoped to companion showcase.\n   Example:\n   .ft-hero {\n     border: 1px solid var(--theme-accent);\n   }\n*/`
+      : targetScope === 'chat'
+        ? `/* Chat experience custom CSS.\n   Example:\n   .ft-topbar {\n     background: rgba(20, 15, 10, 0.95);\n   }\n   .ft-composer {\n     border-top: 1px solid var(--theme-accent);\n   }\n*/`
+        : `/* Companion showcase custom CSS.\n   Example:\n   .ft-hero {\n     border: 1px solid var(--theme-accent);\n   }\n   .ft-showcase-body {\n     font-family: serif;\n   }\n*/`
+  );
+
+  const visiblePresets = $derived(
+    !isCompanionMode
+      ? CUSTOM_CSS_PRESETS
+      : currentSubtab === 'chat'
+        ? CHAT_PRESETS
+        : SHOWCASE_PRESETS
   );
 
   let reports = $state<SanitizeIssue[]>([]);
@@ -81,6 +147,7 @@
 
   $effect(() => {
     const currentCode = code;
+    const currentScope = targetScope;
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(async () => {
       if (!currentCode.trim()) {
@@ -92,10 +159,10 @@
       isAnalyzing = true;
       try {
         const { sanitizeCss, lintSheet, lintChatRestrictions } = await loadCustomCss();
-        const out = sanitizeCss(currentCode, targetScope);
+        const out = sanitizeCss(currentCode, currentScope);
         reports = out.report;
-        lints = lintSheet(currentCode, targetScope);
-        chatRestrictions = targetScope === 'character' ? lintChatRestrictions(currentCode) : [];
+        lints = lintSheet(currentCode, currentScope);
+        chatRestrictions = currentScope === 'character' ? lintChatRestrictions(currentCode) : [];
       } catch (err: any) {
         reports = [{ kind: 'parse-fatal', detail: err?.message ?? 'Unknown CSS parse error' }];
         lints = [];
@@ -237,6 +304,41 @@
 </script>
 
 <div class="flex flex-col h-full space-y-4">
+  {#if isCompanionMode}
+    <!-- Surface Subtabs Bar -->
+    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-(--chrome-line) pb-3 shrink-0">
+      <div class="flex items-center gap-2">
+        <div class="inline-flex rounded-xl bg-(--chrome-bg) p-1 border border-(--chrome-line)">
+          <button
+            type="button"
+            onclick={() => setSubtab('character')}
+            class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors {currentSubtab === 'character'
+              ? 'bg-(--chrome-surface) text-accent shadow-xs border border-(--chrome-line)'
+              : 'text-(--chrome-text)/60 hover:text-(--chrome-text)'}"
+          >
+            <span>Companion Showcase</span>
+            <span class="rounded px-1.5 py-0.5 text-[10px] font-mono bg-(--chrome-bg) text-(--chrome-text)/50">character</span>
+          </button>
+          <button
+            type="button"
+            onclick={() => setSubtab('chat')}
+            class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors {currentSubtab === 'chat'
+              ? 'bg-(--chrome-surface) text-accent shadow-xs border border-(--chrome-line)'
+              : 'text-(--chrome-text)/60 hover:text-(--chrome-text)'}"
+          >
+            <span>Chat Experience</span>
+            <span class="rounded px-1.5 py-0.5 text-[10px] font-mono bg-(--chrome-bg) text-(--chrome-text)/50">chat</span>
+          </button>
+        </div>
+      </div>
+      <div class="text-[11px] text-(--chrome-text)/50 hidden sm:block">
+        {currentSubtab === 'character'
+          ? 'Styles applied to Companion Profile & Author Showcase'
+          : 'Styles applied to Chat Viewport, MessageLog, TopBar & Composer'}
+      </div>
+    </div>
+  {/if}
+
   <!-- Toolbar: Quick Snippets & Size Meter -->
   <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 p-2.5 shrink-0">
     <div class="flex flex-wrap items-center gap-1.5">
@@ -262,7 +364,7 @@
         >
           .ft-char-card
         </button>
-      {:else}
+      {:else if targetScope === 'character'}
         <button
           type="button"
           onclick={() => insertSnippet('.ft-hero {\n  border: 1px solid var(--theme-accent);\n}\n')}
@@ -291,16 +393,31 @@
         >
           .ft-decor-layer
         </button>
+      {:else}
         <button
           type="button"
-          onclick={() => insertSnippet('.ft-bubble-char {\n  /* Companion speech bubble styling */\n}\n')}
+          onclick={() => insertSnippet('.ft-message-log {\n  /* Chat reading canvas styling */\n}\n')}
           class="rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1 text-xs font-mono text-(--chrome-text) hover:bg-(--chrome-line)/40 transition-colors"
         >
-          .ft-bubble-char
+          .ft-message-log
         </button>
         <button
           type="button"
-          onclick={() => insertSnippet('.ft-row {\n  /* Segment row styling */\n}\n')}
+          onclick={() => insertSnippet('.ft-topbar {\n  /* Top bar header styling */\n}\n')}
+          class="rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1 text-xs font-mono text-(--chrome-text) hover:bg-(--chrome-line)/40 transition-colors"
+        >
+          .ft-topbar
+        </button>
+        <button
+          type="button"
+          onclick={() => insertSnippet('.ft-composer {\n  /* Composer footer styling */\n}\n')}
+          class="rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1 text-xs font-mono text-(--chrome-text) hover:bg-(--chrome-line)/40 transition-colors"
+        >
+          .ft-composer
+        </button>
+        <button
+          type="button"
+          onclick={() => insertSnippet('.ft-row {\n  /* Segment row layout */\n}\n')}
           class="rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1 text-xs font-mono text-(--chrome-text) hover:bg-(--chrome-line)/40 transition-colors"
         >
           .ft-row
@@ -318,6 +435,13 @@
           class="rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1 text-xs font-mono text-(--chrome-text) hover:bg-(--chrome-line)/40 transition-colors"
         >
           .ft-avatar
+        </button>
+        <button
+          type="button"
+          onclick={() => insertSnippet('.ft-turn-name {\n  /* Turn speaker name styling */\n}\n')}
+          class="rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1 text-xs font-mono text-(--chrome-text) hover:bg-(--chrome-line)/40 transition-colors"
+        >
+          .ft-turn-name
         </button>
       {/if}
       <button
@@ -368,7 +492,7 @@
       <span class="text-[11px] text-(--chrome-text)/50 hidden sm:inline">Curated starter sheets (under 8 KB, lint-clean)</span>
     </div>
     <div class="flex flex-wrap items-center gap-1.5">
-      {#each CUSTOM_CSS_PRESETS as preset (preset.id)}
+      {#each visiblePresets as preset (preset.id)}
         <button
           type="button"
           onclick={() => applyPreset(preset)}
@@ -397,8 +521,8 @@
     <!-- Code Editor Area -->
     <div class="xl:col-span-2 flex flex-col min-h-[350px] h-full rounded-xl border border-(--chrome-line) bg-(--chrome-bg) overflow-hidden">
       <div class="flex items-center justify-between border-b border-(--chrome-line) bg-(--chrome-surface) px-3 py-1.5 text-xs text-(--chrome-text)/70">
-        <span class="font-mono text-[11px]">custom.css</span>
-        <span class="text-[11px] text-(--chrome-text)/50">Pure CSS • Scoped to {targetScope === 'shell' ? 'Shell Surface' : 'Character Page'}</span>
+        <span class="font-mono text-[11px]">custom.css <span class="text-(--chrome-text)/40">({targetScope === 'chat' ? 'chat' : targetScope === 'shell' ? 'shell' : 'showcase'})</span></span>
+        <span class="text-[11px] text-(--chrome-text)/50">Pure CSS • Scoped to {targetScope === 'shell' ? 'Shell Surface' : targetScope === 'chat' ? 'Chat Viewport' : 'Companion Showcase'}</span>
       </div>
       <textarea
         bind:this={textarea}
@@ -582,10 +706,10 @@
                   {/each}
                 </div>
               </div>
-            {:else}
+            {:else if targetScope === 'character'}
               <!-- Character Surface Hooks -->
               <div class="space-y-1.5">
-                <div class="text-[10px] font-mono uppercase tracking-wider text-(--chrome-text)/50">Character Surface</div>
+                <div class="text-[10px] font-mono uppercase tracking-wider text-(--chrome-text)/50">Character Surface Hooks</div>
                 <div class="grid grid-cols-1 gap-1">
                   {#each Object.entries(HOOKS.character) as [name, hook]}
                     <button
@@ -601,10 +725,10 @@
                   {/each}
                 </div>
               </div>
-
+            {:else}
               <!-- Chat & Speech Hooks -->
               <div class="space-y-1.5">
-                <div class="text-[10px] font-mono uppercase tracking-wider text-(--chrome-text)/50">Speech & Turns</div>
+                <div class="text-[10px] font-mono uppercase tracking-wider text-(--chrome-text)/50">Chat Surface Hooks</div>
                 <div class="grid grid-cols-1 gap-1">
                   {#each Object.entries(HOOKS.chat) as [name, hook]}
                     <button

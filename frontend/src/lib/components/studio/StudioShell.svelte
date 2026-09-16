@@ -24,6 +24,7 @@
 
   type StudioTab = 'identity' | 'voice' | 'showcase' | 'aesthetic' | 'layout' | 'css' | 'state' | 'bindings' | 'gallery' | 'prompt';
   let activeTab = $state<StudioTab>('identity');
+  let cssSubtab = $state<'character' | 'chat'>('character');
   let saving = $state(false);
   let discardConfirmOpen = $state(false);
   let mobilePreviewOpen = $state(false);
@@ -179,7 +180,11 @@
         {:else if activeTab === 'layout'}
           <LayoutPanel {draft} />
         {:else if activeTab === 'css'}
-          <CustomCssPanel {draft} />
+          <CustomCssPanel
+            {draft}
+            activeSurfaceSubtab={cssSubtab}
+            onsubtabchange={(sub) => (cssSubtab = sub)}
+          />
         {:else if activeTab === 'state'}
           <StatePanel {draft} />
         {:else if activeTab === 'bindings'}
@@ -194,7 +199,7 @@
 
     <!-- Right Rail: Live Preview (5 Cols) -->
     <div class="{mobilePreviewOpen ? 'flex' : 'hidden lg:flex'} lg:col-span-5 flex-col p-4 bg-(--chrome-bg) border-l border-(--chrome-line) overflow-hidden">
-      <LivePreview {draft} activeStudioTab={activeTab} />
+      <LivePreview {draft} activeStudioTab={activeTab} activeCssSubtab={cssSubtab} />
     </div>
   </div>
 

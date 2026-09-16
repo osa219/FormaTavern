@@ -17,10 +17,14 @@
   import ShowcaseBody from '$lib/components/showcase/ShowcaseBody.svelte';
   import ConfirmDialog from '$lib/components/dialogs/ConfirmDialog.svelte';
   import CustomStyleOutlet from '$lib/components/custom/CustomStyleOutlet.svelte';
+  import { splitCustomCss } from '@formatavern/shared';
 
   let { data }: { data: PageData } = $props();
 
   const character = $derived(data.character as CharacterCard);
+  const showcaseCss = $derived(
+    character.customCss ? splitCustomCss(character.customCss).showcase || character.customCss : null
+  );
   let chats = $state<ChatView[]>([]);
   const personas = $derived((data.personas ?? []) as Persona[]);
 
@@ -84,7 +88,7 @@
   data-ft-surface="character"
   class="relative isolate min-h-screen bg-(--chrome-bg) text-(--chrome-text) font-sans"
 >
-  <CustomStyleOutlet scope="character" css={character.customCss} />
+  <CustomStyleOutlet scope="character" css={showcaseCss} />
 
   <!-- Ambient character backdrop (image + overlay, or accent gradient fallback) -->
   <Backdrop image={showcaseBg} />

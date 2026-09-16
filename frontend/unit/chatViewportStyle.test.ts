@@ -24,8 +24,8 @@ describe('Chat Surface Custom Styling & Conservative Profile (Slice 6, Invariant
     expect(content).toContain('data-ft-surface="chat"');
     expect(content).toContain('{HOOKS.chat.viewport}');
 
-    // Must mount CustomStyleOutlet with scope="chat" and character customCss
-    expect(content).toContain('<CustomStyleOutlet scope="chat" css={session.character?.customCss} />');
+    // Must mount CustomStyleOutlet with scope="chat" and partitioned chat customCss
+    expect(content).toMatch(/<CustomStyleOutlet scope="chat" css=\{(?:chatCss|session\.character\?\.customCss)\} \/>/);
   });
 
   it('enforces chat-conservative profile on character sheet in chat scope', async () => {
