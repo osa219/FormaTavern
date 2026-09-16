@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
   import type { ChatSession } from '$lib/state/session.svelte';
   import type { ThemeEngine } from '$lib/theme/engine.svelte';
@@ -198,13 +198,17 @@
     }
   }
 
-  function handleStandingDirectionChange(dir: string) {
-    // Optimistic local update first: the director field is uncontrolled, so any
-    // re-render before the PATCH lands would overwrite the typed text with the
-    // stale prop (typed text "disappears" while the server already has it).
-    if (session.chat) {
-      session.chat.metadata = { ...session.chat.metadata, standingDirection: dir };
-    }
+  // Standing direction: optimistic locally on every keystroke, persisted to the
+  // server only after the user pauses (600 ms), like the preamble field. Firing
+  // a PATCH per keystroke spammed the server and let out-of-order completions
+  // clobber newer text.
+  let standingDebounce: any = null;
+  let pendingStandingDir: string | null = null;
+
+  function flushStandingDirection() {
+    if (pendingStandingDir === null) return;
+    const dir = pendingStandingDir;
+    pendingStandingDir = null;
     api.api.chats({ id: session.chatId }).patch({
       metadata: { standingDirection: dir }
     }).then(
@@ -214,6 +218,23 @@
       }
     );
   }
+
+  function handleStandingDirectionChange(dir: string) {
+    // Optimistic local update first: the director field is uncontrolled, so any
+    // re-render before the PATCH lands would overwrite the typed text with the
+    // stale prop (typed text "disappears" while the server already has it).
+    if (session.chat) {
+      session.chat.metadata = { ...session.chat.metadata, standingDirection: dir };
+    }
+    pendingStandingDir = dir;
+    clearTimeout(standingDebounce);
+    standingDebounce = setTimeout(flushStandingDirection, 600);
+  }
+
+  onDestroy(() => {
+    clearTimeout(standingDebounce);
+    flushStandingDirection();
+  });
 
   function closeActiveOverlay(): boolean {
     if (editingTurn) {
