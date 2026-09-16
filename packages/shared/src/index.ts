@@ -1,4 +1,4 @@
-export const SHARED_VERSION = '0.6.0-customization';
+export const SHARED_VERSION = '0.7.0-chat-layout';
 
 export interface HealthResponse {
   ok: true;
@@ -17,6 +17,7 @@ export * from './schemas/primitives';
 export * from './schemas/theme';
 export * from './schemas/state';
 export * from './schemas/character';
+export * from './schemas/layout';
 export * from './schemas/persona';
 export * from './schemas/narrative';
 export * from './schemas/api';
@@ -38,3 +39,5 @@ export * from './fixtures/stream';
 export * from './fixtures/envelope';
 export * from './theme';
 export * from './hooks/manifest';
+export * from './layout/resolve';
+export * from './layout/presets';

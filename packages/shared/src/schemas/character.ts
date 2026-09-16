@@ -2,6 +2,7 @@ import { Type, type Static } from '@sinclair/typebox';
 import { Id, AssetPath, UnixMs } from './primitives';
 import { CharacterThemeSchema } from './theme';
 import { StateFieldSchema, StateBindingSchema, StateVectorSchema } from './state';
+import { CharacterLayoutSchema } from './layout';
 
 export const TagSchema = Type.String({ pattern: '^[a-z0-9][a-z0-9-]{0,23}$' });
 export type Tag = Static<typeof TagSchema>;
@@ -28,6 +29,7 @@ export const CharacterCardSchema = Type.Object({
   })),
   showcase: Type.Optional(Type.String({ maxLength: 65_536 })), // Display only (P4)
   customCss: Type.Optional(Type.String({ maxLength: 131_072 })), // raw authored CSS; sanitized at render (C10)
+  layout: Type.Optional(CharacterLayoutSchema),
   version: Type.Optional(Type.String()),
   createdAt: Type.Optional(UnixMs),
   updatedAt: Type.Optional(UnixMs)
@@ -73,10 +75,11 @@ export const CharacterPromptPreviewBodySchema = Type.Object({
 export type CharacterPromptPreviewBody = Static<typeof CharacterPromptPreviewBodySchema>;
 
 export const CharacterPatchSchema = Type.Composite([
-  Type.Partial(Type.Omit(CharacterCardSchema, ['id', 'createdAt', 'updatedAt', 'customCss'])),
+  Type.Partial(Type.Omit(CharacterCardSchema, ['id', 'createdAt', 'updatedAt', 'customCss', 'layout'])),
   Type.Object({
     expectedUpdatedAt: UnixMs,
-    customCss: Type.Optional(Type.Union([Type.String({ maxLength: 131_072 }), Type.Null()]))
+    customCss: Type.Optional(Type.Union([Type.String({ maxLength: 131_072 }), Type.Null()])),
+    layout: Type.Optional(Type.Union([CharacterLayoutSchema, Type.Null()]))
   })
 ]);
 export type CharacterPatch = Static<typeof CharacterPatchSchema>;

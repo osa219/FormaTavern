@@ -11,6 +11,9 @@ import {
   DEFAULT_SHELL_THEME,
   shellToThemeOverrides,
   CharacterThemeSchema,
+  CharacterLayoutSchema,
+  ThemeOverridesSchema,
+  THEME_PATHS,
   validate,
   type CharacterCard
 } from '../src/index';
@@ -471,6 +474,65 @@ describe('Shared Schema Validation', () => {
           labels: { startStory: 'A'.repeat(41) }
         };
         expect(validate(CharacterCardSchema, cardOverLimit).ok).toBe(false);
+      });
+
+      it('validates optional CharacterLayout on CharacterCard and rejects invalid enums', () => {
+        const cardWithoutLayout = { ...eldrinFixture };
+        expect(validate(CharacterCardSchema, cardWithoutLayout).ok).toBe(true);
+
+        const cardWithLayout = {
+          ...eldrinFixture,
+          layout: {
+            align: 'uniform-left',
+            container: 'row',
+            headers: 'voices',
+            avatars: { character: true, persona: false, npc: false, shape: 'circle' },
+            narrator: 'dim-only',
+            names: { showCharacter: true, showPersona: true, showNpc: true, format: 'plain' },
+            tails: false
+          }
+        };
+        expect(validate(CharacterCardSchema, cardWithLayout).ok).toBe(true);
+
+        const cardWithBadEnum = {
+          ...eldrinFixture,
+          layout: { align: 'sideways' }
+        };
+        expect(validate(CharacterCardSchema, cardWithBadEnum).ok).toBe(false);
+      });
+
+      it('ensures CharacterSummarySchema excludes layout to keep lists light (Invariant L0)', () => {
+        expect('layout' in CharacterSummarySchema.properties).toBe(false);
+      });
+
+      it('ensures ThemeOverridesSchema and THEME_PATHS gain no layout keys (Invariant L6)', () => {
+        const layoutKeys = ['align', 'container', 'headers', 'avatars', 'narrator', 'names', 'tails'];
+        const overrideKeys = Object.keys(ThemeOverridesSchema.properties);
+
+        for (const k of layoutKeys) {
+          expect(overrideKeys.includes(k)).toBe(false);
+          expect(THEME_PATHS.some((p) => p.startsWith(`layout.`))).toBe(false);
+        }
+      });
+
+      it('permits CharacterPatchSchema to set layout to null for clearing back to neutral', () => {
+        const patchClear = {
+          expectedUpdatedAt: 1700000000000,
+          layout: null
+        };
+        expect(validate(CharacterPatchSchema, patchClear).ok).toBe(true);
+
+        const patchSet = {
+          expectedUpdatedAt: 1700000000000,
+          layout: { container: 'bubble' }
+        };
+        expect(validate(CharacterPatchSchema, patchSet).ok).toBe(true);
+
+        const patchBad = {
+          expectedUpdatedAt: 1700000000000,
+          layout: { container: 'invalid_container' }
+        };
+        expect(validate(CharacterPatchSchema, patchBad).ok).toBe(false);
       });
     });
   });
