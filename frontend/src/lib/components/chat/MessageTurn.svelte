@@ -1,12 +1,12 @@
 <script lang="ts">
-  import type { Segment, MessageStatus, NarrativeRole } from '@formatavern/shared';
-  import { HOOKS } from '@formatavern/shared';
+  import type { Segment, MessageStatus, NarrativeRole, ResolvedLayout } from '@formatavern/shared';
+  import { HOOKS, NEUTRAL_LAYOUT_DOC } from '@formatavern/shared';
+  import TurnRow from './TurnRow.svelte';
   import NarratorBlock from './NarratorBlock.svelte';
   import SpeechBubble from './SpeechBubble.svelte';
   import SegmentEditor from './SegmentEditor.svelte';
   import ErrorSlate from './ErrorSlate.svelte';
   import ReasoningBlock from './ReasoningBlock.svelte';
-  import Icon from '../ui/Icon.svelte';
   import { npcHue } from '$lib/render/npcTint';
   import type { Snippet } from 'svelte';
 
@@ -29,13 +29,16 @@
     editSaving = false,
     onStartEdit,
     onSaveEdit,
-    onCancelEdit
+    onCancelEdit,
+    layout = NEUTRAL_LAYOUT_DOC,
+    characterAvatar = null,
+    personaAvatar = null
   }: {
     segments?: Segment[];
     status?: MessageStatus;
     narrativeRole?: NarrativeRole;
     primaryName?: string;
-    npcs?: Record<string, { accent?: string }>;
+    npcs?: Record<string, { accent?: string; avatar?: string }>;
     streaming?: boolean;
     isLast?: boolean;
     reasoning?: string | null;
@@ -50,6 +53,9 @@
     onStartEdit?: (index: number) => void;
     onSaveEdit?: (index: number, text: string) => void;
     onCancelEdit?: () => void;
+    layout?: ResolvedLayout;
+    characterAvatar?: string | null;
+    personaAvatar?: string | null;
   } = $props();
 
   const lastIdx = $derived(segments.length - 1);
@@ -60,6 +66,7 @@
 <article
   class="turn group relative my-2 flex w-full flex-col gap-1.5 {HOOKS.chat.turn}"
   data-role={narrativeRole}
+  data-headers={layout.headers}
   data-status={status}
   aria-busy={streaming}
   style={streaming || isLast ? '' : 'content-visibility: auto; contain-intrinsic-size: auto 6rem;'}
@@ -67,7 +74,19 @@
   <ReasoningBlock {reasoning} durationMs={reasoningDurationMs} {isThinking} {streaming} />
 
   {#each segments as seg, i (i)}
-    <div class="group/seg relative w-full">
+    <TurnRow
+      kind={seg.kind}
+      name={seg.name ?? (seg.kind === 'persona' ? 'You' : seg.kind === 'character' ? primaryName : 'NPC')}
+      {primaryName}
+      avatarSrc={seg.kind === 'character' ? characterAvatar : seg.kind === 'persona' ? personaAvatar : (npcs[seg.name ?? '']?.avatar ?? null)}
+      hue={seg.kind === 'npc' ? npcHue(seg.name ?? 'NPC', npcs) : null}
+      {layout}
+      isFirstRow={i === 0}
+      isTurnOwner={seg.kind === narrativeRole || (narrativeRole === 'character' && seg.kind === 'character')}
+      editable={canEditSeg && editingIndex === null}
+      onStartEdit={() => onStartEdit?.(i)}
+      editIndex={i}
+    >
       {#if editingIndex === i}
         <SegmentEditor
           initial={seg.text}
@@ -89,23 +108,22 @@
             {fx}
           />
         {/if}
-        {#if canEditSeg && editingIndex === null}
-          <button
-            type="button"
-            onclick={() => onStartEdit?.(i)}
-            class="absolute top-0 right-1 z-10 flex h-7 w-7 items-center justify-center rounded bg-neutral-900/80 text-neutral-400 opacity-100 shadow-sm backdrop-blur transition-opacity duration-150 hover:bg-neutral-800 hover:text-neutral-200 focus-visible:opacity-100 md:opacity-0 md:group-hover/seg:opacity-100 md:group-focus-within/seg:opacity-100 [@media(hover:none)]:opacity-100"
-            title="Edit segment"
-            aria-label="Edit segment {i + 1}"
-          >
-            <Icon name="edit" size={13} />
-          </button>
-        {/if}
       {/if}
-    </div>
+    </TurnRow>
   {/each}
 
   {#if streaming && segments.length === 0 && !reasoning && !isThinking}
-    <SpeechBubble variant="character" name={primaryName} {primaryName} text="" live {fx} />
+    <TurnRow
+      kind="character"
+      name={primaryName}
+      {primaryName}
+      avatarSrc={characterAvatar}
+      {layout}
+      isFirstRow={true}
+      isTurnOwner={true}
+    >
+      <SpeechBubble variant="character" name={primaryName} {primaryName} text="" live {fx} />
+    </TurnRow>
   {/if}
 
   {#if status === 'error'}

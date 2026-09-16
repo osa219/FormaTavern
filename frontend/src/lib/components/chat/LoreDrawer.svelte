@@ -79,6 +79,18 @@
     chatDialect && defaultDialect && chatDialect !== defaultDialect ? defaultDialect : null
   );
 
+  const layoutSummary = $derived.by(() => {
+    if (!character.layout) return null;
+    const parts: string[] = [];
+    parts.push(character.layout.align === 'split' ? 'Split' : 'Uniform rows');
+    if (character.layout.headers) {
+      parts.push(character.layout.headers === 'voices' ? 'voices' : 'single header');
+    }
+    const hasAvatars = character.layout.avatars?.character || character.layout.avatars?.persona || character.layout.avatars?.npc;
+    parts.push(hasAvatars ? 'avatars' : 'no avatars');
+    return parts.join(' · ');
+  });
+
   function openConvert() {
     convertOpen = true;
     convertTarget = null;
@@ -261,6 +273,19 @@
                     </div>
                   {/if}
                 {/if}
+              {/if}
+              {#if layoutSummary}
+                <div class="flex items-center gap-2 pt-1 text-[11px] text-neutral-500">
+                  <span>Layout:</span>
+                  <span class="text-neutral-400 font-mono">{layoutSummary}</span>
+                  <a
+                    href="/studio/{character.id || character.name}"
+                    class="text-accent hover:underline ml-auto"
+                    title="Edit companion layout in Studio"
+                  >
+                    Edit in Studio
+                  </a>
+                </div>
               {/if}
             </div>
           {/if}

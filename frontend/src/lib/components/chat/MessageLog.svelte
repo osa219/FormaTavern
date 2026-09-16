@@ -5,9 +5,9 @@
   import MessageTurn from './MessageTurn.svelte';
   import TurnToolbar from './TurnToolbar.svelte';
   import JumpToLatest from './JumpToLatest.svelte';
-  import type { MessageWithTree } from '@formatavern/shared';
-  import { HOOKS } from '@formatavern/shared';
-  import type { Segment } from '@formatavern/shared';
+  import type { MessageWithTree, Segment } from '@formatavern/shared';
+  import { HOOKS, resolveLayout } from '@formatavern/shared';
+  import { layoutRootAttrs, layoutRootStyle } from '$lib/chat/layoutAttrs';
 
   let {
     session,
@@ -72,6 +72,13 @@
   const lastIndex = $derived(session.messages.length - 1);
   const fx = $derived(session.character?.style?.fx?.bubble ?? 'none');
 
+  const narrativeMode = $derived(session.chat?.metadata?.narrativeMode ?? 'narrative');
+  const resolvedLayout = $derived(resolveLayout(session.character?.layout, narrativeMode));
+  const rootAttrs = $derived(layoutRootAttrs(resolvedLayout));
+  const rootStyle = $derived(layoutRootStyle(resolvedLayout));
+  const characterAvatar = $derived(session.character?.avatar ?? null);
+  const personaAvatar = $derived(session.persona?.avatar ?? null);
+
   // Single active inline segment edit across the whole log (scope §7: first cut).
   let segEditing = $state<{ messageId: string; index: number } | null>(null);
   let segSaving = $state(false);
@@ -126,10 +133,11 @@
   <div
     bind:this={logEl}
     class="h-full w-full overflow-y-auto px-4 py-6 md:px-8 focus:outline-none {HOOKS.chat.messageLog}"
-    style="overflow-anchor: none;"
+    style="overflow-anchor: none; {rootStyle}"
     tabindex="-1"
     role="region"
     aria-label="Conversation turns"
+    {...rootAttrs}
   >
     <!-- Top Sentinel for older pagination -->
     {#if session.hasOlder}
@@ -149,6 +157,9 @@
         {primaryName}
         {npcs}
         {fx}
+        layout={resolvedLayout}
+        {characterAvatar}
+        {personaAvatar}
         isLast={i === lastIndex && !session.live}
         reasoning={msg.metadata?.reasoning}
         reasoningDurationMs={msg.metadata?.reasoningDurationMs}
@@ -188,6 +199,9 @@
         {primaryName}
         {npcs}
         {fx}
+        layout={resolvedLayout}
+        {characterAvatar}
+        {personaAvatar}
         streaming={true}
         isLast={true}
         reasoning={session.live.reasoning}

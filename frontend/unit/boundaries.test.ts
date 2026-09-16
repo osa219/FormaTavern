@@ -111,4 +111,24 @@ describe('Architecture & Boundary Police (Invariant U2, U3, U6)', () => {
     expect(log).toContain('flex-1 min-h-0');
     expect(log).toMatch(/overflow-y-auto/);
   });
+
+  it('prohibits role-branched justify-end in chat turn rendering components (Invariant L2)', () => {
+    const turnFiles = [
+      'SpeechBubble.svelte',
+      'TurnRow.svelte',
+      'MessageTurn.svelte',
+      'NarratorBlock.svelte',
+      'SegmentAvatar.svelte'
+    ];
+    for (const name of turnFiles) {
+      const file = join(SRC_DIR, 'lib/components/chat', name);
+      const content = readFileSync(file, 'utf-8');
+      expect(content).not.toContain('justify-end');
+    }
+  });
+
+  it('ensures per-voice rows are the primitive in MessageTurn (Invariant L1)', () => {
+    const turn = readFileSync(join(SRC_DIR, 'lib/components/chat/MessageTurn.svelte'), 'utf-8');
+    expect(turn).toContain('<TurnRow');
+  });
 });
