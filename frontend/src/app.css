@@ -406,12 +406,142 @@ input[type="range"]:disabled::-moz-range-thumb {
   font-family: var(--font-mono);
 }
 
-/* Speech bubble tails */
+/* Speech bubble tails & Layout Neutrality Series (L1-L8) */
+:root {
+  --msg-measure: 72ch;
+  --msg-avatar-size: 2rem;
+}
+
 .bubble-tail {
   position: relative;
 }
 
+/* 1. Alignment */
+[data-align="uniform-left"] .speech-bubble-wrapper,
+[data-align="uniform-left"] .ft-row-header {
+  justify-content: flex-start;
+}
+
+[data-align="split"] .ft-turn[data-role="persona"] .speech-bubble-wrapper,
+[data-align="split"] .ft-row[data-kind="persona"] .speech-bubble-wrapper {
+  justify-content: flex-end;
+}
+
+[data-align="split"] .ft-turn[data-role="persona"] .ft-row-header,
+[data-align="split"] .ft-row[data-kind="persona"] .ft-row-header {
+  justify-content: flex-end;
+}
+
+[data-align="split"] .ft-turn:not([data-role="persona"]) .speech-bubble-wrapper,
+[data-align="split"] .ft-row:not([data-kind="persona"]) .speech-bubble-wrapper {
+  justify-content: flex-start;
+}
+
+[data-align="split"] .ft-turn:not([data-role="persona"]) .ft-row-header,
+[data-align="split"] .ft-row:not([data-kind="persona"]) .ft-row-header {
+  justify-content: flex-start;
+}
+
+/* 2. Container: row (default neutral) */
+[data-container="row"] .speech-bubble {
+  max-width: var(--msg-measure, 72ch);
+  width: 100%;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0.25rem 0;
+  color: inherit;
+}
+
+/* 3. Container: flat */
+[data-container="flat"] .speech-bubble {
+  max-width: var(--msg-measure, 72ch);
+  width: 100%;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0.25rem 0;
+  color: inherit;
+}
+
+/* 4. Container: bubble */
+[data-container="bubble"] .speech-bubble {
+  max-width: 85%;
+  width: fit-content;
+  border-radius: var(--theme-bubble-radius, 1rem);
+  padding: var(--theme-bubble-padding, 1rem 1.25rem);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+@media (min-width: 768px) {
+  [data-container="bubble"] .speech-bubble {
+    max-width: 70%;
+  }
+}
+
+[data-container="bubble"] .ft-bubble-user {
+  background-color: var(--theme-user-bg, rgba(15, 23, 42, 0.8));
+  color: var(--theme-user-text, #f8fafc);
+  border: 1px solid var(--theme-user-border, transparent);
+}
+
+[data-container="bubble"] .ft-bubble-char {
+  background-color: var(--theme-char-bg, rgba(69, 26, 3, 0.6));
+  color: var(--theme-char-text, #fef3c7);
+  border: 1px solid var(--theme-char-border, rgba(180, 83, 9, 0.4));
+}
+
+[data-container="bubble"] .ft-bubble-npc {
+  background-color: var(--theme-char-bg, rgba(69, 26, 3, 0.6));
+  color: var(--theme-char-text, #fef3c7);
+  border: 1px solid color-mix(in oklab, var(--theme-char-border, #b45309) 60%, transparent);
+}
+
+[data-container="bubble"] .ft-bubble-npc[style*="--npc-hue"] {
+  background: color-mix(in oklab, var(--theme-char-bg) 68%, hsl(var(--npc-hue) 55% 45%) 32%);
+  --bubble-tail-color: color-mix(in oklab, var(--theme-char-bg) 68%, hsl(var(--npc-hue) 55% 45%) 32%);
+}
+
+/* 5. Tails */
+.bubble-tail::after {
+  content: '';
+  display: none;
+}
+
+[data-container="bubble"][data-tails="on"] [data-align="split"] .ft-turn[data-role="persona"] .bubble-tail::after,
+[data-container="bubble"][data-tails="on"] [data-align="split"] .ft-row[data-kind="persona"] .bubble-tail::after {
+  display: block;
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: -8px;
+  width: 0;
+  height: 0;
+  border-top: 8px solid transparent;
+  border-left: 8px solid var(--bubble-tail-color, var(--theme-user-bg));
+  border-bottom: 0;
+}
+
+[data-container="bubble"][data-tails="on"] [data-align="split"] .ft-turn:not([data-role="persona"]) .bubble-tail::after,
+[data-container="bubble"][data-tails="on"] [data-align="split"] .ft-row:not([data-kind="persona"]) .bubble-tail::after,
+[data-container="bubble"][data-tails="on"] [data-align="uniform-left"] .bubble-tail::after {
+  display: block;
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -8px;
+  width: 0;
+  height: 0;
+  border-top: 8px solid transparent;
+  border-right: 8px solid var(--bubble-tail-color, var(--theme-char-bg));
+  border-bottom: 0;
+}
+
+/* Legacy data-tail explicit overrides */
 .bubble-tail[data-tail="left"]::after {
+  display: block;
   content: '';
   position: absolute;
   bottom: 0;
@@ -424,6 +554,7 @@ input[type="range"]:disabled::-moz-range-thumb {
 }
 
 .bubble-tail[data-tail="right"]::after {
+  display: block;
   content: '';
   position: absolute;
   bottom: 0;
@@ -435,8 +566,56 @@ input[type="range"]:disabled::-moz-range-thumb {
   border-bottom: 0;
 }
 
+[data-tails="off"] .bubble-tail::after,
+[data-container="row"] .bubble-tail::after,
+[data-container="flat"] .bubble-tail::after,
 .bubble-tail[data-tail="none"]::after {
+  display: none !important;
+}
+
+/* 6. Narrator modes */
+[data-narrator="dim-only"] .narrator-block {
+  max-width: var(--msg-measure, 72ch);
+  width: 100%;
+  text-align: left;
+  margin: 0.25rem 0;
+}
+[data-narrator="dim-only"] .narrator-separator {
   display: none;
+}
+[data-narrator="dim-only"] .narrator-content {
+  color: color-mix(in oklab, var(--chrome-text, #e5e5e5) 72%, transparent);
+  font-style: normal;
+}
+
+[data-narrator="inline"] .narrator-block {
+  max-width: var(--msg-measure, 72ch);
+  width: 100%;
+  text-align: left;
+  margin: 0.25rem 0;
+}
+[data-narrator="inline"] .narrator-separator {
+  display: none;
+}
+[data-narrator="inline"] .narrator-content {
+  color: inherit;
+  font-style: normal;
+}
+
+[data-narrator="centered"] .narrator-block {
+  max-width: 62ch;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  text-align: center;
+}
+[data-narrator="centered"] .narrator-content {
+  font-style: italic;
+  font-size: clamp(0.95rem, 0.9rem + 0.25vw, 1.0625rem);
+  color: var(--theme-narrator-text, #d6d3d1);
 }
 
 /* Ensure native dialog elements are hidden when closed, even with Tailwind display utilities like .flex */

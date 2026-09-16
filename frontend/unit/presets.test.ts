@@ -4,19 +4,25 @@ import {
   TERMINAL_PRESET,
   MANUSCRIPT_PRESET,
   WINDOW_PRESET,
-  NIGHT_MARKET_PRESET
+  NIGHT_MARKET_PRESET,
+  UNIFORM_ROWS_PRESET,
+  SPLIT_BUBBLES_PRESET,
+  CENTERED_NARRATOR_PRESET
 } from '../src/lib/custom/presets';
 import { sanitizeCss } from '@formatavern/shared/customCss';
 import { lintSheet } from '@formatavern/shared/customCss';
 
 describe('Custom CSS Presets (Slice 7)', () => {
-  it('defines 4 curated starter presets with required properties', () => {
-    expect(CUSTOM_CSS_PRESETS.length).toBe(4);
+  it('defines curated starter presets with required properties', () => {
+    expect(CUSTOM_CSS_PRESETS.length).toBe(7);
     expect(CUSTOM_CSS_PRESETS.map((p) => p.id)).toEqual([
       'terminal',
       'manuscript',
       'window',
-      'night-market'
+      'night-market',
+      'uniform-rows',
+      'split-bubbles',
+      'centered-narrator'
     ]);
 
     for (const preset of CUSTOM_CSS_PRESETS) {

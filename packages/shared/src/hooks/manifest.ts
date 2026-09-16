@@ -45,6 +45,11 @@ export const HOOKS = {
     streamCaret: 'ft-stream-caret',
     jumpToLatest: 'ft-jump-to-latest',
     decorLayers: 'ft-chat-decor-layers',
-    decorLayer: 'ft-chat-decor-layer'
+    decorLayer: 'ft-chat-decor-layer',
+    row: 'ft-row',
+    rowHeader: 'ft-row-header',
+    avatar: 'ft-avatar',
+    turnName: 'ft-turn-name',
+    turnBody: 'ft-turn-body'
   }
 } as const satisfies Record<string, Record<string, `ft-${string}`>>;

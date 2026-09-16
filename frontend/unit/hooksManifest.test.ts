@@ -68,7 +68,7 @@ describe('Hook Contract & Manifest Invariants (Invariant C1)', () => {
 
     const uniqueHooks = new Set(allHooks);
     expect(uniqueHooks.size).toBe(allHooks.length);
-    expect(allHooks.length).toBe(36);
+    expect(allHooks.length).toBe(41);
   });
 
   it('prohibits hardcoded ft- class literal strings in frontend/src outside manifest', () => {

@@ -173,9 +173,102 @@ export const NIGHT_MARKET_PRESET: CustomCssPreset = {
 `
 };
 
+export const UNIFORM_ROWS_PRESET: CustomCssPreset = {
+  id: 'uniform-rows',
+  name: 'Uniform Rows',
+  description: 'Clean reading layout with uniform left alignment, subtle borders, and distinct voice tags',
+  css: `/* Uniform Rows — Clean flat reading layout starter */
+.ft-row {
+  max-width: var(--msg-measure, 72ch);
+  margin-bottom: 0.75rem;
+}
+
+.ft-turn-name {
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  color: var(--theme-accent, #60a5fa);
+  margin-bottom: 0.25rem;
+}
+
+.ft-turn-body {
+  border-left: 2px solid color-mix(in srgb, var(--chrome-line) 60%, transparent);
+  padding-left: 0.75rem;
+  line-height: 1.65;
+}
+
+.ft-row[data-kind="narrator"] .ft-turn-body {
+  border-left-color: transparent;
+  color: color-mix(in oklab, var(--chrome-text, #e5e5e5) 75%, transparent);
+  font-style: italic;
+}
+`
+};
+
+export const SPLIT_BUBBLES_PRESET: CustomCssPreset = {
+  id: 'split-bubbles',
+  name: 'Split Bubbles',
+  description: 'Classic messenger style with right-aligned user bubbles, left-aligned companion speech, and rounded cards',
+  css: `/* Split Bubbles — Classic messenger dialogue starter */
+.ft-turn[data-role="persona"] .ft-row {
+  justify-content: flex-end;
+}
+
+.ft-bubble-char {
+  background-color: var(--theme-char-bg, rgba(30, 41, 59, 0.8));
+  border: 1px solid var(--theme-char-border, rgba(51, 65, 85, 0.6));
+  border-radius: 1rem;
+  padding: 0.75rem 1rem;
+}
+
+.ft-bubble-user {
+  background-color: var(--theme-user-bg, rgba(15, 23, 42, 0.9));
+  border: 1px solid var(--theme-user-border, rgba(30, 41, 59, 0.8));
+  border-radius: 1rem;
+  padding: 0.75rem 1rem;
+}
+
+.ft-turn-name {
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  opacity: 0.8;
+}
+`
+};
+
+export const CENTERED_NARRATOR_PRESET: CustomCssPreset = {
+  id: 'centered-narrator',
+  name: 'Centered Narrator',
+  description: 'Atmospheric storybook style with centered narrator passages and stylized quotation framing',
+  css: `/* Centered Narrator — Book style with centered scene descriptions */
+.ft-row[data-kind="narrator"] {
+  justify-content: center;
+  text-align: center;
+  margin: 1.5rem auto;
+  max-width: 60ch;
+}
+
+.ft-row[data-kind="narrator"] .ft-turn-body {
+  font-style: italic;
+  color: color-mix(in srgb, var(--chrome-text, #e5e5e5) 80%, var(--theme-accent, #60a5fa) 20%);
+  padding: 0.5rem 1rem;
+  border-top: 1px dashed color-mix(in srgb, var(--chrome-line) 40%, transparent);
+  border-bottom: 1px dashed color-mix(in srgb, var(--chrome-line) 40%, transparent);
+}
+
+.ft-row:not([data-kind="narrator"]) .ft-turn-name {
+  font-weight: 700;
+  color: var(--theme-accent, #60a5fa);
+}
+`
+};
+
 export const CUSTOM_CSS_PRESETS: readonly CustomCssPreset[] = [
   TERMINAL_PRESET,
   MANUSCRIPT_PRESET,
   WINDOW_PRESET,
-  NIGHT_MARKET_PRESET
+  NIGHT_MARKET_PRESET,
+  UNIFORM_ROWS_PRESET,
+  SPLIT_BUBBLES_PRESET,
+  CENTERED_NARRATOR_PRESET
 ];
