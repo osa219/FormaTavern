@@ -1,8 +1,8 @@
 # FormaTavern — Database & Storage Schema Reference
 
 **Scope:** The definitive data dictionary, relational DDL, JSON column schemas, tree branching model, and integrity contracts for FormaTavern (Phase 0 through Customization Series).
-**Engine:** SQLite 3 in WAL mode via Bun embedded (`bun:sqlite`), schema version `PRAGMA user_version = 5`.
-**Cross-references:** See [`docs/architecture.md §5`](architecture.md#5-storage) for storage architecture and [`.agents/AGENTS.md §4`](../.agents/AGENTS.md#4-invariant-cheat-sheet-cite-by-id) for canonical invariants (I1–I6, S2–S6).
+**Engine:** SQLite 3 in WAL mode via Bun embedded (`bun:sqlite`), schema version `PRAGMA user_version = 7`.
+**Cross-references:** See [`docs/architecture.md §5`](architecture.md#5-storage) for storage architecture and [`.agents/AGENTS.md §4`](../.agents/AGENTS.md#4-invariant-cheat-sheet-cite-by-id) for canonical invariants (I1–I6, S2–S6, L1–L8).
 
 ---
 
@@ -63,11 +63,20 @@ CREATE TABLE IF NOT EXISTS characters (
   created_at   INTEGER NOT NULL,              -- Unix timestamp in milliseconds
   updated_at   INTEGER NOT NULL,              -- Unix timestamp in milliseconds
   metadata     TEXT,                          -- JSON: CharacterMetadata (stateSchema, stateBindings, etc.)
-  custom_css   TEXT                           -- Raw author custom CSS; NULL = none (added in v5)
+  custom_css   TEXT,                          -- Raw author custom CSS; NULL = none (added in v5)
+  layout       TEXT                           -- JSON: CharacterLayout; NULL = neutral baseline (added in v7)
 );
 
 CREATE INDEX IF NOT EXISTS idx_characters_updated ON characters(updated_at DESC);
 ```
+
+#### 2.1.1 `layout` Column & Invariant L4
+
+Added in migration v7 (`chat_layout_neutrality`). Nullable JSON column conforming to `CharacterLayoutSchema`.
+
+- **Invariant L4:** A database value of `NULL` indicates the **neutral baseline** (uniform-left alignment, flat row container, no tails, plain name labels, zero avatars, dimmed narrator in flow).
+- **Migration Backfill:** All existing pre-v7 characters are backfilled with `CLASSIC_LAYOUT` to preserve user-facing layout fidelity, inspecting `style.bubble.charTail` to set `tails: false` if `'none'`, and defaulting to `tails: true`.
+- **API Flow:** Omitted from `CharacterSummary` (Invariant L0). In `PATCH /api/characters/:id`, `layout: null` resets the card back to the neutral baseline (`NULL` in SQLite). In Studio, "Reset to Neutral" sends `null`.
 
 ### 2.2 `personas` Table
 
@@ -435,10 +444,11 @@ The database integrity script (`backend/scripts/check.ts`) enforces strict runti
 
 | Audit Item | Rule / Assertion | Invariant |
 |---|---|---|
-| **Pragma Audit** | `journal_mode = wal`, `foreign_keys = 1`, `user_version = 5`. | I3, I4 |
+| **Pragma Audit** | `journal_mode = wal`, `foreign_keys = 1`, `user_version = 7`. | I3, I4 |
 | **Integrity Check** | `PRAGMA integrity_check` returns `ok`. | Engine |
 | **Foreign Key Check** | `PRAGMA foreign_key_check` returns 0 violations. | I4 |
-| **Columns Check** | `messages` includes `narrative_role`, `sender_name`, `segments`, `state`. `chats` includes `active_leaf_id`. `characters` includes `custom_css`. | v2, v3, v5 |
+| **Columns Check** | `messages` includes `narrative_role`, `sender_name`, `segments`, `state`. `chats` includes `active_leaf_id`. `characters` includes `custom_css`, `layout`. | v2, v3, v5, v7 |
+| **Layout Validity Audit** | Every non-null `characters.layout` parses and validates against `CharacterLayoutSchema` (`layout_valid = ok`). | L4, v7 |
 | **Search Index Parity** | `characters_fts` count matches `characters` count (`fts_parity = ok`). | P6 |
 | **Zero Streaming Rows** | No rows exist with `status = 'streaming'` on an idle database. | S3 |
 | **Active Leaf Cohesion** | `chats.active_leaf_id` exists and belongs to the same chat. | S6 |

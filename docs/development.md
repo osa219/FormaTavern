@@ -113,6 +113,14 @@ The per-phase blueprints list **required tests by name**; a PR that removes or w
 | C12 (SPA style lifecycle) | `frontend/unit/customStyleOutlet.test.ts`, `frontend/unit/chatViewportStyle.test.ts` |
 | C13 (Performance budgets) | `packages/shared/test/schemas.test.ts` (decor maxItems: 2), `frontend/unit/boundaries.test.ts` (dynamic `css-tree`) |
 | C14 (Surface completeness & dialog scoping) | `frontend/unit/surfaces.test.ts` |
+| L1 (Per-voice row primitive) | `frontend/unit/layoutContract.test.ts`, `boundaries.test.ts` |
+| L2 (No role-branched layout) | `frontend/unit/boundaries.test.ts`, `SpeechBubble.svelte` |
+| L3 (Pure resolveLayout) | `packages/shared/test/layout/resolve.test.ts` |
+| L4 (NULL=neutral, backfill=classic) | `backend/test/migrations.test.ts`, `repositories/characters.test.ts` |
+| L5 (Classic preset layout-only) | `packages/shared/test/layout/presets.test.ts` |
+| L6 (Single owner: card only) | `packages/shared/test/schemas.test.ts` |
+| L7 (Measure stability) | `frontend/unit/layoutContract.test.ts`, `app.css` (`--msg-measure: 72ch`) |
+| L8 (Non-owner inline voice tags) | `frontend/unit/layoutContract.test.ts`, `TurnRow.svelte` |
 
 ### 6.4 Writing tests
 - Prefer table-driven cases over prose-heavy ones; assert on codes/paths (`/style/colors/accent`, `state_unclosed`), not message text.

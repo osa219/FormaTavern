@@ -12,6 +12,7 @@
 4. **Single-request narrative.** Narrator, character, NPCs, and a state vector arrive in one completion; the parser is a pure function of the full buffer (E1, E2).
 5. **Byte-exact, version-agnostic wire contracts** (S9).
 6. **Self-contained companion ecosystem.** Complete author showcase, companion studio with OCC, persona roster with atomic defaults, FTS5 discovery catalog, and local SHA-256 asset store (P1–P7).
+7. **Neutral layout as data.** The chat log is neutral by default (uniform-left, row container, plain names, zero avatars, dimmed narrator in flow). Layout is owned strictly by the character card (`CharacterLayout`), resolved purely via `resolveLayout`, and expressed through DOM data attributes rather than role conditionals (L1–L8).
 
 ---
 
@@ -320,6 +321,18 @@ Surfaces never nest; exactly one `<CustomStyleOutlet>` is ever active on a page:
 ### 11.4 Markdown pipelines (`lib/render/`)
 1. **Roleplay prose:** `renderRoleplayMarkdown` via `marked` + speech quotes (`<q class="speech">`) sanitized through strict DOMPurify allow-list (`Markdown.svelte`).
 2. **Author showcase:** `renderShowcaseMarkdown` via `marked` + headings, tables, lists, images (local `/assets/` and `data:image/` only; remote URLs strictly rejected per P3) + safe inline style allowlist (`rebuildStyle` preserving typography, colors, layout, and borders per Amendment A-U2). Rendered exclusively in `ShowcaseBody.svelte`.
+
+### 11.5 Chat Message Layout Architecture (Invariants L1–L8)
+Message rendering in `/chat/[chatId]` decouples structure from role styling:
+- **Per-voice row primitive (Invariant L1):** `article.ft-turn[data-role]` contains $N$ `div.ft-row[data-kind]` rows (`TurnRow.svelte`), each exposing a header slot (avatar + name label) and a body slot (`ft-turn-body`). Single-header turn presentation is a collapsed view over these rows, not a divergent data structure.
+- **Zero role-branched layout in components (Invariant L2):** Component code contains zero conditional alignment (`justify-end` / `justify-start`), tails, or backgrounds based on message role. All alignment, container boundaries, speech tails, and narrator geometries are driven strictly by DOM data attributes (`data-align`, `data-container`, `data-headers`, `data-narrator`, `data-tails`).
+- **Pure resolveLayout (Invariant L3):** `resolveLayout(card?.layout, mode): ResolvedLayout` in `@formatavern/shared` is a pure deterministic mapping. Blank card or `NULL` layout yields `NEUTRAL_LAYOUT_DOC` (uniform-left, row container, dim narrator, plain names, 0 avatars, no tails). In classic chats, headers are forced to `single` and NPC/narrator controls are marked inert.
+- **NULL = neutral, backfill = classic (Invariant L4):** Existing pre-v7 cards were backfilled with `CLASSIC_LAYOUT` (honoring `charTail: 'none'` intent), while new characters default to the neutral baseline.
+- **Classic preset layout-only (Invariant L5):** `CLASSIC_LAYOUT` contains strictly 0 style/color keys.
+- **Single owner (Invariant L6):** Layout configuration is owned exclusively by the character card (`CharacterLayout`). It is absent from `ThemeOverridesSchema` and persona configurations.
+- **Measure stability (Invariant L7):** `--msg-measure: 72ch` is a stylesheet constant in `app.css`. Container widths do not shrink-wrap or jump between turns.
+- **Honesty in collapsed headers (Invariant L8):** When `headers === 'single'`, non-owner segments (NPC or switched voices) retain inline voice tags (`span.ft-turn-name.inline`) to prevent voice misattribution.
+- **Two-Track System:** Track 1 provides easy controls in Studio (`LayoutPanel.svelte`); Track 2 provides expressive CSS control via stable hooks (`.ft-row`, `.ft-turn-body`, `.ft-avatar`, `.ft-turn-name`) with starter sheets (`UNIFORM_ROWS_PRESET`, `SPLIT_BUBBLES_PRESET`, `CENTERED_NARRATOR_PRESET`).
 
 ---
 
