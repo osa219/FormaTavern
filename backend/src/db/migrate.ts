@@ -1,4 +1,5 @@
 import type { Database } from 'bun:sqlite';
+import { CLASSIC_LAYOUT } from '@formatavern/shared';
 
 export interface Migration {
   version: number;
@@ -154,6 +155,44 @@ export const migrations: readonly Migration[] = [
         updated_at INTEGER NOT NULL
       );`);
       db.run(`CREATE INDEX IF NOT EXISTS idx_provider_configs_updated ON provider_configs(updated_at DESC);`);
+    }
+  },
+  {
+    version: 7,
+    name: 'chat_layout_neutrality',
+    up: (db) => {
+      // 1. DDL: characters.layout as nullable JSON column (NULL = neutral default, Invariant L4)
+      db.run(`ALTER TABLE characters ADD COLUMN layout TEXT;`);
+
+      // 2. Backfill: stamp existing layout IS NULL rows with CLASSIC_LAYOUT,
+      // honoring charTail: 'none' intent if present in style.
+      const rows = db.query(`SELECT id, style FROM characters WHERE layout IS NULL;`).all() as Array<{
+        id: string;
+        style: string | null;
+      }>;
+
+      const updateStmt = db.prepare(`UPDATE characters SET layout = ? WHERE id = ?;`);
+
+      for (const row of rows) {
+        let tails = true;
+        if (row.style) {
+          try {
+            const parsed = JSON.parse(row.style);
+            if (parsed?.bubble?.charTail === 'none') {
+              tails = false;
+            }
+          } catch {
+            // Guard: unparseable style falls back to tails: true (current visual)
+          }
+        }
+
+        const classicDoc = {
+          ...CLASSIC_LAYOUT,
+          tails
+        };
+
+        updateStmt.run(JSON.stringify(classicDoc), row.id);
+      }
     }
   }
 ];

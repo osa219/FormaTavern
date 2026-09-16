@@ -300,4 +300,67 @@ describe('SqliteCharacterRepository (Phase 5)', () => {
     const refetched = repos.characters.get('styled');
     expect(refetched?.customCss).toBeUndefined();
   });
+
+  it('round-trips character layout, duplicates layout, excludes from summary, and null-clears on patch', () => {
+    inst = openTestDb(':memory:');
+    runMigrations(inst.db);
+    const repos = createRepositories(inst.db);
+
+    const layout = {
+      align: 'uniform-left' as const,
+      container: 'row' as const,
+      headers: 'voices' as const,
+      avatars: { character: true, persona: false, npc: false, shape: 'square' as const },
+      narrator: 'dim-only' as const,
+      names: { showCharacter: true, showPersona: true, showNpc: true, format: 'plain' as const },
+      tails: false
+    };
+
+    const c = repos.characters.create({
+      ...makeCard('layout-char', 'Layout Character'),
+      layout
+    });
+    expect(c.layout).toEqual(layout);
+
+    const fetched = repos.characters.get('layout-char');
+    expect(fetched?.layout).toEqual(layout);
+
+    // Duplication carries layout (Invariant C11 spirit / Blueprint §3.3)
+    const dup = repos.characters.duplicate('layout-char');
+    expect(dup.layout).toEqual(layout);
+
+    // Summary excludes layout (Invariant L0)
+    const list = repos.characters.list();
+    const summary = list.items.find((i) => i.id === 'layout-char') as any;
+    expect(summary).toBeDefined();
+    expect(summary.layout).toBeUndefined();
+
+    // Patch updating layout
+    const updatedLayout = {
+      ...layout,
+      align: 'split' as const,
+      container: 'bubble' as const,
+      tails: true
+    };
+    const patched = repos.characters.patch('layout-char', {
+      layout: updatedLayout,
+      expectedUpdatedAt: fetched!.updatedAt!
+    });
+    expect(typeof patched).not.toBe('string');
+    if (typeof patched !== 'string') {
+      expect(patched.layout).toEqual(updatedLayout);
+    }
+
+    // Patch clearing layout with null -> becomes neutral (undefined)
+    const patchedClear = repos.characters.patch('layout-char', {
+      layout: null,
+      expectedUpdatedAt: (patched as CharacterCard).updatedAt!
+    });
+    expect(typeof patchedClear).not.toBe('string');
+    if (typeof patchedClear !== 'string') {
+      expect(patchedClear.layout).toBeUndefined();
+    }
+    const refetched = repos.characters.get('layout-char');
+    expect(refetched?.layout).toBeUndefined();
+  });
 });

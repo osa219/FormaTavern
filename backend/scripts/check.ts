@@ -2,7 +2,7 @@ import { DB_PATH } from '../src/db/paths';
 import { openDatabase } from '../src/db/connection';
 import { createRepositories } from '../src/db/repositories';
 import { nearestState } from '../src/engine/context';
-import { validate, CharacterCardSchema, CharacterSummarySchema, PersonaSchema } from '@formatavern/shared';
+import { validate, CharacterCardSchema, CharacterSummarySchema, PersonaSchema, CharacterLayoutSchema } from '@formatavern/shared';
 
 let db;
 try {
@@ -31,8 +31,8 @@ try {
     console.error(`[check] ERROR: foreign_keys is not 1`);
     hasFailure = true;
   }
-  if (user_version !== 6) {
-    console.error(`[check] ERROR: user_version is ${user_version}, expected 6`);
+  if (user_version !== 7) {
+    console.error(`[check] ERROR: user_version is ${user_version}, expected 7`);
     hasFailure = true;
   }
 
@@ -64,6 +64,37 @@ try {
       hasFailure = true;
     } else {
       console.log(`custom_css_column=ok`);
+    }
+  }
+
+  if (!charColNames.includes('layout')) {
+    console.error(`[check] ERROR: characters table missing required column 'layout'`);
+    hasFailure = true;
+  } else {
+    const layoutRows = db.query('SELECT id, layout FROM characters WHERE layout IS NOT NULL;').all() as Array<{
+      id: string;
+      layout: string;
+    }>;
+    let invalidLayouts = 0;
+    for (const lr of layoutRows) {
+      try {
+        const parsed = JSON.parse(lr.layout);
+        const v = validate(CharacterLayoutSchema, parsed);
+        if (!v.ok) {
+          console.error(`[check] ERROR: Character ${lr.id} has invalid layout:`, v.issues);
+          invalidLayouts++;
+          hasFailure = true;
+        }
+      } catch (e: any) {
+        console.error(`[check] ERROR: Character ${lr.id} has unparseable layout JSON:`, e.message);
+        invalidLayouts++;
+        hasFailure = true;
+      }
+    }
+    if (invalidLayouts === 0) {
+      console.log(`layout_valid=ok (${layoutRows.length} checked)`);
+    } else {
+      console.error(`layout_valid=failed (${invalidLayouts} invalid out of ${layoutRows.length})`);
     }
   }
 
