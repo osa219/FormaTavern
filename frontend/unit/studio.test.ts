@@ -234,4 +234,58 @@ describe('CharacterDraft & Studio State (Layer 7)', () => {
     expect(draft2.expectedUpdatedAt).toBe(1500);
     expect(draft2.dirty).toBe(false);
   });
+
+  it('populates layout from existing card and sends layout in PATCH payload', async () => {
+    let patchBody: any = null;
+    const mockClient = {
+      api: {
+        characters: () => ({
+          patch: mock(async (body: any) => {
+            patchBody = body;
+            return {
+              data: { ...sampleCard, ...body, updatedAt: 2000 },
+              status: 200,
+              error: null
+            };
+          })
+        })
+      }
+    };
+
+    const cardWithLayout: CharacterCard = {
+      ...sampleCard,
+      layout: {
+        align: 'split',
+        container: 'bubble',
+        tails: true
+      }
+    };
+
+    const draft = new CharacterDraft(cardWithLayout, mockClient);
+    expect(draft.card.layout?.align).toBe('split');
+    expect(draft.card.layout?.container).toBe('bubble');
+    expect(draft.card.layout?.tails).toBe(true);
+
+    // Modify layout
+    draft.card.layout = {
+      align: 'uniform-left',
+      container: 'row',
+      tails: false
+    };
+    expect(draft.dirty).toBe(true);
+
+    const result = await draft.save();
+    expect(result).toBe('saved');
+    expect(patchBody.layout).toEqual({
+      align: 'uniform-left',
+      container: 'row',
+      tails: false
+    });
+
+    // When layout is cleared (undefined), patch sends null (Invariant L4: clear to neutral)
+    draft.card.layout = undefined;
+    expect(draft.dirty).toBe(true);
+    await draft.save();
+    expect(patchBody.layout).toBeNull();
+  });
 });

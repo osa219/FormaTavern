@@ -298,6 +298,27 @@
         >
           .ft-bubble-char
         </button>
+        <button
+          type="button"
+          onclick={() => insertSnippet('.ft-row {\n  /* Segment row styling */\n}\n')}
+          class="rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1 text-xs font-mono text-(--chrome-text) hover:bg-(--chrome-line)/40 transition-colors"
+        >
+          .ft-row
+        </button>
+        <button
+          type="button"
+          onclick={() => insertSnippet('.ft-turn-body {\n  /* Turn body styling */\n}\n')}
+          class="rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1 text-xs font-mono text-(--chrome-text) hover:bg-(--chrome-line)/40 transition-colors"
+        >
+          .ft-turn-body
+        </button>
+        <button
+          type="button"
+          onclick={() => insertSnippet('.ft-avatar {\n  /* Avatar styling */\n}\n')}
+          class="rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1 text-xs font-mono text-(--chrome-text) hover:bg-(--chrome-line)/40 transition-colors"
+        >
+          .ft-avatar
+        </button>
       {/if}
       <button
         type="button"

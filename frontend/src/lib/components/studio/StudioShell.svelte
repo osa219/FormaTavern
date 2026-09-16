@@ -10,6 +10,7 @@
   import VoicePanel from './VoicePanel.svelte';
   import ShowcaseEditor from './ShowcaseEditor.svelte';
   import AestheticPanel from './AestheticPanel.svelte';
+  import LayoutPanel from './LayoutPanel.svelte';
   import StatePanel from './StatePanel.svelte';
   import BindingsPanel from './BindingsPanel.svelte';
   import GalleryManager from './GalleryManager.svelte';
@@ -21,7 +22,7 @@
 
   let { draft }: { draft: CharacterDraft } = $props();
 
-  type StudioTab = 'identity' | 'voice' | 'showcase' | 'aesthetic' | 'css' | 'state' | 'bindings' | 'gallery' | 'prompt';
+  type StudioTab = 'identity' | 'voice' | 'showcase' | 'aesthetic' | 'layout' | 'css' | 'state' | 'bindings' | 'gallery' | 'prompt';
   let activeTab = $state<StudioTab>('identity');
   let saving = $state(false);
   let discardConfirmOpen = $state(false);
@@ -146,6 +147,7 @@
           { id: 'voice', label: 'Voice' },
           { id: 'showcase', label: 'Showcase' },
           { id: 'aesthetic', label: 'Aesthetic' },
+          { id: 'layout', label: 'Layout' },
           { id: 'css', label: 'Custom CSS' },
           { id: 'state', label: 'State' },
           { id: 'bindings', label: 'Bindings' },
@@ -174,6 +176,8 @@
           <ShowcaseEditor {draft} />
         {:else if activeTab === 'aesthetic'}
           <AestheticPanel {draft} />
+        {:else if activeTab === 'layout'}
+          <LayoutPanel {draft} />
         {:else if activeTab === 'css'}
           <CustomCssPanel {draft} />
         {:else if activeTab === 'state'}

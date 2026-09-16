@@ -28,6 +28,7 @@ export function createEmptyCard(): CharacterCreate {
     customCss: '',
     tags: [],
     style: JSON.parse(JSON.stringify(DEFAULT_CHARACTER_THEME)),
+    layout: undefined,
     stateSchema: {},
     stateBindings: [],
     initialState: {}
@@ -102,6 +103,7 @@ export class CharacterDraft {
         customCss: initialCard.customCss ?? '',
         tags: [...(initialCard.tags ?? [])],
         style: JSON.parse(JSON.stringify(initialCard.style)),
+        layout: initialCard.layout ? JSON.parse(JSON.stringify(initialCard.layout)) : undefined,
         stateSchema: initialCard.stateSchema ? JSON.parse(JSON.stringify(initialCard.stateSchema)) : {},
         stateBindings: initialCard.stateBindings ? JSON.parse(JSON.stringify(initialCard.stateBindings)) : [],
         initialState: initialCard.initialState ? JSON.parse(JSON.stringify(initialCard.initialState)) : {}
@@ -231,6 +233,7 @@ export class CharacterDraft {
         const payload: any = {
           ...this.card,
           customCss: this.card.customCss?.trim() ? this.card.customCss : null,
+          layout: this.card.layout ? this.card.layout : null,
           expectedUpdatedAt: this.expectedUpdatedAt ?? Date.now()
         };
         const res = await (this.client.api.characters({ id: this.characterId }).patch as any)(payload);
@@ -254,7 +257,8 @@ export class CharacterDraft {
         // POST new character (promotes draft owner if uploaded)
         const payload: any = {
           ...this.card,
-          customCss: this.card.customCss?.trim() ? this.card.customCss : undefined
+          customCss: this.card.customCss?.trim() ? this.card.customCss : undefined,
+          layout: this.card.layout ? this.card.layout : undefined
         };
         const res = await (this.client.api.characters.post as any)(payload);
         if (res.error) {
