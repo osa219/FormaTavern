@@ -55,6 +55,15 @@ export const ChatListItemSchema = Type.Object({
 });
 export type ChatListItem = Static<typeof ChatListItemSchema>;
 
+export const ChatConvertBodySchema = Type.Object({
+  targetDialect: Type.Union([
+    Type.Literal('directive'),
+    Type.Literal('xml'),
+    Type.Literal('prefix')
+  ])
+});
+export type ChatConvertBody = Static<typeof ChatConvertBodySchema>;
+
 export const ChatListQuerySchema = Type.Object({
   characterId: Type.Optional(Id),
   limit: Type.Optional(

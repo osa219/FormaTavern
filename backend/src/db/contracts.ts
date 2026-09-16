@@ -142,6 +142,7 @@ export interface MessageRepository {
     opts: { before?: string; limit: number }
   ): MessageWithTree[];
   countInChat(chatId: string): number;
+  listInChat(chatId: string): MessageRow[];
   updateStreaming(id: string, patch: { content: string; segments: Segment[] }): void;
   finalize(
     id: string,

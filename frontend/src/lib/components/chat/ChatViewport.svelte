@@ -144,6 +144,24 @@
     await session.edit(id, newContent);
   }
 
+  async function handleConvertChat(
+    targetDialect: 'directive' | 'xml' | 'prefix'
+  ): Promise<{ converted: number; unchanged: number }> {
+    const { data, error } = await api.api.chats({ id: session.chatId }).convert.post({
+      targetDialect
+    });
+    if (error) {
+      throw new Error(toUiError(error).message);
+    }
+    await session.refetchState();
+    const result = data as { converted: number; unchanged: number };
+    toasts.success(
+      `Converted ${result.converted} turn${result.converted === 1 ? '' : 's'} to ${targetDialect}` +
+        (result.unchanged > 0 ? ` (${result.unchanged} plain turns untouched)` : '')
+    );
+    return result;
+  }
+
   async function handleNewChat(characterId?: string) {
     const charId = characterId || session.character?.id;
     if (!charId) return;
@@ -476,6 +494,7 @@
         loreOpen = false;
         settingsOpen = true;
       }}
+      onConvertChat={handleConvertChat}
     />
   {/if}
 </div>

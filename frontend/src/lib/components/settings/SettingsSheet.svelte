@@ -16,7 +16,8 @@ import {
 import { validateNarrativeExample } from '$lib/settings/narrative';
   import { prefs } from '$lib/state/prefs.svelte';
   import { shellTheme } from '$lib/state/shellTheme.svelte';
-  import type { ProviderConfigView, SettingsPatch, ShellTheme } from '@formatavern/shared';
+  import type { ChatView, ProviderConfigView, SettingsPatch, ShellTheme } from '@formatavern/shared';
+import { api } from '$lib/api';
   import { HOOKS } from '@formatavern/shared';
   import CustomCssPanel from '../studio/CustomCssPanel.svelte';
 
@@ -251,6 +252,42 @@ import { validateNarrativeExample } from '$lib/settings/narrative';
   }
 
   const s = $derived(settingsStore.settings);
+
+  // Dialect-mismatch nudge: changing the global default never rewrites chats,
+  // so point at the ones speaking other formats (convertible per chat).
+  let dialectMismatch = $state<{ count: number; chats: Array<{ id: string; title: string; dialect: string }> } | null>(
+    null
+  );
+
+  $effect(() => {
+    if (activeTab !== 'narrative') return;
+    const def = s?.narrative.defaultDialect;
+    if (!def) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data, error } = await api.api.chats.get();
+        if (cancelled || error || !Array.isArray(data)) return;
+        const others = (data as ChatView[])
+          .filter(
+            (c) =>
+              c.metadata?.narrativeMode === 'narrative' &&
+              (c.metadata?.envelopeDialect ?? 'directive') !== def
+          )
+          .map((c) => ({
+            id: c.id,
+            title: c.title,
+            dialect: c.metadata?.envelopeDialect ?? 'directive'
+          }));
+        dialectMismatch = { count: others.length, chats: others.slice(0, 20) };
+      } catch {
+        // Non-fatal: the nudge simply stays hidden.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  });
 
   // Narrative example editor (§4): a single canonical example, authored in
   // directive syntax and rendered into every dialect server-side.
@@ -1044,6 +1081,24 @@ import { validateNarrativeExample } from '$lib/settings/narrative';
             <option value="xml">XML Tags (&lt;narrator&gt; / &lt;speech&gt;)</option>
             <option value="prefix">Prefix (Narrator: / Character:)</option>
           </select>
+          {#if dialectMismatch && dialectMismatch.count > 0}
+            <details class="mt-1.5 rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 px-3 py-2">
+              <summary class="cursor-pointer text-[11px] text-(--chrome-text)/70 select-none">
+                {dialectMismatch.count} existing chat{dialectMismatch.count === 1 ? '' : 's'} speak{dialectMismatch.count === 1 ? 's' : ''} another format — changing the default never rewrites them
+              </summary>
+              <ul class="mt-1.5 space-y-1">
+                {#each dialectMismatch.chats as c (c.id)}
+                  <li class="flex items-center gap-2 text-[11px]">
+                    <a href="/chat/{c.id}" class="text-accent underline hover:text-accent/80">{c.title}</a>
+                    <span class="font-mono text-(--chrome-text)/50">{c.dialect}</span>
+                  </li>
+                {/each}
+              </ul>
+              <p class="mt-1.5 text-[11px] text-(--chrome-text)/60">
+                Open a chat → About tab → Convert to re-render it explicitly.
+              </p>
+            </details>
+          {/if}
         </div>
 
         <div>

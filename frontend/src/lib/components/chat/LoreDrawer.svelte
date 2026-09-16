@@ -1,10 +1,14 @@
 <script lang="ts">
   import type { CharacterCard, ChatView, Persona, StateVector } from '@formatavern/shared';
+  import { settingsStore } from '$lib/state/settings.svelte';
   import { HOOKS } from '@formatavern/shared';
   import ShowcaseBody from '$lib/components/showcase/ShowcaseBody.svelte';
   import Icon from '$lib/components/ui/Icon.svelte';
   import PromptTab from './PromptTab.svelte';
   import type { PromptDraft } from '$lib/prompt/preview';
+
+  const CONVERT_DIALECTS = ['directive', 'xml', 'prefix'] as const;
+  type ConvertDialect = (typeof CONVERT_DIALECTS)[number];
 
   let {
     open,
@@ -19,7 +23,8 @@
     onClose,
     onSwitchPersona,
     onOpenStateOverride,
-    onEditSettings
+    onEditSettings,
+    onConvertChat
   }: {
     open: boolean;
     character: CharacterCard;
@@ -34,6 +39,7 @@
     onSwitchPersona: (personaId: string) => Promise<void>;
     onOpenStateOverride?: () => void;
     onEditSettings?: () => void;
+    onConvertChat?: (targetDialect: ConvertDialect) => Promise<{ converted: number; unchanged: number }>;
   } = $props();
 
   type LoreTab = 'about' | 'voice' | 'you' | 'state' | 'prompt';
@@ -46,6 +52,53 @@
   $effect(() => {
     if (open) activeTab = initialTab;
   });
+
+
+
+  // Inline dialect conversion flow (explicit per-chat action, never automatic).
+  let convertOpen = $state(false);
+  let convertTarget = $state<ConvertDialect | null>(null);
+  let converting = $state(false);
+  let convertError = $state<string | null>(null);
+
+  const chatDialect = $derived(
+    chat?.metadata?.narrativeMode === 'narrative' ? (chat.metadata.envelopeDialect ?? 'directive') : null
+  );
+
+  // Global default for the misalignment prompt below. Loaded on demand: the
+  // chat page never fetches settings otherwise, and an unloaded store simply
+  // hides the prompt (the generic Convert action always stays).
+  $effect(() => {
+    if (open && !settingsStore.settings && !settingsStore.loading) {
+      void settingsStore.load();
+    }
+  });
+
+  const defaultDialect = $derived(settingsStore.settings?.narrative.defaultDialect ?? null);
+  const misalignedDialect = $derived(
+    chatDialect && defaultDialect && chatDialect !== defaultDialect ? defaultDialect : null
+  );
+
+  function openConvert() {
+    convertOpen = true;
+    convertTarget = null;
+    convertError = null;
+  }
+
+  async function confirmConvert() {
+    if (!convertTarget || !onConvertChat) return;
+    converting = true;
+    convertError = null;
+    try {
+      await onConvertChat(convertTarget);
+      convertOpen = false;
+      convertTarget = null;
+    } catch (err: any) {
+      convertError = err?.message ?? 'Conversion failed';
+    } finally {
+      converting = false;
+    }
+  }
   let switching = $state(false);
 
   async function handleSelectPersona(e: Event) {
@@ -126,9 +179,89 @@
             <div class="flex flex-wrap items-center gap-1.5 text-[11px]">
               <span class="text-neutral-500">This conversation speaks</span>
               <span class="rounded border border-neutral-800 bg-neutral-950 px-1.5 py-0.5 font-mono text-neutral-300">
-                {chat.metadata.narrativeMode === 'narrative' ? (chat.metadata.envelopeDialect ?? 'directive') : 'classic prose'}
+                {chatDialect ?? 'classic prose'}
               </span>
-              <span class="text-neutral-500" title="The format is set when the chat is created and never changes mid-story">locked at creation</span>
+              {#if chatDialect}
+                <span class="text-neutral-500" title="The format is set when the chat is created. Convert it explicitly below — never automatically.">locked at creation</span>
+                {#if misalignedDialect && !convertOpen}
+                  <button
+                    type="button"
+                    onclick={() => {
+                      convertOpen = true;
+                      convertTarget = misalignedDialect;
+                      convertError = null;
+                    }}
+                    class="rounded border border-amber-800/80 bg-amber-950/40 px-1.5 py-0.5 font-mono text-amber-300 hover:text-amber-200"
+                    title="Re-render this chat from {chatDialect} into your default {misalignedDialect}"
+                  >
+                    default is {misalignedDialect} — convert?
+                  </button>
+                {/if}
+                {#if onConvertChat}
+                  {#if !convertOpen}
+                    <button
+                      type="button"
+                      onclick={openConvert}
+                      class="rounded border border-neutral-800 bg-neutral-950 px-1.5 py-0.5 font-mono text-accent hover:text-accent/80"
+                      title="Re-render this chat's history in another format"
+                    >
+                      Convert…
+                    </button>
+                  {:else}
+                    <div class="flex w-full flex-col gap-1.5 rounded-xl border border-neutral-800 bg-neutral-950/60 p-2.5">
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-neutral-400">Convert to</span>
+                        {#each CONVERT_DIALECTS.filter((d) => d !== chatDialect) as target (target)}
+                          <button
+                            type="button"
+                            onclick={() => {
+                              convertTarget = target;
+                              convertError = null;
+                            }}
+                            disabled={converting}
+                            class="rounded border px-1.5 py-0.5 font-mono {convertTarget === target
+                              ? 'border-accent text-accent'
+                              : 'border-neutral-800 text-neutral-300 hover:text-neutral-100'} disabled:opacity-40"
+                          >
+                            {target}
+                          </button>
+                        {/each}
+                        <button
+                          type="button"
+                          onclick={() => {
+                            convertOpen = false;
+                            convertTarget = null;
+                            convertError = null;
+                          }}
+                          disabled={converting}
+                          class="ml-auto text-neutral-500 hover:text-neutral-300 disabled:opacity-40"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                      {#if convertTarget}
+                        <p class="leading-relaxed text-neutral-500">
+                          Re-renders every turn from its stored form into {convertTarget}. Mechanical and
+                          reversible by converting back — plain user messages pass through untouched.
+                        </p>
+                        <div>
+                          <button
+                            type="button"
+                            onclick={confirmConvert}
+                            disabled={converting}
+                            class="rounded-lg bg-accent px-2.5 py-1 text-[11px] font-semibold text-accent-contrast hover:bg-accent/90 disabled:opacity-40"
+                          >
+                            {converting ? 'Converting…' : `Confirm convert to ${convertTarget}`}
+                          </button>
+                        </div>
+                      {/if}
+                      {#if convertError}
+                        <p class="leading-relaxed text-red-300" role="alert">{convertError}</p>
+                      {/if}
+                    </div>
+                  {/if}
+                {/if}
+              {/if}
             </div>
           {/if}
           {#if character.showcase}

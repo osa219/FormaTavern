@@ -1,5 +1,6 @@
 import { Elysia } from 'elysia';
 import {
+  ChatConvertBodySchema,
   ChatCreateSchema,
   ChatListQuerySchema,
   ChatPatchSchema,
@@ -9,6 +10,7 @@ import {
   defaultState,
   parseEnvelope,
   resolveState,
+  type ChatConvertBody,
   type ChatCreate,
   type ChatMetadata,
   type ChatPatch,
@@ -25,6 +27,7 @@ import type { ChatRow, MessageRow, Repositories } from '../db/contracts';
 import { newId } from '../db/ids';
 import type { GenerationHub, GenerationJob, ProviderRegistry } from '../engine/contracts';
 import { assembleContext } from '../engine/context';
+import { ConvertError, planDialectConversion } from '../engine/convert';
 import { ApiError } from '../engine/errors';
 import { runGeneration } from '../engine/generation';
 import { buildPrompt } from '../prompt/builder';
@@ -369,6 +372,88 @@ export function createChatsRouter(deps: {
       },
       {
         body: PromptPreviewBodySchema
+      }
+    )
+    .post(
+      '/:id/convert',
+      ({ params, body }): {
+        converted: number;
+        unchanged: number;
+        targetDialect: string;
+        warnings: Array<{ messageId: string; codes: string[] }>;
+      } => {
+        // Explicit per-chat dialect conversion: re-render every turn through
+        // the canonical segment form, atomically. Never automatic.
+        const convertBody = body as ChatConvertBody;
+        const chat = repos.chats.get(params.id);
+        if (!chat) {
+          throw new ApiError('not_found', 404, `Chat ${params.id} not found`);
+        }
+
+        if (chat.metadata.narrativeMode !== 'narrative') {
+          throw new ApiError('validation_failed', 422, 'Only narrative chats have a dialect to convert');
+        }
+        const sourceDialect = chat.metadata.envelopeDialect ?? 'directive';
+        if (convertBody.targetDialect === sourceDialect) {
+          throw new ApiError('validation_failed', 422, `Chat already speaks ${sourceDialect}`);
+        }
+
+        if (hub.activeForChat(chat.id)) {
+          throw new ApiError('generation_in_progress', 409, 'Cannot convert while generation is active');
+        }
+
+        const character = repos.characters.get(chat.primaryCharacterId);
+        if (!character) {
+          throw new ApiError('not_found', 404, `Character ${chat.primaryCharacterId} not found`);
+        }
+        const persona = repos.personas.get(chat.activePersonaId);
+        if (!persona) {
+          throw new ApiError('not_found', 404, `Persona ${chat.activePersonaId} not found`);
+        }
+
+        const rows = repos.messages.listInChat(chat.id);
+        let plan: ReturnType<typeof planDialectConversion>;
+        try {
+          plan = planDialectConversion(rows, {
+            sourceDialect,
+            targetDialect: convertBody.targetDialect,
+            primaryCharacter: character.name,
+            knownNames: [
+              character.name,
+              ...Object.values(chat.metadata.npcs ?? {}).map((n) => n.displayName)
+            ],
+            personaName: persona.name
+          });
+        } catch (err) {
+          if (err instanceof ConvertError) {
+            throw new ApiError('validation_failed', 422, err.message);
+          }
+          throw err;
+        }
+
+        repos.transaction(() => {
+          for (const u of plan.updates) {
+            repos.messages.updateContent(u.id, {
+              content: u.content,
+              segments: u.segments,
+              metadata: u.metadata
+            });
+          }
+          repos.chats.update(chat.id, {
+            metadata: { ...chat.metadata, envelopeDialect: convertBody.targetDialect },
+            updatedAt: Date.now()
+          });
+        });
+
+        return {
+          converted: plan.converted,
+          unchanged: plan.unchanged,
+          targetDialect: convertBody.targetDialect,
+          warnings: plan.warnings
+        };
+      },
+      {
+        body: ChatConvertBodySchema
       }
     )
     .post(

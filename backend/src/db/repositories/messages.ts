@@ -258,6 +258,13 @@ export class SQLiteMessageRepository implements MessageRepository {
     return row?.count ?? 0;
   }
 
+  listInChat(chatId: string): MessageRow[] {
+    const raws = this.db
+      .query('SELECT * FROM messages WHERE chat_id = ? ORDER BY created_at ASC, id ASC;')
+      .all(chatId) as any[];
+    return raws.map(toMessageRow);
+  }
+
   updateStreaming(id: string, patch: { content: string; segments: Segment[] }): void {
     this.db.run(
       `UPDATE messages
