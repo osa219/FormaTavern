@@ -22,6 +22,8 @@ export interface PromptContext {
   character: CharacterCard;
   persona: Persona;
   chat: ChatMetadata;
+  /** Single canonical narrative example (directive-authored), rendered per dialect. */
+  narrativeExample?: string;
   history: HistoryTurn[];
   directorNote?: string;
   sceneState?: StateVector;

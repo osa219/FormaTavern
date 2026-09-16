@@ -5,14 +5,15 @@
   import { settingsStore } from '$lib/state/settings.svelte';
   import { providerConfigsStore } from '$lib/state/providerConfigs.svelte';
   import { rangeFill } from '$lib/actions/rangeFill';
-  import {
-    topPDisplay,
-    topKDisplay,
-    repetitionPenaltyDisplay,
-    frequencyPenaltyDisplay,
-    reasoningDisplay,
-    reasoningEffortDisplay
-  } from '$lib/settings/generation';
+import {
+  topPDisplay,
+  topKDisplay,
+  repetitionPenaltyDisplay,
+  frequencyPenaltyDisplay,
+  reasoningDisplay,
+  reasoningEffortDisplay
+} from '$lib/settings/generation';
+import { validateNarrativeExample } from '$lib/settings/narrative';
   import { prefs } from '$lib/state/prefs.svelte';
   import { shellTheme } from '$lib/state/shellTheme.svelte';
   import type { ProviderConfigView, SettingsPatch, ShellTheme } from '@formatavern/shared';
@@ -212,6 +213,32 @@
     }, delay);
   }
 
+  // Narrative example draft (§4): null = pristine. Unlike the preamble's
+  // debounced auto-save, the example saves explicitly so validation can block
+  // a bad save. Deriveds below live next to `s` (they read the store).
+  let exampleDraft = $state<string | null>(null);
+
+  // After a successful save the server value matches the draft: drop back to
+  // pristine so the field tracks the store again. A rejected save leaves the
+  // draft (and its inline issues) in place; the store toasts the reason.
+  $effect(() => {
+    if (exampleDraft === null) return;
+    const current = s?.narrative.example ?? s?.exampleRenderings?.directive ?? '';
+    if (exampleDraft === current) exampleDraft = null;
+  });
+
+  function saveExample() {
+    if (exampleDraft === null || exampleIssues.length > 0) return;
+    // Typing the built-in text back is a reset, not a custom override.
+    const value = exampleDraft === exampleDefault ? null : exampleDraft;
+    settingsStore.patch({ narrative: { example: value } });
+  }
+
+  function resetExample() {
+    exampleDraft = null;
+    settingsStore.patch({ narrative: { example: null } });
+  }
+
   function handleCancel(e: Event) {
     e.preventDefault();
     onClose();
@@ -224,6 +251,15 @@
   }
 
   const s = $derived(settingsStore.settings);
+
+  // Narrative example editor (§4): a single canonical example, authored in
+  // directive syntax and rendered into every dialect server-side.
+  const exampleDefault = $derived(s?.exampleRenderings?.directive ?? '');
+  const exampleOverride = $derived<string | null>(s?.narrative.example ?? null);
+  const exampleEffective = $derived(exampleDraft ?? exampleOverride ?? exampleDefault);
+  const exampleDirty = $derived(exampleDraft !== null && exampleDraft !== (exampleOverride ?? exampleDefault));
+  const exampleCustomized = $derived(exampleOverride !== null);
+  const exampleIssues = $derived(exampleDraft === null ? [] : validateNarrativeExample(exampleDraft));
 </script>
 
 <dialog
@@ -1023,6 +1059,87 @@
             class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) p-3 font-mono text-xs text-(--chrome-text) focus:border-accent focus:outline-none"
           ></textarea>
         </div>
+
+        <details class="rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50">
+          <summary class="cursor-pointer px-4 py-3 font-medium text-(--chrome-text) select-none">
+            Narrative instruction template (advanced)
+          </summary>
+          <div class="flex flex-col gap-4 border-t border-(--chrome-line) px-4 py-4">
+            <p class="text-[11px] leading-relaxed text-(--chrome-text)/60">
+              The format example taught to the model in Block 1b, written once in directive
+              syntax and rendered into every dialect automatically. The agency rule (never write
+              for your persona) and the end-with-a-state-block instruction are fixed and always
+              appended around it — they cannot be edited here. Saving is blocked while the
+              example breaks the rules below.
+            </p>
+            <div>
+              <div class="mb-1 flex items-center justify-between gap-2">
+                <label for="template-example" class="font-medium text-(--chrome-text)">
+                  Canonical example (directive)
+                </label>
+                {#if exampleCustomized}
+                  <span class="rounded border border-accent/40 bg-accent/10 px-1.5 py-0.5 font-mono text-[10px] text-accent">
+                    customized
+                  </span>
+                {/if}
+              </div>
+              <textarea
+                id="template-example"
+                value={exampleEffective}
+                oninput={(e) => (exampleDraft = e.currentTarget.value)}
+                rows={10}
+                spellcheck={false}
+                placeholder={exampleDefault}
+                aria-label="Canonical narrative example in directive syntax"
+                class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) p-3 font-mono text-xs leading-relaxed text-(--chrome-text) placeholder:text-(--chrome-text)/30 focus:border-accent focus:outline-none"
+              ></textarea>
+              <p class="mt-1 text-[11px] text-(--chrome-text)/60">
+                {'{{char}}'} and {'{{user}}'} are filled in per chat. The example must parse as
+                directive blocks, demonstrate the state block (```state fence), and must not
+                speak for the persona.
+              </p>
+                {#if exampleIssues.length > 0}
+                  <div class="mt-1.5 rounded-lg border border-red-500/40 bg-red-500/10 px-2.5 py-2 text-[11px] leading-relaxed text-red-300" role="alert">
+                    {#each exampleIssues as issue (issue)}
+                      <p>{issue}</p>
+                    {/each}
+                  </div>
+                {/if}
+                <div class="mt-2 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onclick={saveExample}
+                    disabled={!exampleDirty || exampleIssues.length > 0 || settingsStore.saving}
+                  class="rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-accent-contrast hover:bg-accent/90 disabled:opacity-40"
+                >
+                  Save example
+                </button>
+                <button
+                  type="button"
+                  onclick={resetExample}
+                  disabled={!exampleCustomized && !exampleDirty}
+                  class="rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-3 py-1.5 text-xs font-medium text-(--chrome-text) hover:bg-(--chrome-line)/40 disabled:opacity-40"
+                  title="Clear the override and restore the built-in example"
+                >
+                  Reset to default
+                </button>
+              </div>
+            </div>
+            <p class="-mt-2 text-[11px] text-(--chrome-text)/60">
+              Renderings reflect the saved example and refresh when you save — the server renders them with the same code path as chat.
+            </p>
+            <div class="grid gap-2 md:grid-cols-2">
+              {#each [{ id: 'xml', label: 'Renders as (XML)' }, { id: 'prefix', label: 'Renders as (prefix)' }] as rendering (rendering.id)}
+                <div>
+                  <div class="mb-1 text-[11px] font-medium text-(--chrome-text)/60">{rendering.label}</div>
+                  <pre
+                    class="max-h-56 overflow-y-auto rounded-xl border border-(--chrome-line) bg-(--chrome-surface)/60 p-3 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-(--chrome-text)/70"
+                    aria-label="Example rendered as {rendering.id}">{s?.exampleRenderings?.[rendering.id as 'xml' | 'prefix'] ?? ''}</pre>
+                </div>
+              {/each}
+            </div>
+          </div>
+        </details>
       </div>
     {:else if activeTab === 'appearance'}
       <div class="flex flex-col gap-5">

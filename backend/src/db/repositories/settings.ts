@@ -129,6 +129,11 @@ export class SQLiteSettingsRepository implements SettingsRepository {
       if (p.narrative !== undefined) {
         const current = this.loadSubObject('narrative');
         const merged = { ...current, ...p.narrative };
+        // A null/blank example clears back to the built-in (mirrors the
+        // generation null-clears); the router validates non-blank values first.
+        if (p.narrative.example === null || (typeof p.narrative.example === 'string' && p.narrative.example.trim() === '')) {
+          delete merged.example;
+        }
         upsertStmt.run('narrative', JSON.stringify(merged), now);
       }
 

@@ -39,7 +39,8 @@ export const AppSettingsSchema = Type.Object({
       Type.Literal('directive'),
       Type.Literal('xml'),
       Type.Literal('prefix')
-    ], { default: 'directive' })
+    ], { default: 'directive' }),
+    example: Type.Optional(Type.String({ maxLength: 20_000 }))
   }, { default: { defaultMode: 'narrative', defaultDialect: 'directive' } }),
   preamble: Type.Optional(Type.String({ maxLength: 20_000 }))
 });
@@ -91,7 +92,13 @@ export const SettingsViewSchema = Type.Object({
       Type.Literal('directive'),
       Type.Literal('xml'),
       Type.Literal('prefix')
-    ])
+    ]),
+    example: Type.Optional(Type.String())
+  }),
+  exampleRenderings: Type.Object({
+    directive: Type.String(),
+    xml: Type.String(),
+    prefix: Type.String()
   }),
   preamble: Type.Optional(Type.String())
 });
@@ -136,7 +143,8 @@ export const SettingsPatchSchema = Type.Object({
       Type.Literal('directive'),
       Type.Literal('xml'),
       Type.Literal('prefix')
-    ])
+    ]),
+    example: Type.Optional(Type.Union([Type.String({ maxLength: 20_000 }), Type.Null()]))
   }))),
   preamble: Type.Optional(Type.Union([Type.String({ maxLength: 20_000 }), Type.Null()]))
 });

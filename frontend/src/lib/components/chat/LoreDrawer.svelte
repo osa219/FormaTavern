@@ -122,6 +122,15 @@
       <div class="flex-1 overflow-y-auto p-5 space-y-6">
         <!-- ABOUT TAB -->
         {#if activeTab === 'about'}
+          {#if chat?.metadata}
+            <div class="flex flex-wrap items-center gap-1.5 text-[11px]">
+              <span class="text-neutral-500">This conversation speaks</span>
+              <span class="rounded border border-neutral-800 bg-neutral-950 px-1.5 py-0.5 font-mono text-neutral-300">
+                {chat.metadata.narrativeMode === 'narrative' ? (chat.metadata.envelopeDialect ?? 'directive') : 'classic prose'}
+              </span>
+              <span class="text-neutral-500" title="The format is set when the chat is created and never changes mid-story">locked at creation</span>
+            </div>
+          {/if}
           {#if character.showcase}
             <ShowcaseBody markdown={character.showcase} />
           {:else}

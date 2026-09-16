@@ -230,6 +230,32 @@ describe('PromptBuilder', () => {
     expect(lastUserMsg.content).toContain('Reply using the directive block format and end with a state block.');
   });
 
+  it('renders the canonical example override per dialect in block 1b (§4)', () => {
+    const custom = ':::narrator\nSnow falls.\n:::\n\n```state\n{"mood":"calm"}\n```';
+    const built = buildPrompt(makeContext({ narrativeExample: custom }));
+    const report = built.blocks.find((b) => b.id === '1b')!;
+    expect(report.included).toBe(true);
+    expect(report.text).toContain('Snow falls.');
+    expect(report.text).not.toContain('morning mist');
+    expect(built.systemPrompt).toContain('Snow falls.');
+
+    // Same override under the xml dialect renders as xml.
+    const builtXml = buildPrompt(
+      makeContext({
+        narrativeExample: custom,
+        chat: { narrativeMode: 'narrative', envelopeDialect: 'xml' }
+      })
+    );
+    const reportXml = builtXml.blocks.find((b) => b.id === '1b')!;
+    expect(reportXml.text).toContain('<narrator>');
+    expect(reportXml.text).toContain('Snow falls.');
+    expect(reportXml.text).not.toContain(':::narrator');
+
+    // Without an override the built-in example applies.
+    const builtDefault = buildPrompt(makeContext());
+    expect(builtDefault.blocks.find((b) => b.id === '1b')!.text).toContain('morning mist');
+  });
+
   it('attaches the closing instruction exactly once (no double bottom attach)', () => {
     const built = buildPrompt(makeContext());
     for (const msg of built.history) {

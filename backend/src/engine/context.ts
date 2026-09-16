@@ -102,6 +102,7 @@ export function assembleContext(input: AssembleContextInput): AssembledContext {
     character: input.character,
     persona: input.persona,
     chat: input.chat.metadata,
+    narrativeExample: input.settings.narrative.example,
     history,
     directorNote,
     sceneState,

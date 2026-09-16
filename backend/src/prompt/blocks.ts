@@ -3,10 +3,8 @@ import type { PromptContext, BlockId } from './types';
 import {
   PREAMBLE_DEFAULT,
   AGENCY_CLAUSE,
-  DIRECTIVE_SYNTAX_EXAMPLE,
-  XML_SYNTAX_EXAMPLE,
-  PREFIX_SYNTAX_EXAMPLE,
-  CONTINUATION_PREFILL_REMINDER
+  CONTINUATION_PREFILL_REMINDER,
+  renderExampleForDialect
 } from './templates';
 
 export function getDialect(ctx: PromptContext): 'directive' | 'xml' | 'prefix' | 'classic' {
@@ -24,7 +22,7 @@ function macro(text: string, ctx: PromptContext): string {
   });
 }
 
-export function generateBlock(id: BlockId, ctx: PromptContext): string | null {
+export function generateBlock(id: BlockId, ctx: PromptContext, warnings: string[] = []): string | null {
   const mode = ctx.chat.narrativeMode ?? 'classic';
   const dialect = getDialect(ctx);
 
@@ -37,15 +35,19 @@ export function generateBlock(id: BlockId, ctx: PromptContext): string | null {
     case '1b': {
       if (mode !== 'narrative') return null;
 
-      let example = DIRECTIVE_SYNTAX_EXAMPLE;
       let syntaxDesc = 'Use the directive block syntax (:::kind[name] ... :::).';
       if (dialect === 'xml') {
-        example = XML_SYNTAX_EXAMPLE;
         syntaxDesc = 'Use XML tags (<kind name="name"> ... </kind>).';
       } else if (dialect === 'prefix') {
-        example = PREFIX_SYNTAX_EXAMPLE;
         syntaxDesc = 'Use prefix speaker lines (Speaker: text).';
       }
+      // Single canonical example (directive-authored), rendered into the active
+      // dialect; falls back to built-in with a warning on render failure.
+      const example = renderExampleForDialect(
+        dialect === 'classic' ? 'directive' : dialect,
+        ctx.narrativeExample,
+        warnings
+      );
 
       let stateDesc = 'End every reply with a state block exactly as shown above.';
       const schemaFields = ctx.character.stateSchema ? Object.entries(ctx.character.stateSchema) : [];

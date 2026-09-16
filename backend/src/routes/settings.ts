@@ -9,6 +9,11 @@ import {
 } from '@formatavern/shared';
 import type { Repositories } from '../db/contracts';
 import { ApiError } from '../engine/errors';
+import {
+  renderExampleForDialect,
+  validateNarrativeExample,
+  type NarrativeDialect
+} from '../prompt/templates';
 
 type KeySource = 'env' | 'settings' | 'none';
 
@@ -34,6 +39,17 @@ export function isValidBaseUrl(raw: string): boolean {
   }
 }
 
+/** Canonical example rendered into every dialect (override or built-in). */
+function exampleRenderings(stored: AppSettings): Record<NarrativeDialect, string> {
+  const override = stored.narrative.example;
+  const sink: string[] = [];
+  return {
+    directive: renderExampleForDialect('directive', override, sink),
+    xml: renderExampleForDialect('xml', override, sink),
+    prefix: renderExampleForDialect('prefix', override, sink)
+  };
+}
+
 export function toSettingsView(stored: AppSettings): SettingsView {
   const customBaseUrl = stored.custom?.baseUrl?.trim() || null;
 
@@ -47,6 +63,7 @@ export function toSettingsView(stored: AppSettings): SettingsView {
     gemini: keyStatus(stored.gemini?.apiKey, process.env.GEMINI_API_KEY),
     generation: stored.generation,
     narrative: stored.narrative,
+    exampleRenderings: exampleRenderings(stored),
     preamble: stored.preamble
   };
 }
@@ -72,6 +89,17 @@ export function createSettingsRouter(repos: Repositories) {
           !isValidBaseUrl(patch.custom.baseUrl)
         ) {
           throw new ApiError('validation_failed', 422, 'Custom base URL must be a valid http(s) URL');
+        }
+
+        // Narrative example override: authored once in directive syntax, rendered
+        // per dialect. Structural validation via the parser itself; null clears
+        // back to the built-in example.
+        const example = patch.narrative?.example;
+        if (example !== undefined && example !== null) {
+          const issues = validateNarrativeExample(example);
+          if (issues.length > 0) {
+            throw new ApiError('validation_failed', 422, `Narrative example rejected: ${issues.join(' ')}`);
+          }
         }
 
         const updated = repos.settings.patch(patch);

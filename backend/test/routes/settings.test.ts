@@ -477,4 +477,67 @@ describe('routes/settings', () => {
       expect(json2.generation.maxTokens).toBe(1024);
     });
   });
+
+  it('stores, validates, and clears the canonical narrative example (§4)', async () => {
+    const { app } = setupTestApp();
+
+    const patch = (body: unknown) =>
+      app.handle(
+        new Request('http://127.0.0.1/api/settings', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        })
+      );
+
+    // Per-dialect renderings of the built-in are exposed for reference.
+    const getRes = await app.handle(new Request('http://127.0.0.1/api/settings'));
+    const view0 = (await getRes.json()) as SettingsView;
+    expect(view0.exampleRenderings.directive).toContain(':::narrator');
+    expect(view0.exampleRenderings.xml).toContain('<narrator>');
+    expect(view0.exampleRenderings.prefix).toContain('Narrator:');
+    expect(view0.narrative.example).toBeUndefined();
+
+    // Missing state demo -> 422, nothing stored.
+    const noFence = await patch({
+      narrative: { example: ':::narrator\nSnow falls.\n:::' }
+    });
+    expect(noFence.status).toBe(422);
+
+    // Persona voice -> 422.
+    const personaVoice = await patch({
+      narrative: {
+        example: ':::persona\nI wander.\n:::\n\n```state\n{}\n```'
+      }
+    });
+    expect(personaVoice.status).toBe(422);
+
+    // Non-directive authoring -> 422.
+    const xmlAuthored = await patch({
+      narrative: { example: '<narrator>Snow.</narrator>\n\n<state>\n{}\n</state>' }
+    });
+    expect(xmlAuthored.status).toBe(422);
+
+    // Blank -> 422 (reset instead).
+    const blank = await patch({ narrative: { example: '   ' } });
+    expect(blank.status).toBe(422);
+
+    // Valid custom example stores, surfaces in the view, and renders per dialect.
+    const custom = ':::narrator\nSnow falls.\n:::\n\n```state\n{"mood":"calm"}\n```';
+    const ok = await patch({ narrative: { example: custom } });
+    expect(ok.status).toBe(200);
+    const view1 = (await ok.json()) as SettingsView;
+    expect(view1.narrative.example).toBe(custom);
+    expect(view1.exampleRenderings.directive).toContain('Snow falls.');
+    expect(view1.exampleRenderings.xml).toContain('<narrator>');
+    expect(view1.exampleRenderings.xml).toContain('Snow falls.');
+    expect(view1.narrative.defaultDialect).toBe('directive');
+
+    // Null clears back to built-in.
+    const cleared = await patch({ narrative: { example: null } });
+    expect(cleared.status).toBe(200);
+    const view2 = (await cleared.json()) as SettingsView;
+    expect(view2.narrative.example).toBeUndefined();
+    expect(view2.exampleRenderings.directive).toContain('morning mist');
+  });
 });

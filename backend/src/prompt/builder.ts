@@ -16,7 +16,7 @@ export function buildPrompt(ctx: PromptContext): BuiltPrompt {
   const includedSystemBlocks: string[] = [];
 
   for (const id of staticBlockIds) {
-    const content = generateBlock(id, ctx);
+    const content = generateBlock(id, ctx, warnings);
     if (content !== null && content.trim().length > 0) {
       const c = countTokens(content);
       if (c.warning) warnings.push(c.warning);
@@ -45,7 +45,7 @@ export function buildPrompt(ctx: PromptContext): BuiltPrompt {
   const bottomParts: string[] = [];
 
   for (const id of bottomBlockIds) {
-    const content = generateBlock(id, ctx);
+    const content = generateBlock(id, ctx, warnings);
     if (content !== null && content.trim().length > 0) {
       const c = countTokens(content);
       if (c.warning) warnings.push(c.warning);
