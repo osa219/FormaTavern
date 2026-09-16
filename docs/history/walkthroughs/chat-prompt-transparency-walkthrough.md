@@ -1,6 +1,6 @@
-# Chat Prompt Transparency Walkthrough: User Turns + Template Leak (Batch 1) + Inline Segment Editing (Batch 2) + Chat Prompt Preview (Batch 3) + Studio Prompt Preview (Batch 4)
+# Chat Prompt Transparency Walkthrough: User Turns + Template Leak (Batch 1) + Inline Segment Editing (Batch 2) + Chat Prompt Preview (Batch 3) + Studio Prompt Preview (Batch 4) + Template Editor (Batch 5)
 
-As-built record for [`docs/history/reports/chat-prompt-transparency-scope.md`](../reports/chat-prompt-transparency-scope.md) §2–§3 (Batch 1, built in the order: user-segment persistence → scroll-chain fix → template neutralization), §7 (Batch 2: inline per-segment editing), §5 (Batch 3: chat prompt preview), and §6 (Batch 4: Studio prompt preview). Scope §4 untouched; §8 remains scoped (not implemented) and deferred. Batch 1 commits: `051244c` (chat fixes), `5f4719d` (prompt fix); scope-doc status updates in `4718320`. Batch 2 commits: `c9bc1b8` (feat), `e3b49ce` (docs). Batch 3 commits: `83b0c7d` (feat), `c97d77c` (docs). Batch 4 (uncommitted at time of writing): §6 implementation + tests; scope-doc §6 status update.
+As-built record for [`docs/history/reports/chat-prompt-transparency-scope.md`](../reports/chat-prompt-transparency-scope.md) §2–§3 (Batch 1, built in the order: user-segment persistence → scroll-chain fix → template neutralization), §7 (Batch 2: inline per-segment editing), §5 (Batch 3: chat prompt preview), and §6 (Batch 4: Studio prompt preview). Scope §4 untouched; §8 remains scoped (not implemented) and deferred. Batch 1 commits: `051244c` (chat fixes), `5f4719d` (prompt fix); scope-doc status updates in `4718320`. Batch 2 commits: `c9bc1b8` (feat), `e3b49ce` (docs). Batch 3 commits: `83b0c7d` (feat), `c97d77c` (docs). Batch 4 commits: `1877c83` (feat), `57d5f55` (docs). Batch 5 (uncommitted at time of writing): §4 implementation + tests; scope-doc §4 status update.
 
 ## 1. What changed
 
@@ -127,3 +127,32 @@ As-built record for scope §6, built in the order: lenient draft schema → char
 
 * **Stale-backend trap, caught live.** The first live probe returned 422 on the empty card while the suite passed — the running backend predated the schema relaxation (mapped-drive watcher miss, now confirmed to bite backend `--watch` too, not just Vite). Restarted the backend from `backend/` the same way it was launched (`bun --watch src/index.ts`) and re-probed green. Lesson: a passing suite plus a failing live probe means restart the server before doubting the code — in that order.
 * **History is one synthetic turn, not empty** (same shape as the §5 empty-chat case): the test initially asserted `[]` and was corrected — the provider needs a user turn, so "no history" still sends `[Continue the scene.]` + bottom blocks.
+
+---
+
+## Batch 5 — §4 editable narrative template (reworked to single-source)
+
+As-built record for scope §4. First cut built per-dialect overrides (three textareas); reworked before commit to a **single canonical example authored in directive syntax and rendered into every dialect** — per-dialect copies drift (Batch 1 fixed the same leak three times), and the envelope package already translates both directions. Per-character overrides stay deferred, as scoped.
+
+### 1. What changed
+
+* **Settings keys (`packages/shared/src/schemas/settings.ts`)** — `narrative.example` (optional string, 20k cap; PATCH accepts `string | null`, null clears). `SettingsView` exposes the stored example plus server-rendered `exampleRenderings` (directive/xml/prefix, override or built-in) so the UI shows translations without duplicating the render path.
+* **Validation (`backend/src/prompt/templates.ts`)** — new structural `validateNarrativeExample(text)`, using the parser itself: must parse as directive (xml/prefix authoring rejected — it renders automatically), must contain segments + a state block (the Batch 1 lesson encoded), must not speak for the persona (checked via truncation signal, since the parser drops persona content before kind checks could see it), parser warnings surface as issues. Enforced in the settings PATCH route as 422. A lenient-body footnote: `Type.Partial` keeps `minLength`, so the schema omits `name`-style strictness where blanks are legitimate (same lesson as the §6 card schema).
+* **Rendering (`backend/src/prompt/templates.ts`, `blocks.ts`)** — new `renderExampleForDialect(dialect, override, warnings)`: no override returns the hand-tuned built-in for that dialect verbatim (never round-tripped — prefix prose can collide with prefix speaker detection on re-serialize, found by test); a custom override is validated, parsed, and serialized into the target dialect; any failure falls back to built-in with a warning instead of emitting a broken block. Block 1b is the single call site; `PromptContext` carries one optional `narrativeExample`, filled from settings in `assembleContext` (chat send, chat preview, Studio preview all honor it with no per-route code). `generateBlock` accepts an optional warnings sink for the fallback path.
+* **Storage (`backend/src/db/repositories/settings.ts`)** — null/blank example deletes the key (mirrors the generation null-clears).
+* **Editor (`SettingsSheet.svelte` narrative tab)** — collapsed "advanced" section under the preamble: safety note (agency rule + state instruction are fixed code around the example), one directive textarea with macro hints, `customized` badge, explicit Save (disabled unless dirty + valid) and Reset-to-default, plus read-only "renders as" panels for xml/prefix computed server-side (they track the *saved* example and refresh on save — the frontend may not import the parser, so live-draft translation stays server-side by design). Draft stays local until saved; a post-save sync drops to pristine on match, so a rejected save keeps the draft and inline issues. Client validator (`frontend/src/lib/settings/narrative.ts`) mirrors the rules string-wise for instant feedback; the server enforces structurally.
+
+### 2. Verification
+
+* Suites: backend 265/265 (252 + validator/render 11 + settings lifecycle 1 + builder per-dialect render 1), frontend 207/207 (202 + validator 5), shared 193/193; `typecheck` 3/3 clean; `db:check` clean; golden untouched (no override → byte-identical built-ins). The colon-heavy prefix collision is pinned as a unit test (valid directive example, per-dialect fallback + warning).
+* The test suite earned its keep twice during the rework: it caught the prefix round-trip collision and the persona-truncation signal, both fixed before shipping.
+* Live API against the real dev DB: built-in renderings per dialect, no-fence / xml-authored / persona saves rejected (422), valid custom example stored and honored end-to-end (block 1b + xml/prefix siblings), null-clear restores the built-in — settings left exactly as found.
+* Headless settings-dialog capture not possible (dialog closed by default, no click driver): the editor UI is covered by validator tests + `svelte-check`, and awaits the human pass below.
+
+### 3. Scope interpretation, flagged
+
+* The scope sketch says per-dialect textareas with "agency clause + state instruction must survive". Built instead: one canonical textarea, because three copies reintroduce the exact drift Batch 1 eliminated. The guarantee is preserved in stronger form — agency + state live in fixed code, and validation is structural (parse-based) rather than substring-based. Saving the built-in text back counts as a reset, not an override.
+
+### 4. Follow-up from manual testing: dialect visibility
+
+* Dialect is per-chat, frozen at creation from the global default — changing the default does not rewrite existing chats (verified live: an old chat kept sending `directive` after the default moved to `xml`, and the preview badge said so honestly). Since nothing previously showed a chat's format, the Lore Drawer About tab now opens with a "This conversation speaks X — locked at creation" line (`LoreDrawer.svelte`, from the already-passed `chat` prop). A mid-story dialect converter was discussed and parked, not built.

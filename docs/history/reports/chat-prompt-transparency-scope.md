@@ -1,6 +1,6 @@
 # Chat Frontend + Prompt Transparency Scope
 
-**Status:** §2–§3 implemented and user-verified; §7–§5–§6 implemented and agent-verified (human check pending); §4 agreed, not started; §8 scoped, deferred.
+**Status:** §2–§3 implemented and user-verified; §7–§5–§6–§4 implemented and agent-verified (human check pending); §8 scoped, deferred.
 **Date:** 2026-09-14 UTC
 **Scope:** Chat page frontend readability, user-turn persistence, narrative template leakage, prompt preview per chat and per character. No streaming, parser, or storage engine changes beyond what is listed; no visual redesign beyond readability fixes.
 **Reference:** Screenshots of `test` chat showing Guide-only history with leaked `[state]` text, and empty `test` Studio card.
@@ -58,6 +58,8 @@
 ---
 
 ## §4 — Editable narrative template: where it lives
+
+**Status:** Done — implemented, agent-verified (suites + live API save/validate/clear cycle with restore); human in-browser check pending. Ships as a single canonical example under `narrative.example` (directive-authored, rendered per dialect; stronger than the sketched per-dialect textareas — no drift possible), with structural 422 guardrails (must parse as directive with segments + state block, no persona voice); agency clause + state instruction stay in fixed code. Per-character override still deferred.
 
 **Agreed:** Settings → Narrative tab owns the global template (it already owns mode, dialect, preamble — `frontend/src/lib/components/settings/SettingsSheet.svelte:980-1025`).
 
