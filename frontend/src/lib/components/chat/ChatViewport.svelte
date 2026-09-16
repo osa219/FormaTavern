@@ -23,7 +23,7 @@
   import EditTurnDialog from '../dialogs/EditTurnDialog.svelte';
   import ConfirmDialog from '../dialogs/ConfirmDialog.svelte';
   import CustomStyleOutlet from '../custom/CustomStyleOutlet.svelte';
-  import { splitCustomCss } from '@formatavern/shared';
+  import { selectPartitionSurface } from '@formatavern/shared';
 
   let {
     session,
@@ -33,10 +33,10 @@
     themeEngine: ThemeEngine;
   } = $props();
 
+  // Marked sheets inject only the chat partition (possibly nothing);
+  // unmarked legacy sheets keep pre-partition behavior (whole sheet, C4-contained).
   const chatCss = $derived(
-    session.character?.customCss
-      ? splitCustomCss(session.character.customCss).chat || session.character.customCss
-      : null
+    selectPartitionSurface(session.character?.customCss, 'chat') || null
   );
 
   let ready = $state(false);

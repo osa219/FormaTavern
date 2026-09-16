@@ -71,9 +71,14 @@
     return avatarEnabled || nameEnabled;
   });
 
-  // Invariant L8: In single mode, non-owner segments keep an inline voice tag
+  // Invariant L8: In single mode, non-owner segments keep an inline voice tag.
+  // The tag stays neutral in plain format (accent only in classic).
   const showInlineVoiceTag = $derived(
     isSingle && !isFirstRow && !isTurnOwner && !isNarrator && Boolean(name)
+  );
+
+  const inlineTagColorClass = $derived(
+    layout.names.format === 'classic' ? 'text-accent' : 'text-chrome-text'
   );
 
   const nameFormatClass = $derived.by(() => {
@@ -125,7 +130,7 @@
   <div class="relative w-full {HOOKS.chat.turnBody}">
     {#if showInlineVoiceTag}
       <span
-        class="inline-block text-[0.75rem] font-semibold text-accent mb-1 mr-1.5 opacity-80 select-none {HOOKS.chat.turnName} inline"
+        class="inline-block text-[0.75rem] font-semibold mb-1 mr-1.5 opacity-80 select-none {HOOKS.chat.turnName} inline {inlineTagColorClass}"
       >
         [{name}]
       </span>

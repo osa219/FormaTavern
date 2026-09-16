@@ -113,6 +113,7 @@ The per-phase blueprints list **required tests by name**; a PR that removes or w
 | C12 (SPA style lifecycle) | `frontend/unit/customStyleOutlet.test.ts`, `frontend/unit/chatViewportStyle.test.ts` |
 | C13 (Performance budgets) | `packages/shared/test/schemas.test.ts` (decor maxItems: 2), `frontend/unit/boundaries.test.ts` (dynamic `css-tree`) |
 | C14 (Surface completeness & dialog scoping) | `frontend/unit/surfaces.test.ts` |
+| C15 (Virtual surface partitioning) | `packages/shared/test/customCss/partition.test.ts`, `frontend/unit/customCssPanel.test.ts` |
 | L1 (Per-voice row primitive) | `frontend/unit/layoutContract.test.ts`, `boundaries.test.ts` |
 | L2 (No role-branched layout) | `frontend/unit/boundaries.test.ts`, `SpeechBubble.svelte` |
 | L3 (Pure resolveLayout) | `packages/shared/test/layout/resolve.test.ts` |

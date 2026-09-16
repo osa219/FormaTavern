@@ -2,6 +2,8 @@ import { describe, it, expect } from 'bun:test';
 import {
   splitCustomCss,
   joinCustomCss,
+  hasSurfaceMarkers,
+  selectPartitionSurface,
   SHOWCASE_SURFACE_MARKER,
   CHAT_SURFACE_MARKER
 } from '../../src/customCss/partition';
@@ -107,5 +109,31 @@ ${SHOWCASE_SURFACE_MARKER}
     const showcaseResult = splitCustomCss(legacyShowcaseCss);
     expect(showcaseResult.chat).toBe('');
     expect(showcaseResult.showcase).toBe(legacyShowcaseCss.trim());
+  });
+
+  it('detects explicit surface markers', () => {
+    expect(hasSurfaceMarkers(null)).toBe(false);
+    expect(hasSurfaceMarkers(undefined)).toBe(false);
+    expect(hasSurfaceMarkers('')).toBe(false);
+    expect(hasSurfaceMarkers('.ft-hero { color: red; }')).toBe(false);
+    expect(hasSurfaceMarkers(`${SHOWCASE_SURFACE_MARKER}\n.ft-hero {}`)).toBe(true);
+    expect(hasSurfaceMarkers(`${CHAT_SURFACE_MARKER}\n.ft-turn {}`)).toBe(true);
+  });
+
+  it('selects partition-or-nothing for marked sheets, whole sheet for legacy', () => {
+    const chatOnly = `${CHAT_SURFACE_MARKER}\n.ft-composer { background: #111; }\n`;
+    expect(selectPartitionSurface(chatOnly, 'chat')).toBe('.ft-composer { background: #111; }');
+    expect(selectPartitionSurface(chatOnly, 'showcase')).toBe('');
+
+    const showcaseOnly = `${SHOWCASE_SURFACE_MARKER}\n.ft-hero { opacity: 0.9; }\n`;
+    expect(selectPartitionSurface(showcaseOnly, 'showcase')).toBe('.ft-hero { opacity: 0.9; }');
+    expect(selectPartitionSurface(showcaseOnly, 'chat')).toBe('');
+
+    const legacy = '.ft-message-log { background: #120e09; }';
+    expect(selectPartitionSurface(legacy, 'chat')).toBe(legacy);
+    expect(selectPartitionSurface(legacy, 'showcase')).toBe(legacy);
+
+    expect(selectPartitionSurface('', 'chat')).toBe('');
+    expect(selectPartitionSurface(null, 'showcase')).toBe('');
   });
 });

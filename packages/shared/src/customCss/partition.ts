@@ -94,6 +94,31 @@ export function splitCustomCss(raw: string | undefined | null): PartitionedCusto
 }
 
 /**
+ * Reports whether a sheet carries explicit surface markers.
+ * Outlets use this to distinguish "marked, partition empty" (inject nothing)
+ * from "unmarked legacy" (inject the whole sheet, preserving pre-partition rendering).
+ */
+export function hasSurfaceMarkers(raw: string | undefined | null): boolean {
+  if (!raw) return false;
+  return SHOWCASE_MARKER_REGEX.test(raw) || CHAT_MARKER_REGEX.test(raw);
+}
+
+/**
+ * Selects the CSS to inject for one surface.
+ * Marked sheets resolve to their partition (possibly empty, meaning inject nothing);
+ * unmarked legacy sheets resolve to the whole sheet (pre-partition behavior, C4
+ * scope-prefixing still contains cross-surface selectors at sanitize time).
+ */
+export function selectPartitionSurface(
+  raw: string | undefined | null,
+  surface: 'showcase' | 'chat'
+): string {
+  if (!raw || !raw.trim()) return '';
+  if (!hasSurfaceMarkers(raw)) return raw.trim();
+  return splitCustomCss(raw)[surface];
+}
+
+/**
  * Combines showcase and chat partitions into a single unified custom CSS sheet
  * using standardized surface markers.
  */

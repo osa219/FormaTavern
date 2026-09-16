@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { resolveLayout, type CharacterCard, type Segment, splitCustomCss } from '@formatavern/shared';
+  import { resolveLayout, type CharacterCard, type Segment, selectPartitionSurface } from '@formatavern/shared';
   import { HOOKS } from '@formatavern/shared';
   import type { CharacterDraft } from '$lib/studio/draft.svelte';
   import { themeToCssVars, serializeVars } from '$lib/theme/cssVars';
@@ -55,8 +55,6 @@
   const greetingResult = $derived(parseGreeting(draft.card.firstMessage, draft.card.name || 'Companion'));
   const segments = $derived(greetingResult.segments);
 
-  const partitions = $derived(splitCustomCss(draft.card.customCss));
-
   const previewCard = $derived<CharacterCard>({
     id: draft.characterId || 'preview-companion',
     name: draft.card.name || 'Companion',
@@ -90,8 +88,14 @@
   const previewSurface = $derived<'character' | 'chat'>(
     activeTab === 'showcase' ? 'character' : 'chat'
   );
+
+  // Same selector as the runtime outlets, so the preview never disagrees with paint:
+  // marked sheets resolve to their partition (possibly nothing), legacy sheets to the whole sheet.
   const activePartitionCss = $derived(
-    previewSurface === 'character' ? partitions.showcase : partitions.chat
+    selectPartitionSurface(
+      draft.card.customCss,
+      previewSurface === 'character' ? 'showcase' : 'chat'
+    )
   );
 </script>
 

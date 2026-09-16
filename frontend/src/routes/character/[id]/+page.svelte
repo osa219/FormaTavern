@@ -17,13 +17,15 @@
   import ShowcaseBody from '$lib/components/showcase/ShowcaseBody.svelte';
   import ConfirmDialog from '$lib/components/dialogs/ConfirmDialog.svelte';
   import CustomStyleOutlet from '$lib/components/custom/CustomStyleOutlet.svelte';
-  import { splitCustomCss } from '@formatavern/shared';
+  import { selectPartitionSurface } from '@formatavern/shared';
 
   let { data }: { data: PageData } = $props();
 
   const character = $derived(data.character as CharacterCard);
+  // Marked sheets inject only the showcase partition (possibly nothing);
+  // unmarked legacy sheets keep pre-partition behavior (whole sheet, C4-contained).
   const showcaseCss = $derived(
-    character.customCss ? splitCustomCss(character.customCss).showcase || character.customCss : null
+    selectPartitionSurface(character.customCss, 'showcase') || null
   );
   let chats = $state<ChatView[]>([]);
   const personas = $derived((data.personas ?? []) as Persona[]);

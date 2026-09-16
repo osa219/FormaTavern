@@ -89,7 +89,7 @@
     }
   }
 
-  // Font Manager State (Slice 5)
+  // Font Manager State
   let uploadedFonts = $state<Array<{ name: string; path: string; mime: string; format: string }>>([]);
   let uploadingFont = $state(false);
   let fontFileInput = $state<HTMLInputElement>();

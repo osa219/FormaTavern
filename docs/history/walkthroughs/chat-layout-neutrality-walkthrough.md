@@ -89,27 +89,18 @@ Expose the resolved layout to CSS through data attributes, establish layout CSS 
 
 ### Changes Made
 - **Layout Attributes Helper** ([`frontend/src/lib/chat/layoutAttrs.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/chat/layoutAttrs.ts)):
-  - Pure converter from `ResolvedLayout` to DOM data attributes (`data-align`, `data-container`, `data-headers`, `data-narrator`, `data-tails`).
-  - Added avatar size custom property generator (`styleString` with `--msg-avatar-size`).
-- **Styles & Layout Rules** ([`frontend/src/app.css`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/app.css)):
-  - Added `--msg-measure: 72ch` stylesheet constant (Invariant L7).
-  - Defined container modes for `.ft-turn-body`:
-    - `[data-container="row"]`: zero background, zero border, zero shadow, padding 0.
-    - `[data-container="bubble"]`: background surface, border, radius, padding.
-    - `[data-container="minimal"]`: subtle left border highlight.
-  - Defined alignment rules:
-    - `[data-align="left"]`: all turns and rows align left.
-    - `[data-align="split"]`: persona turns align right (`justify-end`, `items-end`, text left-aligned within body); character and system turns align left.
-    - `[data-align="center"]`: turns and rows centered (`justify-center`).
-  - Defined speech tail rules (`[data-tails="true"][data-container="bubble"]`):
-    - Classic directional tail pseudo-elements with strict mode containment (zero tails on raw rows or minimal mode).
-  - Defined narrator block modes:
-    - `[data-narrator="dim"]`: transparent background, italic typography, dimmed text.
-    - `[data-narrator="box"]`: distinct subtle border and surface card styling.
-    - `[data-narrator="full"]`: full-width section styling.
+  - Pure converter `layoutRootAttrs()` from `ResolvedLayout` to log-root attributes: `data-align` (`uniform-left` | `split`), `data-container` (`row` | `bubble` | `flat`), `data-headers` (`single` | `voices`), `data-narrator` (`dim-only` | `inline` | `centered`), `data-name-format`, `data-tails` (`on` | `off`), `data-avatar-shape`.
+  - `layoutRootStyle()` emits `--msg-avatar-size` from `avatars.size`.
+  - `turnAttrs()` emits `data-role` + `data-headers` for the turn article; `rowAttrs()` emits `data-kind` per segment row (Invariant L1).
+- **Styles & Layout Rules** ([`frontend/src/app.css`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/app.css), `/* Speech bubble tails & Layout Neutrality Series (L1-L8) */`):
+  - Stylesheet constants (Invariant L7): `--msg-measure: 72ch`, `--msg-avatar-size: 2rem` on `:root`.
+  - Alignment: `[data-align="uniform-left"]` left-gutters rows and headers; `[data-align="split"]` pushes persona rows/headers right (`justify-end`) and keeps the rest left — keyed off both `data-role` (article) and `data-kind` (row) so `single` and `voices` modes align identically.
+  - Containers: `[data-container="row"]` / `[data-container="flat"]` — transparent, borderless, shadowless full-measure bodies; `[data-container="bubble"]` — shrink-wrap (`max-width: 85%`, `70%` at ≥768px), theme radius/padding/shadow, role backgrounds from theme tokens gated behind the bubble container so row/flat never color-code.
+  - Tails: paint only under `[data-container="bubble"][data-tails="on"]`, side following computed alignment (right for persona in split, left otherwise). `[data-tails="off"]`, row/flat containers, and legacy `data-tail="none"` force `display: none`. Legacy explicit `data-tail="left"` / `"right"` overrides retained for compat.
+  - Narrator modes: `[data-narrator="dim-only"]` (inline + dimmed via `color-mix`, separator hidden — the neutral default); `[data-narrator="inline"]` (identical to body text); `[data-narrator="centered"]` (the historical 62ch centered italic block verbatim).
 - **Contract Tests** ([`frontend/unit/layoutAttrs.test.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/unit/layoutAttrs.test.ts), [`frontend/unit/layoutContract.test.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/unit/layoutContract.test.ts)):
-  - Tested pure attribute emission and style generation.
-  - Validated selector presence and invariants in `app.css` (`--msg-measure: 72ch`, `[data-align]`, `[data-container]`, `[data-tails]`, `[data-narrator]`, zero tails when container is row).
+  - Pure attribute-emission and style-generation tables (align, container, headers, narrator, tails, avatar shape).
+  - Selector presence and invariant assertions over `app.css` (`--msg-measure: 72ch`, `[data-align]`, `[data-container]`, `[data-tails]`, `[data-narrator]`, zero tails outside bubble+on).
 
 ### Verification
 - `bun run --cwd frontend test unit/layoutAttrs.test.ts` passing.
@@ -134,7 +125,7 @@ Refactor chat components so that layout is entirely governed by CSS data attribu
   - Placed message edit button on the body/action row instead of role-branched header.
 - **Component Decoupling & Role Neutrality**:
   - [`SpeechBubble.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/chat/SpeechBubble.svelte): Stripped role-branched classes (`justify-end`, `border-accent/40`, hardcoded tails). Delegated structure to `ft-turn-body` and container data attributes (Invariant L2).
-  - [`NarratorBlock.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/chat/NarratorBlock.svelte): Removed hardcoded box styling; delegated to `ft-turn-narrator` and `[data-narrator]`.
+  - [`NarratorBlock.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/chat/NarratorBlock.svelte): Removed hardcoded centered-box styling; the retained `ft-narrator` hook with `narrator-block` / `narrator-separator` / `narrator-content` classes is now governed by `[data-narrator]` (`dim-only` | `inline` | `centered`).
   - [`MessageTurn.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/chat/MessageTurn.svelte): Emits `article.ft-turn[data-role]` and renders each envelope segment through `TurnRow`.
   - [`MessageLog.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/chat/MessageLog.svelte): Calls `resolveLayout(card?.layout, narrativeMode)` and mounts `data-align`, `data-container`, `data-headers`, `data-narrator`, `data-tails`, and `--msg-avatar-size` on log root. Passes resolved layout and avatar URLs down.
 - **Boundary & Manifest Tests**:
@@ -225,7 +216,7 @@ Elevate the Custom CSS authoring experience in Character Studio by cleanly separ
 
 ### Architectural Design & Invariants
 
-1. **Deterministic Virtual Surface Partitioning (Invariant C15)**
+1. **Deterministic Virtual Surface Partitioning (Invariant C15 — indexed in `docs/development.md` §6.3 and `docs/architecture.md` §11.3)**
    - Stored in a single `card.customCss` column via deterministic boundary delimiters:
      - `/* === @formatavern/surface: showcase === */`
      - `/* === @formatavern/surface: chat === */`
@@ -236,9 +227,10 @@ Elevate the Custom CSS authoring experience in Character Studio by cleanly separ
    - Zero database migration or schema modification required (`user_version = 7` maintained).
 
 2. **Scoped Runtime Style Outlets**
-   - **Showcase View** (`/character/[id]`): Injects only the `showcase` partition into `CustomStyleOutlet` scoped to `[data-ft-surface="character"]`.
-   - **Chat View** (`ChatViewport.svelte`): Injects only the `chat` partition into `CustomStyleOutlet` scoped to `[data-ft-surface="chat"]`.
-   - Ensures rules authored for one surface never leak into or conflict with the other surface at runtime.
+   - **Showcase View** (`/character/[id]`): Injects `selectPartitionSurface(customCss, 'showcase')` into `CustomStyleOutlet` scoped to `[data-ft-surface="character"]`.
+   - **Chat View** (`ChatViewport.svelte`): Injects `selectPartitionSurface(customCss, 'chat')` into `CustomStyleOutlet` scoped to `[data-ft-surface="chat"]`.
+   - Selector semantics: marked sheets resolve to their partition (possibly empty, meaning inject nothing); unmarked legacy sheets resolve to the whole sheet, preserving pre-partition rendering with C4 scope-prefixing still containing cross-surface selectors at sanitize time. The Studio LivePreview uses the same selector, so preview paint never disagrees with runtime paint.
+   - Ensures rules authored for one surface are never evaluated against the other surface at runtime (beyond the sanitizer guarantee).
 
 3. **Contextual Studio Custom CSS Subtabs**
    - Implemented within `CustomCssPanel.svelte` as subtabs:
@@ -275,16 +267,24 @@ Elevate the Custom CSS authoring experience in Character Studio by cleanly separ
 - **Live Preview** ([`frontend/src/lib/components/studio/LivePreview.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/studio/LivePreview.svelte)):
   - Renders miniature chat viewport frame with `.ft-topbar`, `.ft-viewport`, `.ft-message-log`, and `.ft-composer` when `activeStudioTab === 'css' && activeCssSubtab === 'chat'` or `activeStudioTab === 'layout'`.
 - **Runtime Outlets**:
-  - [`frontend/src/routes/character/[id]/+page.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/routes/character/[id]/+page.svelte): Passes `splitCustomCss(character.customCss).showcase` to `CustomStyleOutlet`.
-  - [`frontend/src/lib/components/chat/ChatViewport.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/chat/ChatViewport.svelte): Passes `splitCustomCss(chat.character?.customCss).chat` to `CustomStyleOutlet`.
+  - [`frontend/src/routes/character/[id]/+page.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/routes/character/%5Bid%5D/+page.svelte): Injects `selectPartitionSurface(character.customCss, 'showcase')` into `CustomStyleOutlet`.
+  - [`frontend/src/lib/components/chat/ChatViewport.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/chat/ChatViewport.svelte): Injects `selectPartitionSurface(chat.character?.customCss, 'chat')` into `CustomStyleOutlet`.
+  - [`frontend/src/lib/components/studio/LivePreview.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/studio/LivePreview.svelte): Uses the same `selectPartitionSurface` selector for its preview outlet, so preview paint never disagrees with runtime paint.
+  - Selector rule: marked sheets resolve to their partition (possibly empty, meaning inject nothing); unmarked legacy sheets resolve to the whole sheet, preserving pre-partition rendering with C4 scope-prefixing still containing cross-surface selectors.
 
 ### Verification
 - `bun run typecheck`: 0 errors, 0 warnings across all 3 packages (`packages/shared`, `backend`, `frontend`).
-- `bun run test`: 710 passing tests across the monorepo:
-  - `packages/shared`: 211 pass (including partition tests).
+- `bun run test`: 713 passing tests across the monorepo:
+  - `packages/shared`: 213 pass (including partition tests: split/join/roundtrip/heuristics plus `hasSurfaceMarkers` and `selectPartitionSurface` selector tests).
   - `backend`: 273 pass (all routes, repositories, engine).
-  - `frontend`: 226 pass across 32 files (including custom CSS panel subtabs and chat viewport outlet tests).
+  - `frontend`: 227 pass across 32 files (including custom CSS panel subtabs, chat viewport outlet selector tests, and the L8 inline-tag color test: neutral in plain format, accent in classic).
 - `bun run db:check`: 100% clean schema, foreign keys, and layout audits.
+
+### Review follow-ups (applied after the initial §7 build)
+- Walkthrough Slice 3 was rewritten: it described attribute values (`data-align="left"`, `data-container="minimal"`, `data-narrator="dim"/"box"/"full"`) that were never implemented. The record now cites the actual contract (`uniform-left`/`split`, `row`/`bubble`/`flat`, `dim-only`/`inline`/`centered`, tails `on`/`off`, `--msg-measure: 72ch`), and the Slice 4 `ft-turn-narrator` hook reference was corrected to the retained `ft-narrator` hook.
+- Invariant C15 is now indexed in `docs/development.md` §6.3 and `docs/architecture.md` §11.3, and the blueprint §11 carries an amendment pointer to this section as the graduation that happened.
+- Outlets moved from `split(...).part || fullSheet` to `selectPartitionSurface(...)`: marked single-partition sheets no longer re-inject elsewhere-scoped rules (previously neutralized only by the sanitizer); legacy unmarked sheets keep whole-sheet behavior.
+- L8 inline voice tags (`TurnRow.svelte`) render in body text color under `plain` format and accent only under `classic`, keeping the neutral default neutral.
 
 
 

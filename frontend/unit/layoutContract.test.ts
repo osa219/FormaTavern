@@ -90,6 +90,26 @@ describe('Layout Contract & Primitives (Invariants L1, L2, L8)', () => {
     expect(html).toContain('[Barkeep]');
     expect(html).toContain('[Adventurer]');
     expect(html).toContain('ft-turn-name inline');
+    // Plain format stays neutral: inline tags must not use the accent color
+    expect(html).not.toContain('ft-turn-name inline text-accent');
+  });
+
+  it('renders inline voice tags in accent under classic names format (Invariant L8)', () => {
+    const layout = resolveLayout(
+      { headers: 'single', names: { showCharacter: true, showPersona: true, showNpc: true, format: 'classic' } },
+      'narrative'
+    );
+    const { html } = render(MessageTurn, {
+      props: {
+        segments: multiVoiceSegments,
+        narrativeRole: 'character',
+        primaryName: 'Eldrin',
+        layout
+      }
+    });
+
+    expect(html).toContain('[Barkeep]');
+    expect(html).toContain('text-accent');
   });
 
   it('prohibits role-branched justify-end/justify-start in chat component source (Invariant L2)', () => {

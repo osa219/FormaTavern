@@ -387,6 +387,8 @@ Not in this blueprint: per-chat layout overrides (card default only; graduates o
 
 What this hands forward: a row-level markup contract every future chat feature (edit chrome, swipe UI, future per-chat overrides, future `card`/`density` fields) builds on without re-contracting; a `resolveLayout` pure function the exporter/importer can carry verbatim; Studio and preset patterns the next graduation reuses.
 
+**Amendment (graduation that happened):** after the layout slices landed, the Studio custom-CSS authoring grew surface-scoped subtabs (showcase vs chat), virtual surface partitioning of the single stored `customCss` document (Invariant C15 — deterministic delimiters, zero-migration, total parser with heuristic legacy fallback), and a miniature chat-viewport LivePreview frame. Recorded as-built in the walkthrough §7 ("Post-Blueprint Architectural Horizons"); C15 is indexed in `docs/development.md` §6.3 and `docs/architecture.md` §11.3 alongside C14.
+
 ---
 
 ## 12. Execution order
