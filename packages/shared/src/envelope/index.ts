@@ -85,10 +85,19 @@ export function parseEnvelope(input: string, options: ParseOptions): ParseResult
     const lines = text.split('\n');
     let cutIndex = -1;
 
-    // Pattern for {{user}}: or <personaName>:
-    const userMacroOrNamePattern = options.personaName
-      ? new RegExp(`^\\s*(?:\\{\\{\\s*user\\s*\\}\\}|${escapeRegex(options.personaName)})\\s*:`, 'i')
-      : /^\s*\{\{\s*user\s*\}\}\s*:/i;
+    // Pattern for prefix speaker lines: {{user}}:, User:, Persona:, or <personaName>:
+    const personaTokens = ['\\{\\{\\s*user\\s*\\}\\}'];
+    const primaryLower = options.primaryCharacter.toLowerCase();
+    if (primaryLower !== 'user') personaTokens.push('user');
+    if (primaryLower !== 'persona') personaTokens.push('persona');
+    if (
+      options.personaName &&
+      options.personaName.trim() &&
+      options.personaName.trim().toLowerCase() !== primaryLower
+    ) {
+      personaTokens.push(escapeRegex(options.personaName.trim()));
+    }
+    const userMacroOrNamePattern = new RegExp(`^\\s*(?:${personaTokens.join('|')})\\s*:`, 'i');
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -167,7 +176,8 @@ export function parseEnvelope(input: string, options: ParseOptions): ParseResult
     const classification = classifyLine(line, {
       dialect: options.dialect,
       knownNames: options.knownNames,
-      primaryCharacter: options.primaryCharacter
+      primaryCharacter: options.primaryCharacter,
+      personaName: options.personaName
     });
 
     if (classification.type === 'header') {

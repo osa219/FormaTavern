@@ -238,6 +238,25 @@
     standingDebounce = setTimeout(flushStandingDirection, 600);
   }
 
+  async function handleUpdatePersonaVoicing(policy: 'inherited' | 'prohibited' | 'allowed') {
+    if (!session.chat) return;
+    const value = policy === 'inherited' ? null : policy;
+    const nextMeta = { ...session.chat.metadata };
+    if (value) {
+      nextMeta.personaVoicing = value;
+    } else {
+      delete nextMeta.personaVoicing;
+    }
+    session.chat.metadata = nextMeta;
+    try {
+      await api.api.chats({ id: session.chatId }).patch({
+        metadata: { personaVoicing: value }
+      });
+    } catch (err: any) {
+      toasts.error(toUiError(err).message);
+    }
+  }
+
   onDestroy(() => {
     clearTimeout(standingDebounce);
     flushStandingDirection();
@@ -523,6 +542,7 @@
         settingsOpen = true;
       }}
       onConvertChat={handleConvertChat}
+      onUpdatePersonaVoicing={handleUpdatePersonaVoicing}
     />
   {/if}
 </div>

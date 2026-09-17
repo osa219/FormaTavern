@@ -2,6 +2,7 @@ import { applyMacros } from '@formatavern/shared';
 import type { PromptContext, BlockId } from './types';
 import {
   PREAMBLE_DEFAULT,
+  PREAMBLE_COAUTHOR_DEFAULT,
   CONTINUATION_PREFILL_REMINDER,
   renderExampleForDialect
 } from './templates';
@@ -27,17 +28,22 @@ export function generateBlock(id: BlockId, ctx: PromptContext, warnings: string[
 
   switch (id) {
     case '1': {
-      const p = ctx.preamble ?? PREAMBLE_DEFAULT;
+      let p = ctx.preamble;
+      if (!p) {
+        p = ctx.personaVoicing === 'allowed' ? PREAMBLE_COAUTHOR_DEFAULT : PREAMBLE_DEFAULT;
+      }
       return macro(p, ctx);
     }
 
     case '1b': {
       if (mode !== 'narrative') return null;
 
+      const isAllowed = ctx.personaVoicing === 'allowed';
       let syntaxDesc = [
         'Structure your response using directive blocks:',
         '- :::narrator ... ::: for scene description, environment, and physical actions.',
         '- :::character[{{char}}] ... ::: for {{char}}\'s spoken dialogue and thoughts.',
+        ...(isAllowed ? ['- :::persona[{{user}}] ... ::: for {{user}}\'s spoken dialogue and actions.'] : []),
         '- :::npc[Name] ... ::: when a side character speaks or acts (use their actual name).',
         '- ```state ... ``` at the very end with current mood and scene as JSON.'
       ].join('\n');
@@ -47,6 +53,7 @@ export function generateBlock(id: BlockId, ctx: PromptContext, warnings: string[
           'Structure your response using XML tags:',
           '- <narrator> ... </narrator> for scene description, environment, and physical actions.',
           '- <character name="{{char}}"> ... </character> for {{char}}\'s spoken dialogue and thoughts.',
+          ...(isAllowed ? ['- <persona name="{{user}}"> ... </persona> for {{user}}\'s spoken dialogue and actions.'] : []),
           '- <npc name="..."> ... </npc> when a side character speaks or acts (use their actual name).',
           '- <state> ... </state> at the very end with current mood and scene as JSON.'
         ].join('\n');
@@ -55,6 +62,7 @@ export function generateBlock(id: BlockId, ctx: PromptContext, warnings: string[
           'Structure your response using speaker prefix lines:',
           '- Narrator: ... for scene description, environment, and physical actions.',
           '- {{char}}: ... for {{char}}\'s spoken dialogue and thoughts.',
+          ...(isAllowed ? ['- {{user}}: ... for {{user}}\'s spoken dialogue and actions.'] : []),
           '- Name: ... when a side character speaks or acts (use their actual name).',
           '- ```state ... ``` at the very end with current mood and scene as JSON.'
         ].join('\n');

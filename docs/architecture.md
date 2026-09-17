@@ -13,7 +13,7 @@
 5. **Byte-exact, version-agnostic wire contracts** (S9).
 6. **Self-contained companion ecosystem.** Complete author showcase, companion studio with OCC, persona roster with atomic defaults, FTS5 discovery catalog, and local SHA-256 asset store (P1–P7).
 7. **Neutral layout as data.** The chat log is neutral by default (uniform-left, row container, plain names, zero avatars, dimmed narrator in flow). Layout is owned strictly by the character card (`CharacterLayout`), resolved purely via `resolveLayout`, and expressed through DOM data attributes rather than role conditionals (L1–L8).
-8. **The co-author paradigm (collaborative narrative studio).** FormaTavern treats the LLM as an expressive creative writing partner in a shared writer's room rather than an adversarial 1st-person chatbot. The human user acts as lead author and creative director; the model contributes multi-track dialogue, environmental narration, and scene progression. Conversational boundaries (such as "never speak for the user") are creator-owned stylistic options, not immutable engine dogma.
+8. **The co-author paradigm (collaborative narrative studio).** FormaTavern treats the LLM as an expressive creative writing partner in a shared writer's room rather than an adversarial 1st-person chatbot. The human user acts as lead author and creative director; the model contributes multi-track dialogue, environmental narration, and scene progression. Conversational boundaries (such as "never speak for the user") are governed by the `personaVoicing` policy (`prohibited` by default, `allowed` for co-authoring). Enabling co-authoring coordinates all four enforcement layers: Prompt preamble & format instructions, provider stop sequences, streaming agency monitors, and envelope parser truncation.
 
 ---
 
@@ -89,7 +89,7 @@ Agency truncation (`:::persona`, `Traveler:` …) detected mid-stream truncates 
 | `schemas/theme.ts` | `CharacterThemeSchema` (font/colors/bubble/background), `ThemeOverridesSchema` (deep-partial) |
 | `schemas/state.ts` | `StateFieldSchema` (enum/int/string), `StateBindingSchema` (`when` → dotted `set`), `StateVectorSchema` |
 | `schemas/character.ts` / `persona.ts` | `CharacterCardSchema` (+`exampleDialogue`, `stateSchema`, `stateBindings`, `initialState`, tags/creator/version), `CharacterMetadataSchema` (the JSON column shape), `PersonaSchema` |
-| `schemas/narrative.ts` | `SegmentSchema`, `ChatMetadataSchema` (narrativeMode, envelopeDialect, standingDirection, npcs{displayName,voice,accent}, currentState, stateOverrides) |
+| `schemas/narrative.ts` | `SegmentSchema`, `PersonaVoicingPolicy` (`prohibited`/`allowed`), `ChatMetadataSchema` (narrativeMode, envelopeDialect, personaVoicing, standingDirection, npcs{displayName,voice,accent}, currentState, stateOverrides) |
 | `schemas/chat.ts`, `message.ts`, `settings.ts`, `api.ts` | DTOs and request bodies for the API; `ApiErrorCode`; `DEFAULT_SETTINGS` |
 | `validate.ts` | `validate()`: Clone → Clean (strip unknown keys) → Default → Check; `assertValid()`; `ValidationError` with JSON-pointer issues |
 | `envelope/` | `parseEnvelope`, `serializeSegments` (alias `serializeEnvelope`, deprecated), `stripOutOfBand`, `computeHoldBack`, grammar, `PARSER_VERSION = 2` |

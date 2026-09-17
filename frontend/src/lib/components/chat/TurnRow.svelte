@@ -123,6 +123,14 @@
         >
           {name}
         </div>
+        {#if isUser && !isTurnOwner}
+          <span
+            class="rounded border border-accent/30 bg-accent/10 px-1 py-0.5 font-mono text-[9px] uppercase tracking-wider text-accent select-none"
+            title="Co-authored by AI"
+          >
+            Co-authored
+          </span>
+        {/if}
       {/if}
     </div>
   {/if}
@@ -134,6 +142,14 @@
       >
         [{name}]
       </span>
+      {#if isUser && !isTurnOwner}
+        <span
+          class="mr-1.5 inline-block rounded border border-accent/30 bg-accent/10 px-1 py-0.2 font-mono text-[9px] uppercase tracking-wider text-accent select-none"
+          title="Co-authored by AI"
+        >
+          Co-authored
+        </span>
+      {/if}
     {/if}
 
     {@render children?.()}

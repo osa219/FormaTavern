@@ -203,10 +203,15 @@ export function createChatsRouter(deps: {
           }
         }
 
+        let mergedMeta = patch.metadata ? { ...chat.metadata, ...patch.metadata } : undefined;
+        if (mergedMeta && (patch.metadata as any)?.personaVoicing === null) {
+          delete (mergedMeta as any).personaVoicing;
+        }
+
         const updated = repos.chats.update(params.id, {
           title: patch.title,
           activePersonaId: patch.activePersonaId,
-          metadata: patch.metadata ? { ...chat.metadata, ...patch.metadata } : undefined,
+          metadata: mergedMeta,
           updatedAt: Date.now()
         });
 
@@ -414,6 +419,9 @@ export function createChatsRouter(deps: {
         const rows = repos.messages.listInChat(chat.id);
         let plan: ReturnType<typeof planDialectConversion>;
         try {
+          const settings = repos.settings.getAll();
+          const personaVoicing =
+            chat.metadata.personaVoicing ?? settings.narrative?.personaVoicing ?? 'prohibited';
           plan = planDialectConversion(rows, {
             sourceDialect,
             targetDialect: convertBody.targetDialect,
@@ -422,7 +430,8 @@ export function createChatsRouter(deps: {
               character.name,
               ...Object.values(chat.metadata.npcs ?? {}).map((n) => n.displayName)
             ],
-            personaName: persona.name
+            personaName: persona.name,
+            allowPersona: personaVoicing === 'allowed'
           });
         } catch (err) {
           if (err instanceof ConvertError) {
@@ -593,11 +602,14 @@ export function createChatsRouter(deps: {
         const dialect =
           chat.metadata.envelopeDialect ?? (chat.metadata.narrativeMode === 'narrative' ? 'directive' : 'auto');
 
+        const personaVoicing =
+          chat.metadata.personaVoicing ?? settings.narrative?.personaVoicing ?? 'prohibited';
         const parseOptions: ParseOptions = {
           primaryCharacter: character.name,
           dialect,
           knownNames,
-          personaName: persona.name
+          personaName: persona.name,
+          allowPersona: personaVoicing === 'allowed'
         };
 
         const job: GenerationJob = {

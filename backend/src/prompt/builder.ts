@@ -117,7 +117,7 @@ export function buildPrompt(ctx: PromptContext): BuiltPrompt {
   });
 
   // 6. Stop sequences
-  const stop = buildStopSequences(dialect, ctx.persona.name);
+  const stop = buildStopSequences(dialect, ctx.persona.name, ctx.personaVoicing ?? 'prohibited');
 
   // 7. Canonical block reports list
   const canonicalReports: BlockReport[] = CANONICAL_BLOCK_IDS.map((id) =>

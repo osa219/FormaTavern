@@ -46,6 +46,7 @@ export interface ConvertOptions {
   primaryCharacter: string;
   knownNames: string[];
   personaName: string;
+  allowPersona?: boolean;
 }
 
 /**
@@ -81,6 +82,7 @@ export function planDialectConversion(rows: MessageRow[], opts: ConvertOptions):
         dialect: opts.sourceDialect,
         knownNames: opts.knownNames,
         personaName: opts.personaName,
+        allowPersona: opts.allowPersona ?? false,
         streaming: false
       });
     } catch (err: any) {

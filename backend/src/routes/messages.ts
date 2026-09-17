@@ -141,11 +141,14 @@ export function createMessagesRouter(deps: {
       const dialect =
         chat.metadata.envelopeDialect ?? (chat.metadata.narrativeMode === 'narrative' ? 'directive' : 'auto');
 
+      const personaVoicing =
+        chat.metadata.personaVoicing ?? settings.narrative?.personaVoicing ?? 'prohibited';
       const parseOptions: ParseOptions = {
         primaryCharacter: character.name,
         dialect,
         knownNames,
-        personaName: persona.name
+        personaName: persona.name,
+        allowPersona: personaVoicing === 'allowed'
       };
 
       const job: GenerationJob = {
@@ -259,11 +262,14 @@ export function createMessagesRouter(deps: {
       const dialect =
         chat.metadata.envelopeDialect ?? (chat.metadata.narrativeMode === 'narrative' ? 'directive' : 'auto');
 
+      const personaVoicing =
+        chat.metadata.personaVoicing ?? settings.narrative?.personaVoicing ?? 'prohibited';
       const parseOptions: ParseOptions = {
         primaryCharacter: character.name,
         dialect,
         knownNames,
-        personaName: persona.name
+        personaName: persona.name,
+        allowPersona: personaVoicing === 'allowed'
       };
 
       const job: GenerationJob = {

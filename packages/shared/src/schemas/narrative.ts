@@ -36,9 +36,16 @@ export const StateOverrideSchema = Type.Object({
 });
 export type StateOverride = Static<typeof StateOverrideSchema>;
 
+export const PersonaVoicingPolicy = Type.Union([
+  Type.Literal('prohibited'),
+  Type.Literal('allowed')
+]);
+export type PersonaVoicingPolicy = Static<typeof PersonaVoicingPolicy>;
+
 export const ChatMetadataSchema = Type.Object({
   narrativeMode: Type.Optional(Type.Union([Type.Literal('classic'), Type.Literal('narrative')])),
   envelopeDialect: Type.Optional(Type.Union([Type.Literal('directive'), Type.Literal('xml'), Type.Literal('prefix')])),
+  personaVoicing: Type.Optional(Type.Union([PersonaVoicingPolicy, Type.Null()])),
   standingDirection: Type.Optional(Type.String()),
   npcs: Type.Optional(
     Type.Record(

@@ -5,7 +5,8 @@ import type {
   StateVector,
   MessagePayload,
   Segment,
-  Dialect
+  Dialect,
+  PersonaVoicingPolicy
 } from '@formatavern/shared';
 
 export interface HistoryTurn {
@@ -31,6 +32,7 @@ export interface PromptContext {
   lorebookEntries?: string[];
   preamble?: string;
   configPrompt?: string;
+  personaVoicing?: PersonaVoicingPolicy;
   budget: {
     contextLength: number;
     reservedCompletion: number;

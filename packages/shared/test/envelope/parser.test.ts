@@ -211,14 +211,16 @@ describe('Envelope Parser (Normative Table & Edge Cases)', () => {
 
   // 7. Agency Truncation
   describe('Agency Truncation', () => {
-    it('truncates at :::persona, :::user, <persona>, <user>, {{user}}:, and personaName:', () => {
+    it('truncates at :::persona, :::user, <persona>, <user>, {{user}}:, personaName:, Persona:, and User:', () => {
       const cases = [
         ':::character[Eldrin]\nSpell.\n:::persona\nSword.',
         ':::character[Eldrin]\nSpell.\n:::user\nSword.',
         ':::character[Eldrin]\nSpell.\n<persona name="Traveler">Sword.</persona>',
         ':::character[Eldrin]\nSpell.\n<user name="Traveler">Sword.</user>',
         ':::character[Eldrin]\nSpell.\n{{user}}: Sword.',
-        ':::character[Eldrin]\nSpell.\nTraveler: Sword.'
+        ':::character[Eldrin]\nSpell.\nTraveler: Sword.',
+        ':::character[Eldrin]\nSpell.\nPersona: Sword.',
+        ':::character[Eldrin]\nSpell.\nUser: Sword.'
       ];
 
       for (const c of cases) {
@@ -251,6 +253,51 @@ describe('Envelope Parser (Normative Table & Edge Cases)', () => {
         name: 'Traveler',
         text: 'Sword.'
       });
+      expect(res.adherent).toBe(false); // no state block in this snippet
+    });
+
+    it('yields persona segment in XML and prefix dialects when allowPersona: true', () => {
+      const xmlInput = '<character name="Eldrin">\nSpell.\n</character>\n<persona name="Traveler">\nSword.\n</persona>\n<state>\n{"mood":"calm"}\n</state>';
+      const xmlRes = parseEnvelope(xmlInput, {
+        primaryCharacter: 'Eldrin',
+        personaName: 'Traveler',
+        allowPersona: true
+      });
+      expect(xmlRes.truncatedAt).toBeNull();
+      expect(xmlRes.segments.length).toBe(2);
+      expect(xmlRes.segments[1]).toEqual({ kind: 'persona', name: 'Traveler', text: 'Sword.' });
+      expect(xmlRes.adherent).toBe(true);
+
+      const prefixInput = 'Eldrin: Spell.\n\nTraveler: Sword.\n\n```state\n{"mood":"calm"}\n```';
+      const prefixRes = parseEnvelope(prefixInput, {
+        primaryCharacter: 'Eldrin',
+        personaName: 'Traveler',
+        dialect: 'prefix',
+        allowPersona: true
+      });
+      expect(prefixRes.truncatedAt).toBeNull();
+      expect(prefixRes.segments.length).toBe(2);
+      expect(prefixRes.segments[1]).toEqual({ kind: 'persona', name: 'Traveler', text: 'Sword.' });
+      expect(prefixRes.adherent).toBe(true);
+
+      const genericPersonaInput = 'Persona: Hello there.\n\n```state\n{"mood":"calm"}\n```';
+      const genericAllowedRes = parseEnvelope(genericPersonaInput, {
+        primaryCharacter: 'Eldrin',
+        personaName: 'Traveler',
+        dialect: 'prefix',
+        allowPersona: true
+      });
+      expect(genericAllowedRes.truncatedAt).toBeNull();
+      expect(genericAllowedRes.segments[0]).toEqual({ kind: 'persona', name: 'Traveler', text: 'Hello there.' });
+
+      const genericProhibitedRes = parseEnvelope(genericPersonaInput, {
+        primaryCharacter: 'Eldrin',
+        personaName: 'Traveler',
+        dialect: 'prefix',
+        allowPersona: false
+      });
+      expect(genericProhibitedRes.truncatedAt).toBe('persona');
+      expect(genericProhibitedRes.segments.length).toBe(0);
     });
   });
 

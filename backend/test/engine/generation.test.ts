@@ -181,6 +181,45 @@ describe('runGeneration', () => {
     expect(allEmittedTokenText).not.toContain('furious');
   });
 
+  it('persona-violation with allowPersona: true: streams complete turn with persona segment without aborting', async () => {
+    const assistantId = createAssistantRow('asst-allowed-persona');
+    const provider = new MockLLMProvider({ intervalMs: 5 });
+    const events: ChatStreamEvent[] = [];
+
+    const job: GenerationJob = {
+      chatId: 'chat-1',
+      assistantId,
+      parentId: null,
+      provider,
+      model: 'mock:persona-violation',
+      request: { model: 'mock:persona-violation', history: [] },
+      promptTokensEstimated: 20,
+      droppedTurns: 0,
+      parseOptions: {
+        ...defaultParseOptions,
+        allowPersona: true
+      },
+      previousState: { mood: 'calm', affinity: 10 },
+      flushIntervalMs: 20
+    };
+
+    hub.subscribe(assistantId, (ev) => events.push(ev));
+    await runGeneration(job, { repos, hub });
+
+    const finalRow = repos.messages.get(assistantId);
+    expect(finalRow!.status).toBe('complete');
+    expect(finalRow!.metadata.parse?.truncatedAt).toBeNull();
+    expect(finalRow!.content).toContain('I draw my sword.');
+
+    // Persona segment was extracted
+    const personaSeg = finalRow!.segments.find((s) => s.kind === 'persona');
+    expect(personaSeg).toBeDefined();
+    expect(personaSeg!.text).toContain('I draw my sword.');
+
+    // State block after persona was reached and parsed
+    expect(finalRow!.state).toMatchObject({ mood: 'furious' });
+  });
+
   it('error script: yields status error, state inherited, error event terminal', async () => {
     const assistantId = createAssistantRow('asst-err');
     const provider = new MockLLMProvider({ intervalMs: 5 });

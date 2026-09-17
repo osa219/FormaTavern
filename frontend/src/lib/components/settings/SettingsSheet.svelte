@@ -1120,6 +1120,24 @@ import { api } from '$lib/api';
           </div>
         </div>
 
+        <div>
+          <label for="persona-voicing" class="mb-1 block font-medium text-(--chrome-text)">
+            Persona Voicing (Co-Author Mode)
+          </label>
+          <select
+            id="persona-voicing"
+            value={s.narrative.personaVoicing ?? 'prohibited'}
+            onchange={(e) => settingsStore.patch({ narrative: { personaVoicing: e.currentTarget.value as any } })}
+            class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text) focus:border-accent focus:outline-none"
+          >
+            <option value="prohibited">Prohibited — AI never speaks for you (Default)</option>
+            <option value="allowed">Allowed — AI co-authors dialogue & actions for your persona</option>
+          </select>
+          <p class="mt-1 text-[11px] text-(--chrome-text)/60">
+            When allowed, the AI may write lines and actions for your persona using narrative tags to propel the story forward. Can be overridden per chat.
+          </p>
+        </div>
+
         {#if s.narrative.defaultMode === 'narrative'}
           <div>
             <label for="narrative-dialect" class="mb-1 block font-medium text-(--chrome-text)">

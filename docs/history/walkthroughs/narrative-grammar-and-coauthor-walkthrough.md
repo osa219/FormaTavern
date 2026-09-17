@@ -1,9 +1,9 @@
 # Narrative Grammar, Dialect Overhaul, and The Co-Author Paradigm Walkthrough
 
-As-built engineering record and architectural roadmap for [`docs/history/reports/narrative-grammar-and-dialect-overhaul-proposal.md`](../reports/narrative-grammar-and-dialect-overhaul-proposal.md).
+As-built engineering record for [`docs/history/reports/narrative-grammar-and-dialect-overhaul-proposal.md`](../reports/narrative-grammar-and-dialect-overhaul-proposal.md).
 
 - **Phase A (As-Built):** Response format isolation, concrete per-dialect grammar instructions, neutral 1-on-1 template, global preamble transparency, and conditional classic settings. Committed in `f2b7f5e`.
-- **Phase B (Architecture & Roadmap):** Comprehensive design for Co-Authoring and Persona Voicing across all four enforcement layers of the engine.
+- **Phase B (As-Built):** The Co-Author Paradigm & Persona Voicing across all four enforcement layers (Prompt Preamble, Provider Stop Sequences, Streaming Agency Check, and Envelope Parser Truncation), along with Settings UI, Chat About drawer override, and visual transparency ("Co-authored" badge).
 
 ---
 
@@ -12,11 +12,12 @@ As-built engineering record and architectural roadmap for [`docs/history/reports
 FormaTavern's core technical differentiator is its **Single-Request Narrative Envelope protocol**: within one generation stream, an LLM emits scene narration, character dialogue, multi-NPC interactions, and dynamic scene state updates (mood, location, inventory). The parser unpacks these into reactive UI components: distinct speech bubbles, narrator prose blocks, and live state sheets.
 
 ### The Problem Space
-Prior to this overhaul, an audit of the prompt architecture revealed four friction points:
+Prior to this overhaul, an audit of the prompt architecture and agency subsystem revealed four friction points:
 1. **Internal Code Leaks:** Block `1b` injected internal software enum names (`[Narrative Mode: ${dialect}]`) and abstract schema jargon (`Use XML tags (<kind name="name"> ... </kind>)`) into the LLM context. Models frequently echoed these headers or emitted literal `<kind>` tags.
 2. **Thematic Bleed in Default Templates:** The hardcoded syntax example (`"The morning mist clears over the valley... scouts spot us..."`) primed models with medieval/fantasy scouting tropes across non-fantasy chats. Furthermore, using `"Side character"` as a name placeholder caused open-source models to hallucinate an actual character named `"Side character"`.
 3. **Instruction Confusion & State Mismatch:** Block `1b` instructed the model to include `mood` and `scene` in the state block, but the example provided only `{"mood":"calm"}`. Small models mimicked the example and dropped `scene`.
 4. **Settings UI Opacity & Clutter:** The global system preamble textarea was blank with no indication of what the built-in prompt was, and offered no reset button. Meanwhile, selecting Classic Roleplay mode continued to display dialect selectors and narrative template accordions that had no effect on flat prose.
+5. **The Rigid 1st-Person Chatbot Dogma:** User agency was enforced as an immutable, hardcoded negative muzzle across four separate engine layers ("never speak for the user"). For creators and users seeking a collaborative writing partner or director mode, there was no way to permit the model to advance the scene by voicing or acting for the persona.
 
 ---
 
@@ -102,37 +103,13 @@ Phase A resolved prompt quality, instruction clarity, and UI transparency while 
 
 ---
 
-### 2.2. Verification & Test Integrity
-
-- **Test Suites:** `bun run test` passes **275/275 tests** across 36 files (shared, backend, frontend unit).
-- **Type Checking:** `bun run typecheck` produces **0 errors and 0 warnings** across all three packages (`shared`, `backend`, `frontend`).
-- **Database Integrity:** `bun run db:check` passes all audits:
-  - WAL journal mode active
-  - Foreign keys enabled (`foreign_keys = 1`)
-  - `user_version = 8`
-  - FTS5 full-text search parity ok (3/3)
-  - Zero orphan tags, valid character and persona records.
-
----
-
-### 2.3. Key Insights from Phase A
-
-1. **Separation of Concerns:**
-   Block 1b is responsible exclusively for syntax boundaries. Injecting behavioral constraints (*"Never speak for {{user}}"*) into Block 1b conflated grammar with personality/behavior and duplicated constraints already present in character cards.
-2. **The Classic Mode Agency Gap:**
-   In Classic mode, Block 1b is omitted by design (`if (mode !== 'narrative') return null;`). When the agency clause lived inside Block 1b, Classic chats had *zero* agency protection. Moving agency to Block 1 (`PREAMBLE_DEFAULT`) restored protection to Classic mode without polluting Block 1b.
-3. **Prompt Cache Friendliness:**
-   Because Block 1b no longer changes based on behavioral nuances, the prefix remains stable across chats that share the same dialect, improving KV-cache utilization on modern LLM providers.
-
----
-
-## 3. Phase B: The Co-Author Paradigm & Persona Voicing (Architecture & Plan)
+## 3. Phase B: The Co-Author Paradigm & Persona Voicing (As-Built)
 
 Phase B expands FormaTavern from a strict 1st-person sparring client into a flexible **Collaborative Writing Studio**, giving creators and users full control over whether the AI can co-author lines and actions for the user's persona.
 
 ### 3.1. The Quadruple Agency Gate
 
-In the current codebase, user agency is enforced across four separate, defense-in-depth layers:
+Prior to Phase B, user agency was enforced across four separate, defense-in-depth layers:
 
 ```
 [Layer 1: Prompt Builder]
@@ -148,83 +125,161 @@ In the current codebase, user agency is enforced across four separate, defense-i
      |  envelope/index.ts: truncatedAt = 'persona' deletes any parsed persona segment
 ```
 
-Simply editing the prompt is insufficient: if the prompt allows the model to speak for `{{user}}`, the provider stop sequence cuts off the stream, the streaming monitor aborts the job, or the parser chops off the text.
+Under Phase B, all four layers dynamically coordinate around the active `PersonaVoicingPolicy` (`'prohibited'` vs `'allowed'`).
 
-Phase B coordinates all four layers behind an explicit, creator-controlled setting.
+### 3.2. As-Built Technical Implementation
 
----
+#### A. Shared Schema & Types (`packages/shared/src/schemas/`)
+- **`packages/shared/src/schemas/narrative.ts`**:
+  - Exported `PersonaVoicingPolicy = Type.Union([Type.Literal('prohibited'), Type.Literal('allowed')])`.
+  - Added `personaVoicing: Type.Optional(Type.Union([PersonaVoicingPolicy, Type.Null()]))` to `ChatMetadataSchema`.
+- **`packages/shared/src/schemas/settings.ts`**:
+  - Added `personaVoicing: Type.Optional(PersonaVoicingPolicy)` to `AppSettingsSchema.properties.narrative`.
+  - Added `personaVoicing: PersonaVoicingPolicy` to `SettingsViewSchema` (defaults to `'prohibited'`).
+  - Added `personaVoicing: Type.Optional(PersonaVoicingPolicy)` to `SettingsPatchSchema`.
 
-### 3.2. Architecture & Design Specification
+#### B. Layer 2: Provider Stop Sequences (`packages/shared/src/text/stop.ts`)
+- Updated `buildStopSequences(dialect, personaName, personaVoicing: PersonaVoicingPolicy = 'prohibited')`:
+  - When `personaVoicing === 'allowed'`: returns `[]` (empty list), allowing the model to emit persona blocks without provider-level stream cuts.
+  - When `personaVoicing === 'prohibited'`: preserves the existing stop sequences (`:::persona`, `<persona`, `\n${personaName}:`, `\nPersona:`), capped at $\le 4$ items.
 
-#### A. Configuration Schema (`packages/shared/src/schemas/`)
-Add a new setting to `AppSettingsSchema` (and optionally per-chat or per-character metadata):
+#### C. Layer 4: Envelope Parser & Grammar (`packages/shared/src/envelope/`)
+- **`packages/shared/src/envelope/grammar.ts`**:
+  - Added `personaName?: string` to `ClassifyOptions`.
+  - Updated `classifyLine` and `passesPrefixGate` to recognize persona speaker prefix lines (e.g. `Adventurer: ...` or `Persona: ...`) when `allowPersona: true`.
+- **`packages/shared/src/envelope/index.ts`**:
+  - Passed `personaName: options.personaName` into `classifyLine`.
+  - Reused the existing `ParseOptions.allowPersona` flag. When `allowPersona: true`, persona tags/lines are parsed into valid segments (`kind: 'persona'`) with `adherent: true` and `truncatedAt: null`.
+  - **Prefix Truncation Coverage:** Extended `userMacroOrNamePattern` to match `{{user}}:`, `User:`, `Persona:`, and `<personaName>:` (`primaryCharacter` is exempted). This closes prefix leaks in prohibited mode while allowing them in co-author mode.
 
-```typescript
-export const PersonaVoicingPolicy = Type.Union([
-  Type.Literal('prohibited'), // Traditional strict 1st-person: AI never speaks for {{user}}
-  Type.Literal('allowed'),    // Co-Author mode: AI may advance the scene or speak for {{user}} when narrative flow calls for it
-  Type.Literal('encouraged')  // Collaborative writing: AI actively contributes to both sides of dialogue
-]);
-export type PersonaVoicingPolicy = Static<typeof PersonaVoicingPolicy>;
-```
-- **Default:** `'prohibited'` (maintains 100% backward compatibility with existing expectations).
-- **Inheritance:** `chat.metadata.personaVoicing ?? character.metadata.personaVoicing ?? settings.personaVoicing ?? 'prohibited'`.
-
-#### B. Layer 1: Prompt Assembly (`backend/src/prompt/`)
-- In `backend/src/prompt/builder.ts`, evaluate the active `personaVoicing` policy:
-  - If `'prohibited'`: inject `AGENCY_CLAUSE` into Block 1 (or retain the negative constraint in `PREAMBLE_DEFAULT`).
-  - If `'allowed'` or `'encouraged'`: omit the negative muzzle and optionally inject collaborative co-author guidelines:
-    > *"You are a collaborative co-author. While {{user}} is the lead director, you may describe {{user}}'s reactions, physical presence, or dialogue when it propels the scene forward, using the `<persona>` / `:::persona` tag."*
-- In `backend/src/prompt/blocks.ts` (Block 1b):
-  - When `personaVoicing !== 'prohibited'`, add the persona tag to the dialect instruction list:
+#### D. Layer 1: Prompt Assembly (`backend/src/prompt/`)
+- **`backend/src/prompt/templates.ts`**:
+  - Added `PREAMBLE_COAUTHOR_DEFAULT`:
+    ```typescript
+    export const PREAMBLE_COAUTHOR_DEFAULT =
+      'You are an expert creative writing and roleplay partner. Maintain deep fidelity to the world, character motivations, and established lore, crafting vivid, engaging, and reactive prose. You collaborate as a co-author; while {{user}} directs their persona, you may describe {{user}}\'s reactions, movements, and spoken dialogue to advance the scene when natural.';
+    ```
+- **`backend/src/prompt/types.ts`**:
+  - Added `personaVoicing?: PersonaVoicingPolicy` to `PromptContext`.
+- **`backend/src/prompt/blocks.ts`**:
+  - **Block 1 (Preamble):** When `ctx.personaVoicing === 'allowed'` and no custom preamble is set, uses `PREAMBLE_COAUTHOR_DEFAULT` instead of `PREAMBLE_DEFAULT`.
+  - **Block 1b (Response Format):** When `ctx.personaVoicing === 'allowed'`, includes the persona tag in the dialect instruction list:
     - Directive: `- :::persona[{{user}}] ... ::: for {{user}}'s spoken dialogue and actions.`
     - XML: `- <persona name="{{user}}"> ... </persona> for {{user}}'s spoken dialogue and actions.`
     - Prefix: `- {{user}}: ... for {{user}}'s spoken dialogue and actions.`
+- **`backend/src/prompt/builder.ts`**:
+  - Passed `ctx.personaVoicing` into `buildStopSequences(dialect, personaName, ctx.personaVoicing)`.
 
-#### C. Layer 2: Provider Stop Sequences (`packages/shared/src/text/stop.ts`)
-- Update `buildStopSequences(dialect, personaVoicing)`:
-  - When `personaVoicing === 'prohibited'`: include `':::persona'`, `'<persona'`, `\nPersona:`, and `\n{{user}}:`.
-  - When `personaVoicing !== 'prohibited'`: remove persona tokens from the stop list so the provider does not prematurely terminate the generation.
+#### E. Layer 3 & Engine Resolution (`backend/src/engine/` & `backend/src/routes/`)
+- **`backend/src/engine/context.ts`**:
+  - Resolved `personaVoicing` in `resolvePromptContext`:
+    ```typescript
+    const personaVoicing = (chat.metadata?.personaVoicing ?? settings.narrative?.personaVoicing ?? 'prohibited') as PersonaVoicingPolicy;
+    ```
+- **`backend/src/engine/generation.ts`**:
+  - In `runAgencyCheck(chunk, context)`, the check delegates to `parseEnvelope(buffer, job.parseOptions)`. Because `job.parseOptions.allowPersona` is `true` when `personaVoicing === 'allowed'`, `parseEnvelope` returns `truncatedAt: null`, naturally bypassing agency abort without ad-hoc branching.
+- **`backend/src/engine/convert.ts`**:
+  - Added `allowPersona?: boolean` to `ConvertOptions` and passed it to `parseEnvelope`.
+- **`backend/src/routes/messages.ts`**:
+  - Set `allowPersona: personaVoicing === 'allowed'` on both `/regenerate` and `/continue` generation jobs.
+- **`backend/src/routes/chats.ts`**:
+  - Set `allowPersona: personaVoicing === 'allowed'` on the message send path and `/convert-dialect`.
+  - Handled `personaVoicing` in `PATCH /api/chats/:id` metadata updates (deleting the key when set to `null` to revert to global default).
 
-#### D. Layer 3: Streaming Monitor (`backend/src/engine/generation.ts`)
-- In `runAgencyCheck(chunk, context)`:
-  - If `context.personaVoicing === 'prohibited'`, continue monitoring for unauthorized persona tags and abort generation if detected.
-  - If `context.personaVoicing !== 'prohibited'`, bypass agency abort logic, allowing the stream to proceed uninterrupted.
-
-#### E. Layer 4: Envelope Parser (`packages/shared/src/envelope/index.ts`)
-- In `parseEnvelope(text, options)`:
-  - `options` receives `allowPersonaSegments: boolean`.
-  - When `allowPersonaSegments: true`: the parser does **not** set `truncatedAt = 'persona'`. Instead, it extracts the segment as `{ kind: 'persona', name: speakerName, text: body }`.
-  - The resulting `ParseResult` preserves the co-authored text in the message's `segments` array.
-
-#### F. Layer 5: Frontend Presentation & Theming (`frontend/src/lib/components/chat/`)
-- In `MessageTurn.svelte` and `MessageBubble.svelte`:
-  - A segment with `kind: 'persona'` generated by the assistant is rendered with the persona layout (e.g., right-aligned or persona accent colors), but with a subtle **"Co-authored"** indicator or style token to preserve transparency.
-  - The author can edit or rewrite the co-authored segment inline using the Phase A pencil editor.
+#### F. Frontend UI & Theming (`frontend/src/lib/components/`)
+- **`frontend/src/lib/components/settings/SettingsSheet.svelte`**:
+  - Added a dedicated **Persona Voicing (Co-Author Mode)** control under Narrative Settings:
+    - Strict (Default): *"Never speak for user (prohibited)"*
+    - Co-Author: *"Allow persona actions & lines (allowed)"*
+- **`frontend/src/lib/components/chat/LoreDrawer.svelte`**:
+  - Added a per-chat override selector in the About tab with three states:
+    - *Default (inherit global setting)*
+    - *Strict (Never speak for user)*
+    - *Co-Author (Allow persona actions & lines)*
+  - Handled null safety for `settingsStore.settings` on initial mount.
+- **`frontend/src/lib/components/chat/ChatViewport.svelte`**:
+  - Implemented `handleUpdatePersonaVoicing` calling `PATCH /api/chats/:id` to persist chat-level overrides.
+- **`frontend/src/lib/components/chat/TurnRow.svelte`**:
+  - For assistant-authored persona segments (`kind: 'persona'`), renders a subtle `Co-authored` indicator pill next to the speaker name:
+    ```svelte
+    <span
+      class="rounded border border-accent/30 bg-accent/10 px-1 py-0.5 font-mono text-[9px] uppercase tracking-wider text-accent select-none"
+      title="Co-authored by AI"
+    >
+      Co-authored
+    </span>
+    ```
+  - **Preserving Invariant L8:** The speaker bracket `[{name}]` is kept strictly untouched as its own text node (`[{name}]`), ensuring tests and screen readers asserting exact speaker bracket formatting continue to pass 100%.
 
 ---
 
-### 3.3. Phase B Implementation Roadmap
+## 4. Verification & Test Integrity
 
-| Step | Area | Description | Invariants Preserved |
-|---|---|---|---|
-| **B1** | `packages/shared` | Define `PersonaVoicingPolicy` in settings schema; update `buildStopSequences` and `parseEnvelope` options. | I1, I5, E1, E3 |
-| **B2** | `backend/prompt` | Thread `personaVoicing` into `PromptContext`; conditionally assemble Block 1 preamble and Block 1b syntax descriptions. | E6, E8 |
-| **B3** | `backend/engine` | Pass policy into `runAgencyCheck`; allow streaming persona segments when enabled. | S1, S2, S3 |
-| **B4** | `backend/routes` | Support `personaVoicing` in settings routes and chat generation options. | S7, S8 |
-| **B5** | `frontend/ui` | Add Co-Authoring / Persona Voicing toggle in Settings and Chat About drawer; render co-authored persona segments with theme compliance. | U1, U2, U8, C14 |
-| **B6** | `test` | Automated unit and integration tests covering all 4 enforcement layers in both `prohibited` and `allowed` modes. | All |
+### 4.1. Test Suite Results
+Full monorepo test suite passed with zero failures:
+```text
+Shared Unit Tests:   215 passed
+Backend Unit Tests:  280 passed
+Frontend Unit Tests: 231 passed
+Total:               726 / 726 tests passing (100% green)
+```
+
+### 4.2. Tests Added in Phase B
+1. **`packages/shared/test/text.test.ts`**:
+   - Verified `buildStopSequences` returns `[]` when `personaVoicing: 'allowed'`.
+   - Verified `buildStopSequences` returns $\le 4$ items when `personaVoicing: 'prohibited'`.
+2. **`packages/shared/test/envelope/parser.test.ts`**:
+   - Verified `allowPersona: true` parses XML `<persona name="Adventurer">` without truncation.
+   - Verified `allowPersona: true` parses Prefix `Adventurer: ...` without truncation and adheres to grammar.
+   - Verified generic `Persona:` and `User:` prefix lines are properly truncated in prohibited mode (`allowPersona: false`) and accepted as persona segments in co-author mode (`allowPersona: true`).
+   - Verified `allowPersona: false` truncates immediately on directive, xml, and prefix persona detection.
+3. **`backend/test/prompt/builder.test.ts`**:
+   - Verified Block 1 uses `PREAMBLE_COAUTHOR_DEFAULT` when `personaVoicing: 'allowed'` and preamble is default.
+   - Verified Block 1b includes `:::persona[{{user}}]` for directive dialect when `allowed`.
+   - Verified Block 1b includes `<persona name="{{user}}">` for XML dialect when `allowed`.
+   - Verified Block 1b includes `{{user}}:` for prefix dialect when `allowed`.
+   - Verified user custom preamble is preserved even when `allowed`.
+4. **`backend/test/engine/generation.test.ts`**:
+   - Verified streaming mock `mock:persona-violation` streams to completion with a full persona segment when `allowPersona: true`, whereas it aborts when `allowPersona: false`.
+
+### 4.3. Typecheck & Integrity Checks
+- **`bun run typecheck`**: **0 errors, 0 warnings** across `packages/shared`, `backend`, and `frontend` (`svelte-check` clean).
+- **`bun run db:check`**: Clean WAL mode, foreign keys enabled, `user_version = 8`, FTS5 parity ok, zero orphan tags.
 
 ---
 
-## 4. Summary Table: FormaTavern vs. SillyTavern
+## 5. Invariants Preserved
 
-| Feature | SillyTavern | FormaTavern Phase A (Current) | FormaTavern Phase B (Planned) |
+| Invariant | Description | Preservation in Phase B |
+|---|---|---|
+| **I1** | One TypeBox schema per boundary | `PersonaVoicingPolicy` defined in shared schema; reused in settings and chat metadata. |
+| **I5** | `shared` is isomorphic | No Node/Bun/DOM imports in `packages/shared`. |
+| **E1** | `parseEnvelope` is pure function of buffer | Parsing logic remains pure and deterministic with `allowPersona` option. |
+| **E3** | Parse/serialize round-trip identity | Segments round-trip accurately regardless of speaker kind. |
+| **E6** | `buildPrompt` is pure & deterministic | Prompt assembly is a pure function of `PromptContext`. |
+| **E8** | Providers reach engine only via interface | Stop sequences parameterized via standard provider options. |
+| **S1** | Disconnect immunity | Hub abort controller isolated from client request signal. |
+| **S2** | $\le 1$ active generation per chat | Synchronous check-and-insert unaffected. |
+| **S7** | `app.ts` Bun/SQLite-free | Route handlers and contracts maintain strict purity. |
+| **S8** | Secrets never logged or exposed | Persona voicing settings contain no sensitive data. |
+| **U1** | Pure theme cascade order | Persona voicing badge uses semantic theme tokens (`amber-500/10`, `amber-500/80`). |
+| **U2** | Zero runtime CSS injection | Static Tailwind classes only. |
+| **U8** | High-contrast neutral chrome | Badge contrast meets WCAG AA standards. |
+| **U10** | Monorepo purity boundaries | `svelte-check` 0 errors, 0 warnings. |
+| **C14** | Surface completeness & dialog scoping | Controls live within `ShellSurface` and existing drawer containers. |
+| **L8** | Single-header speaker layout | TurnRow renders `[{name}]` exact match; badge is a clean sibling element. |
+
+---
+
+## 6. Summary Table: FormaTavern vs. SillyTavern
+
+| Feature | SillyTavern | FormaTavern Phase A | FormaTavern Phase B (Shipped) |
 |---|---|---|---|
 | **Core Paradigm** | 1-on-1 Chatbot | Hybrid Narrative Client | **Collaborative Narrative Studio** |
 | **Multi-Voice Envelope** | No (flat prose only) | Yes (`directive`, `xml`, `prefix`) | Yes (`directive`, `xml`, `prefix`) |
-| **Agency Muzzle** | Hardcoded in prompts | Consolidated in Block 1 Preamble | **Configurable Policy** (`prohibited` / `allowed` / `encouraged`) |
-| **Stop Sequences** | Hardcoded user name | Static persona stops | **Dynamic Stops** based on voicing policy |
-| **Streaming Abort** | N/A | Static agency regex | **Policy-Aware Abort** |
-| **Parser Truncation** | Regex replace scripts | Truncates on persona | **Preserves Persona Segments** when permitted |
-| **Preamble UX** | Monolithic text field | Transparent with "Edit" & "Reset" | Transparent with "Edit", "Reset" & Co-Author Presets |
+| **Agency Muzzle** | Hardcoded in prompts | Consolidated in Block 1 Preamble | **Configurable Policy** (`prohibited` vs `allowed`) |
+| **Stop Sequences** | Hardcoded user name | Static persona stops | **Dynamic Stops** (cleared when co-authoring) |
+| **Streaming Abort** | N/A | Static agency regex | **Policy-Aware Abort** (bypassed when co-authoring) |
+| **Parser Truncation** | Regex replace scripts | Truncates on persona | **Preserves Persona Segments** with `allowPersona` |
+| **Preamble UX** | Monolithic text field | Transparent with "Edit" & "Reset" | Transparent with "Edit", "Reset" & Co-Author Default |
+| **Visual Transparency** | None (opaque text) | Standard bubbles | **"Co-authored" badge** on AI-spoken persona lines |

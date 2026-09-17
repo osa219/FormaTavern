@@ -49,5 +49,12 @@ describe('Text Utilities (Macros & Stop Sequences)', () => {
       expect(stopsClassic).toEqual(['\nTraveler:']);
       expect(stopsClassic.length).toBeLessThanOrEqual(4);
     });
+
+    it('returns empty stop sequences when personaVoicing is allowed', () => {
+      expect(buildStopSequences('directive', 'Traveler', 'allowed')).toEqual([]);
+      expect(buildStopSequences('xml', 'Traveler', 'allowed')).toEqual([]);
+      expect(buildStopSequences('prefix', 'Traveler', 'allowed')).toEqual([]);
+      expect(buildStopSequences('classic', 'Traveler', 'allowed')).toEqual([]);
+    });
   });
 });

@@ -24,7 +24,8 @@
     onSwitchPersona,
     onOpenStateOverride,
     onEditSettings,
-    onConvertChat
+    onConvertChat,
+    onUpdatePersonaVoicing
   }: {
     open: boolean;
     character: CharacterCard;
@@ -40,6 +41,7 @@
     onOpenStateOverride?: () => void;
     onEditSettings?: () => void;
     onConvertChat?: (targetDialect: ConvertDialect) => Promise<{ converted: number; unchanged: number }>;
+    onUpdatePersonaVoicing?: (policy: 'inherited' | 'prohibited' | 'allowed') => Promise<void>;
   } = $props();
 
   type LoreTab = 'about' | 'voice' | 'you' | 'state' | 'prompt';
@@ -287,6 +289,28 @@
                   </a>
                 </div>
               {/if}
+
+              <div class="flex items-center justify-between gap-2 border-t border-neutral-800/80 pt-2 text-[11px]">
+                <div>
+                  <span class="text-neutral-400">Co-Authoring (Persona Voicing):</span>
+                </div>
+                {#if onUpdatePersonaVoicing}
+                  <select
+                    value={chat?.metadata?.personaVoicing ?? 'inherited'}
+                    onchange={(e) => onUpdatePersonaVoicing?.(e.currentTarget.value as any)}
+                    class="rounded border border-neutral-800 bg-neutral-900 px-1.5 py-0.5 font-mono text-[11px] text-neutral-200 focus:border-accent focus:outline-none"
+                    aria-label="Co-Authoring Persona Voicing Policy"
+                  >
+                    <option value="inherited">inherited ({settingsStore.settings?.narrative?.personaVoicing ?? 'prohibited'})</option>
+                    <option value="prohibited">prohibited</option>
+                    <option value="allowed">allowed</option>
+                  </select>
+                {:else}
+                  <span class="rounded border border-neutral-800 bg-neutral-950 px-1.5 py-0.5 font-mono text-neutral-300">
+                    {chat?.metadata?.personaVoicing ?? `inherited (${settingsStore.settings?.narrative?.personaVoicing ?? 'prohibited'})`}
+                  </span>
+                {/if}
+              </div>
             </div>
           {/if}
           {#if character.showcase}

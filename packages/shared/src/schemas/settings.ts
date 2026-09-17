@@ -40,8 +40,12 @@ export const AppSettingsSchema = Type.Object({
       Type.Literal('xml'),
       Type.Literal('prefix')
     ], { default: 'directive' }),
-    example: Type.Optional(Type.String({ maxLength: 20_000 }))
-  }, { default: { defaultMode: 'narrative', defaultDialect: 'directive' } }),
+    example: Type.Optional(Type.String({ maxLength: 20_000 })),
+    personaVoicing: Type.Union([
+      Type.Literal('prohibited'),
+      Type.Literal('allowed')
+    ], { default: 'prohibited' })
+  }, { default: { defaultMode: 'narrative', defaultDialect: 'directive', personaVoicing: 'prohibited' } }),
   preamble: Type.Optional(Type.String({ maxLength: 20_000 }))
 });
 export type AppSettings = Static<typeof AppSettingsSchema>;
@@ -93,7 +97,8 @@ export const SettingsViewSchema = Type.Object({
       Type.Literal('xml'),
       Type.Literal('prefix')
     ]),
-    example: Type.Optional(Type.String())
+    example: Type.Optional(Type.String()),
+    personaVoicing: Type.Union([Type.Literal('prohibited'), Type.Literal('allowed')])
   }),
   exampleRenderings: Type.Object({
     directive: Type.String(),
@@ -145,7 +150,8 @@ export const SettingsPatchSchema = Type.Object({
       Type.Literal('xml'),
       Type.Literal('prefix')
     ]),
-    example: Type.Optional(Type.Union([Type.String({ maxLength: 20_000 }), Type.Null()]))
+    example: Type.Optional(Type.Union([Type.String({ maxLength: 20_000 }), Type.Null()])),
+    personaVoicing: Type.Optional(Type.Union([Type.Literal('prohibited'), Type.Literal('allowed')]))
   }))),
   preamble: Type.Optional(Type.Union([Type.String({ maxLength: 20_000 }), Type.Null()]))
 });

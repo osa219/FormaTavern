@@ -98,6 +98,9 @@ export function assembleContext(input: AssembleContextInput): AssembledContext {
   const contextLength = input.settings.generation?.contextLength ?? DEFAULT_SETTINGS.generation.contextLength;
   const reservedCompletion = input.settings.generation?.maxTokens ?? DEFAULT_SETTINGS.generation.maxTokens;
 
+  const personaVoicing =
+    input.chat.metadata.personaVoicing ?? input.settings.narrative?.personaVoicing ?? 'prohibited';
+
   const promptContext: PromptContext = {
     character: input.character,
     persona: input.persona,
@@ -110,6 +113,7 @@ export function assembleContext(input: AssembleContextInput): AssembledContext {
     lorebookEntries: [],
     preamble: input.settings.preamble,
     configPrompt: input.configPrompt,
+    personaVoicing,
     budget: {
       contextLength,
       reservedCompletion

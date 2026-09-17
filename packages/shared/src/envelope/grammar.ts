@@ -43,6 +43,7 @@ export interface ClassifyOptions {
   dialect?: Dialect | 'auto';
   knownNames?: string[];
   primaryCharacter: string;
+  personaName?: string;
 }
 
 /**
@@ -151,6 +152,13 @@ export function classifyLine(line: string, opts: ClassifyOptions): LineClassific
       } else if (rawName.toLowerCase() === opts.primaryCharacter.toLowerCase()) {
         kind = 'character';
         name = rawName;
+      } else if (
+        rawName.toLowerCase() === 'user' ||
+        rawName.toLowerCase() === 'persona' ||
+        (opts.personaName && rawName.toLowerCase() === opts.personaName.toLowerCase())
+      ) {
+        kind = 'persona';
+        name = opts.personaName ?? rawName;
       } else {
         kind = 'npc';
         name = rawName;
@@ -179,6 +187,8 @@ export function classifyLine(line: string, opts: ClassifyOptions): LineClassific
 function passesPrefixGate(name: string, opts: ClassifyOptions): boolean {
   const lower = name.toLowerCase();
   if (lower === 'narrator') return true;
+  if (lower === 'user' || lower === 'persona') return true;
+  if (opts.personaName && lower === opts.personaName.toLowerCase()) return true;
 
   if (opts.knownNames && opts.knownNames.length > 0) {
     if (opts.knownNames.some((kn) => kn.toLowerCase() === lower)) return true;

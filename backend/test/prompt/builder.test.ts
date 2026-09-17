@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { existsSync, mkdirSync } from 'node:fs';
 import { buildPrompt } from '../../src/prompt/builder';
 import { PromptBudgetError, type PromptContext, type HistoryTurn } from '../../src/prompt/types';
+import { PREAMBLE_COAUTHOR_DEFAULT } from '../../src/prompt/templates';
 import { MockLLMProvider } from '../../src/providers/mock';
 import { collect } from '../providers/contract';
 import {
@@ -467,6 +468,46 @@ describe('PromptBuilder', () => {
     it('ignores blank prompts', () => {
       const built = buildPrompt(makeContext({ configPrompt: '   ' }));
       expect(built.blocks.find((b) => b.id === '1c')).toMatchObject({ included: false });
+    });
+  });
+
+  describe('Co-Author Persona Voicing Policy', () => {
+    it('uses co-author preamble and includes persona tag instructions in narrative directive mode', () => {
+      const built = buildPrompt(makeContext({ personaVoicing: 'allowed' }));
+      expect(built.systemPrompt).toContain('You collaborate as a co-author');
+      expect(built.systemPrompt).toContain(':::persona[Traveler] ... ::: for Traveler\'s spoken dialogue and actions.');
+      expect(built.stop).toEqual([]);
+    });
+
+    it('includes XML persona tag in xml dialect when personaVoicing is allowed', () => {
+      const ctx = makeContext({
+        personaVoicing: 'allowed',
+        chat: { narrativeMode: 'narrative', envelopeDialect: 'xml' }
+      });
+      const built = buildPrompt(ctx);
+      expect(built.systemPrompt).toContain('<persona name="Traveler"> ... </persona> for Traveler\'s spoken dialogue and actions.');
+      expect(built.stop).toEqual([]);
+    });
+
+    it('includes prefix persona line in prefix dialect when personaVoicing is allowed', () => {
+      const ctx = makeContext({
+        personaVoicing: 'allowed',
+        chat: { narrativeMode: 'narrative', envelopeDialect: 'prefix' }
+      });
+      const built = buildPrompt(ctx);
+      expect(built.systemPrompt).toContain('Traveler: ... for Traveler\'s spoken dialogue and actions.');
+      expect(built.stop).toEqual([]);
+    });
+
+    it('retains user custom preamble even when personaVoicing is allowed', () => {
+      const ctx = makeContext({
+        personaVoicing: 'allowed',
+        preamble: 'Custom co-writing rules for {{char}} and {{user}}.'
+      });
+      const built = buildPrompt(ctx);
+      expect(built.systemPrompt).toContain('Custom co-writing rules for Eldrin the Mage and Traveler.');
+      expect(built.systemPrompt).not.toContain('You collaborate as a co-author');
+      expect(built.stop).toEqual([]);
     });
   });
 });
