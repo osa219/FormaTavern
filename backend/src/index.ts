@@ -17,6 +17,8 @@ import { FsAssetStore } from './assets/store';
 const HOST = process.env.FORMATAVERN_HOST ?? '127.0.0.1';
 const PORT = Number(process.env.FORMATAVERN_PORT ?? 3000);
 const PROD = process.env.NODE_ENV === 'production';
+const LOG_SILENT = process.env.FORMATAVERN_LOG === 'silent';
+const DEV_LOG = !PROD && !LOG_SILENT;
 const BUILD_DIR = resolve(import.meta.dir, '../../frontend/build');
 
 if (HOST === '0.0.0.0') {
@@ -51,20 +53,37 @@ if (pcSeed.seeded) {
   dbLog += `  provider configs: ${pcSeed.configs} seeded from legacy settings`;
 }
 dbLog += `  recovered ${recoveryResult.recoveredCount} stale generations`;
-console.log(dbLog);
+if (!LOG_SILENT) {
+  console.log(dbLog);
+}
 
 // 6. Hub & Providers
 const hub = new GenerationHubImpl();
 
-if (!PROD && process.env.FORMATAVERN_LOG !== 'silent') {
+// Known secrets for S8 redaction of generation error messages. Populated
+// after settings/providerConfigs load below; emit runs at request time,
+// so late population is safe.
+const knownSecrets: string[] = [];
+const redactSecrets = (msg: string): string => {
+  let out = msg;
+  for (const s of knownSecrets) {
+    if (s && s.length >= 4) {
+      out = out.split(s).join('[redacted]');
+    }
+  }
+  return out;
+};
+
+if (DEV_LOG) {
   const origRegister = hub.register.bind(hub);
   hub.register = (input) => {
     const started = performance.now();
     const shortChat = input.chatId.length > 8 ? input.chatId.slice(-8) : input.chatId;
     let completionTokens = 0;
-    console.log(`  \x1b[35m[generation]\x1b[0m Chat ..${shortChat} → registered`);
 
     const reg = origRegister(input);
+    console.log(`  \x1b[35m[generation]\x1b[0m Chat ..${shortChat} → registered`);
+
     const origEmit = reg.emit;
     reg.emit = (ev) => {
       if (ev.type === 'usage') {
@@ -75,7 +94,7 @@ if (!PROD && process.env.FORMATAVERN_LOG !== 'silent') {
         console.log(`  \x1b[35m[generation]\x1b[0m Chat ..${shortChat} → \x1b[32mcompleted\x1b[0m in ${elapsed}s${tokensInfo}`);
       } else if (ev.type === 'error') {
         const elapsed = ((performance.now() - started) / 1000).toFixed(2);
-        console.log(`  \x1b[35m[generation]\x1b[0m Chat ..${shortChat} → \x1b[31merror\x1b[0m in ${elapsed}s: ${ev.error.message}`);
+        console.log(`  \x1b[35m[generation]\x1b[0m Chat ..${shortChat} → \x1b[31merror\x1b[0m in ${elapsed}s: ${redactSecrets(ev.error.message)}`);
       }
       origEmit(ev);
     };
@@ -123,9 +142,28 @@ const activeLabel = activeConfig
   ? `active: "${activeConfig.name}" (${activeConfig.providerType}/${activeConfig.model ?? 'default'})`
   : `active: ${settings.provider?.id ?? 'mock'}`;
 
-console.log(
-  `[providers] ${activeLabel} | openrouter ${hasOpenRouterKey ? 'ready' : 'disabled (no key)'}, custom ${hasCustom ? 'ready' : 'disabled (no base URL)'}, gemini ${hasGeminiKey ? 'ready' : 'disabled (no key)'}`
-);
+for (const s of [
+  ...configs.map((c) => c.apiKey),
+  settings.openrouter?.apiKey,
+  settings.custom?.apiKey,
+  settings.gemini?.apiKey,
+  process.env.OPENROUTER_API_KEY,
+  process.env.GEMINI_API_KEY
+]) {
+  if (typeof s === 'string' && s.length >= 4) {
+    knownSecrets.push(s);
+    const trimmed = s.trim();
+    if (trimmed.length >= 4 && trimmed !== s) {
+      knownSecrets.push(trimmed);
+    }
+  }
+}
+
+if (!LOG_SILENT) {
+  console.log(
+    `[providers] ${activeLabel} | openrouter ${hasOpenRouterKey ? 'ready' : 'disabled (no key)'}, custom ${hasCustom ? 'ready' : 'disabled (no base URL)'}, gemini ${hasGeminiKey ? 'ready' : 'disabled (no key)'}`
+  );
+}
 
 // 7. Graceful shutdown
 const shutdown = async () => {
@@ -188,7 +226,7 @@ const statusColor = (status: number) => {
 
 const server = new Elysia();
 
-if (!PROD && process.env.FORMATAVERN_LOG !== 'silent') {
+if (DEV_LOG) {
   server
     .onRequest(({ request }) => {
       requestStartTimes.set(request, performance.now());
@@ -272,7 +310,7 @@ server
 
 server.listen({ hostname: HOST, port: PORT });
 
-if (!PROD) {
+if (DEV_LOG) {
   const displayHost = HOST === '0.0.0.0' ? '127.0.0.1' : HOST;
   const bold = (s: string) => `\x1b[1m${s}\x1b[0m`;
   const cyan = (s: string) => `\x1b[36m${s}\x1b[0m`;
@@ -286,6 +324,6 @@ if (!PROD) {
   ➜ ${bold('API:')}      ${green(`http://${displayHost}:${PORT}/`)}    ${dim(`(Elysia backend${HOST === '0.0.0.0' ? ' [0.0.0.0]' : ''})`)}
   ${dim('──────────────────────────────────────────────')}
 `);
-} else {
+} else if (!LOG_SILENT) {
   console.log(`[formatavern] prod backend → http://${HOST}:${PORT}`);
 }
