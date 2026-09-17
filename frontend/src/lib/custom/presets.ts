@@ -213,7 +213,7 @@ export const UNIFORM_ROWS_PRESET: CustomCssPreset = {
 export const SPLIT_BUBBLES_PRESET: CustomCssPreset = {
   id: 'split-bubbles',
   name: 'Split Bubbles',
-  description: 'Classic messenger style with right-aligned user bubbles, left-aligned companion speech, and rounded cards',
+  description: 'Classic messenger style with right-aligned user bubbles, left-aligned character speech, and rounded cards',
   surface: 'chat',
   css: `/* Split Bubbles — Classic messenger dialogue starter */
 .ft-turn[data-role="persona"] .ft-row {

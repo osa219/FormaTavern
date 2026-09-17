@@ -99,7 +99,7 @@
 
   async function handleSwitchPersona(personaId: string) {
     if (session.busy) {
-      toasts.error('Cannot switch persona while companion is generating');
+      toasts.error('Cannot switch persona while character is generating');
       return;
     }
     try {

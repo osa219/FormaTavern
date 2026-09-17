@@ -61,7 +61,7 @@
   <div class="flex items-center justify-between border-b border-(--chrome-line) pb-3">
     <div>
       <h3 class="text-xs font-semibold uppercase tracking-wider text-(--chrome-text)">
-        Companion Chameleon Styling
+        Character Chameleon Styling
       </h3>
       <p class="text-xs text-(--chrome-text)/70 mt-0.5">
         Configures the visual aesthetic and color palette applied to chat sessions.
@@ -137,7 +137,7 @@
 
       <!-- Character Bubble Bg -->
       <div>
-        <label for="color-char-bg" class="block text-[11px] font-mono text-(--chrome-text)/70 mb-1">Companion Bubble Bg</label>
+        <label for="color-char-bg" class="block text-[11px] font-mono text-(--chrome-text)/70 mb-1">Character Bubble Bg</label>
         <div class="flex items-center gap-2">
           <input
             type="color"
@@ -155,7 +155,7 @@
 
       <!-- Character Bubble Text -->
       <div>
-        <label for="color-char-text" class="block text-[11px] font-mono text-(--chrome-text)/70 mb-1">Companion Text</label>
+        <label for="color-char-text" class="block text-[11px] font-mono text-(--chrome-text)/70 mb-1">Character Text</label>
         <div class="flex items-center gap-2">
           <input
             type="color"
@@ -246,7 +246,7 @@
       </div>
 
       <div>
-        <label for="char-tail" class="block text-[11px] font-mono text-(--chrome-text)/70 mb-1">Companion Tail</label>
+        <label for="char-tail" class="block text-[11px] font-mono text-(--chrome-text)/70 mb-1">Character Tail</label>
         <select
           id="char-tail"
           bind:value={draft.card.style.bubble.charTail}
@@ -334,7 +334,7 @@
       <div>
         <h4 class="text-xs font-mono uppercase tracking-wider text-accent">6. Scenery Pins & Page-Dolls (Decor)</h4>
         <p class="text-[11px] text-(--chrome-text)/70 mt-0.5">
-          Fixed decorative graphics (transparent PNG/WebP scenery pins, corner emblems, stickers, or badges) placed on the companion surface (max 2 layers).
+          Fixed decorative graphics (transparent PNG/WebP scenery pins, corner emblems, stickers, or badges) placed on the character surface (max 2 layers).
         </p>
       </div>
       <div class="flex items-center gap-2">
@@ -444,7 +444,7 @@
                       type="button"
                       onclick={() => (layer.image = draft.card.avatar!)}
                       class="shrink-0 rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1.5 text-xs text-(--chrome-text)/70 hover:bg-(--chrome-line)/40 hover:text-(--chrome-text) transition-colors"
-                      title="Use companion avatar as decor pin"
+                      title="Use character avatar as decor pin"
                     >
                       Avatar
                     </button>
@@ -575,7 +575,7 @@
     <div>
       <h4 class="text-xs font-mono uppercase tracking-wider text-accent">7. Call to Action & Labels</h4>
       <p class="text-[11px] text-(--chrome-text)/70 mt-0.5">
-        Customizes prominent interface button text for this companion.
+        Customizes prominent interface button text for this character.
       </p>
     </div>
     <div>

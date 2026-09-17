@@ -36,10 +36,10 @@ describe('Greeting Preview Parser (Amendment A-U3)', () => {
     expect(res.adherent).toBe(true);
   });
 
-  it('defaults primaryCharacter to Companion if empty or undefined', () => {
+  it('defaults primaryCharacter to Character if empty or undefined', () => {
     const res = parseGreeting('A friendly smile.', '');
     expect(res.segments.length).toBe(1);
     expect(res.segments[0].kind).toBe('character');
-    expect(res.segments[0].name).toBe('Companion');
+    expect(res.segments[0].name).toBe('Character');
   });
 });

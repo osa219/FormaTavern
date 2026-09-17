@@ -600,7 +600,7 @@ import { api } from '$lib/api';
         </button>
 
         {#if activeConfigId === null}
-          <div>
+          <div class="flex flex-col gap-3">
             <label for="mock-model-input" class="mb-1 block font-medium text-(--chrome-text)">
               Mock script
             </label>
@@ -1370,7 +1370,7 @@ import { api } from '$lib/api';
             <label for="card-density" class="block font-medium text-(--chrome-text)">
               Card Density
             </label>
-            <div class="text-[11px] text-(--chrome-text)/60">Controls padding and spacing in companion cards</div>
+            <div class="text-[11px] text-(--chrome-text)/60">Controls padding and spacing in character cards</div>
             <select
               id="card-density"
               value={shellTheme.theme.card?.density ?? 'regular'}
@@ -1393,7 +1393,7 @@ import { api } from '$lib/api';
             <label for="card-radius" class="block font-medium text-(--chrome-text)">
               Card Corner Radius
             </label>
-            <div class="text-[11px] text-(--chrome-text)/60">Border radius for companion cards</div>
+            <div class="text-[11px] text-(--chrome-text)/60">Border radius for character cards</div>
             <div class="flex items-center gap-2">
               <select
                 id="card-radius"

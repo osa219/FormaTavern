@@ -37,7 +37,7 @@
     type="text"
     value={value}
     oninput={(e) => onSearch((e.target as HTMLInputElement).value)}
-    placeholder="Search companions by name, lore, or tags... (Press / to focus)"
+    placeholder="Search characters by name, lore, or tags... (Press / to focus)"
     class="w-full rounded-2xl border border-(--chrome-line) bg-(--chrome-surface) pl-10 pr-10 py-3 text-sm text-(--chrome-text) placeholder-(--chrome-text)/40 shadow-md focus:border-accent focus:outline-none transition-colors"
   />
 

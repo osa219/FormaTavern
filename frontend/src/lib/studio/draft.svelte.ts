@@ -269,7 +269,7 @@ export class CharacterDraft {
         const created = res.data as CharacterCard;
         this.snapshot = JSON.stringify(this.card);
         this.clearAutosave();
-        toasts.success(`Created companion "${created.name}"`);
+        toasts.success(`Created character "${created.name}"`);
         return 'saved';
       }
     } catch (err: any) {

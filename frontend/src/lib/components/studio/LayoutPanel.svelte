@@ -174,7 +174,7 @@
           class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-xs font-mono text-(--chrome-text) focus:border-accent focus:outline-none"
         >
           <option value="uniform-left">Uniform Left (All turns share left gutter)</option>
-          <option value="split">Split (User right, Companion left)</option>
+          <option value="split">Split (User right, Character left)</option>
         </select>
         <p class="mt-1 text-[11px] text-(--chrome-text)/50">
           Uniform left delivers clean reader flow without role-pushed gutters.
@@ -305,7 +305,7 @@
               onchange={(e) => updateNameShow('character', (e.target as HTMLInputElement).checked)}
               class="accent-accent rounded"
             />
-            <span class="text-xs text-(--chrome-text)">Companion</span>
+            <span class="text-xs text-(--chrome-text)">Character</span>
           </label>
           <label class="flex items-center gap-2 cursor-pointer">
             <input
@@ -346,7 +346,7 @@
             onchange={(e) => updateAvatarShow('character', (e.target as HTMLInputElement).checked)}
             class="accent-accent rounded"
           />
-          <span class="text-xs text-(--chrome-text)">Companion</span>
+          <span class="text-xs text-(--chrome-text)">Character</span>
         </label>
         <label class="flex items-center gap-2 cursor-pointer">
           <input

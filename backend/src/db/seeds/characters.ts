@@ -116,7 +116,7 @@ export const alice: CharacterCard = {
   color: #fce7f3;
 }
 
-/* Companion Bubble: Gothic Parchment Edge & Gold Accent */
+/* Character Bubble: Gothic Parchment Edge & Gold Accent */
 .ft-bubble-char {
   border: 1px solid rgba(217, 119, 6, 0.5);
   background-color: rgba(28, 10, 20, 0.88);

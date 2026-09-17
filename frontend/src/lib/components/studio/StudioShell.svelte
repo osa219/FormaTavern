@@ -74,7 +74,7 @@
       </a>
       <span class="text-(--chrome-text)/40">/</span>
       <div class="truncate text-xs font-semibold text-(--chrome-text)">
-        {draft.card.name || 'Untitled Companion'}
+        {draft.card.name || 'Untitled Character'}
       </div>
       {#if draft.dirty}
         <span class="inline-flex items-center rounded bg-amber-500/15 px-2 py-0.5 text-[10px] font-mono text-amber-300 border border-amber-500/30">

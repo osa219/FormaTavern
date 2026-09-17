@@ -126,13 +126,13 @@ describe('CustomCssPanel & Studio CSS Integration (Slice 3)', () => {
     expect(rendered.body).toContain('Night Market');
   });
 
-  it('renders Companion Showcase and Chat Experience surface subtabs in studio', () => {
+  it('renders Character Showcase and Chat Experience surface subtabs in studio', () => {
     const draft = new CharacterDraft();
     const rendered = render(CustomCssPanel, {
       props: { draft }
     });
 
-    expect(rendered.body).toContain('Companion Showcase');
+    expect(rendered.body).toContain('Character Showcase');
     expect(rendered.body).toContain('Chat Experience');
   });
 

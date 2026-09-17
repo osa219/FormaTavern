@@ -111,6 +111,7 @@ describe('Surface Completeness & Dialog Scoping (Invariant C14)', () => {
 
   it('ensures shell discovery components and settings sheet use semantic chrome text tokens rather than hardcoded neutral-100', () => {
     const shellComponents = [
+      'discovery/CharacterCard.svelte',
       'CompanionCard.svelte',
       'SearchBar.svelte',
       'TagFilter.svelte',
@@ -118,7 +119,8 @@ describe('Surface Completeness & Dialog Scoping (Invariant C14)', () => {
       'SettingsSheet.svelte'
     ];
     for (const file of allSvelteFiles) {
-      const match = shellComponents.some((name) => file.endsWith(name));
+      const normalized = file.replace(/\\/g, '/');
+      const match = shellComponents.some((name) => normalized.endsWith(name));
       if (!match) continue;
       const content = readFileSync(file, 'utf-8');
       expect(content).not.toContain('text-neutral-100');

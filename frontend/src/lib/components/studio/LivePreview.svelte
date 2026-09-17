@@ -52,12 +52,12 @@
   `;
   const fx = $derived(draft.card.style?.fx?.bubble ?? 'none');
   const decor = $derived(draft.card.style?.decor ?? []);
-  const greetingResult = $derived(parseGreeting(draft.card.firstMessage, draft.card.name || 'Companion'));
+  const greetingResult = $derived(parseGreeting(draft.card.firstMessage, draft.card.name || 'Character'));
   const segments = $derived(greetingResult.segments);
 
   const previewCard = $derived<CharacterCard>({
-    id: draft.characterId || 'preview-companion',
-    name: draft.card.name || 'Companion',
+    id: draft.characterId || 'preview-character',
+    name: draft.card.name || 'Character',
     avatar: draft.card.avatar,
     tagline: draft.card.tagline,
     creator: draft.card.creator,
@@ -248,7 +248,7 @@
             </div>
           {/if}
           <span class="font-semibold text-xs text-(--chrome-text) truncate max-w-[140px]">
-            {draft.card.name || 'Companion'}
+            {draft.card.name || 'Character'}
           </span>
         </div>
         <div class="flex items-center gap-1.5 shrink-0">
@@ -275,7 +275,7 @@
                 <TurnRow
                   kind={seg.kind}
                   name={seg.name}
-                  primaryName={draft.card.name || 'Companion'}
+                  primaryName={draft.card.name || 'Character'}
                   hue={seg.kind === 'npc' ? 190 : null}
                   layout={resolvedLayout}
                   avatarSrc={seg.kind === 'character' ? draft.card.avatar : null}
@@ -286,7 +286,7 @@
                     <SpeechBubble
                       variant={seg.kind}
                       name={seg.name}
-                      primaryName={draft.card.name || 'Companion'}
+                      primaryName={draft.card.name || 'Character'}
                       text={seg.text}
                       fx={seg.kind === 'character' ? fx : 'none'}
                       hue={seg.kind === 'npc' ? 190 : undefined}
@@ -301,7 +301,7 @@
           <article class="turn {HOOKS.chat.turn}" data-role="system" data-headers={resolvedLayout.headers}>
             <TurnRow
               kind="narrator"
-              primaryName={draft.card.name || 'Companion'}
+              primaryName={draft.card.name || 'Character'}
               layout={resolvedLayout}
             >
               <NarratorBlock text="The chamber falls silent as ancient starlight filters through the dome." />
@@ -311,15 +311,15 @@
           <article class="turn {HOOKS.chat.turn}" data-role="character" data-headers={resolvedLayout.headers}>
             <TurnRow
               kind="character"
-              primaryName={draft.card.name || 'Companion'}
-              name={draft.card.name || 'Companion'}
+              primaryName={draft.card.name || 'Character'}
+              name={draft.card.name || 'Character'}
               layout={resolvedLayout}
               avatarSrc={draft.card.avatar}
             >
               <SpeechBubble
                 variant="character"
-                primaryName={draft.card.name || 'Companion'}
-                name={draft.card.name || 'Companion'}
+                primaryName={draft.card.name || 'Character'}
+                name={draft.card.name || 'Character'}
                 text="The celestial alignments are shifting. We must begin before the eclipse reaches totality."
                 {fx}
               />
@@ -329,13 +329,13 @@
           <article class="turn {HOOKS.chat.turn}" data-role="persona" data-headers={resolvedLayout.headers}>
             <TurnRow
               kind="persona"
-              primaryName={draft.card.name || 'Companion'}
+              primaryName={draft.card.name || 'Character'}
               name="You"
               layout={resolvedLayout}
             >
               <SpeechBubble
                 variant="persona"
-                primaryName={draft.card.name || 'Companion'}
+                primaryName={draft.card.name || 'Character'}
                 name="You"
                 text="I have prepared the focus lenses. Are you ready?"
               />
@@ -345,14 +345,14 @@
           <article class="turn {HOOKS.chat.turn}" data-role="character" data-headers={resolvedLayout.headers}>
             <TurnRow
               kind="npc"
-              primaryName={draft.card.name || 'Companion'}
+              primaryName={draft.card.name || 'Character'}
               name="Observatory Scribe"
               hue={190}
               layout={resolvedLayout}
             >
               <SpeechBubble
                 variant="npc"
-                primaryName={draft.card.name || 'Companion'}
+                primaryName={draft.card.name || 'Character'}
                 name="Observatory Scribe"
                 hue={190}
                 text="Careful with the refraction prism! The crystal cannot be replaced."

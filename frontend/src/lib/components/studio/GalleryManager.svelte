@@ -40,7 +40,7 @@
 
       const data = await res.json();
       uploadedImages = [...uploadedImages, data.path];
-      toasts.success('Image uploaded to companion gallery');
+      toasts.success('Image uploaded to character gallery');
     } catch (err: any) {
       toasts.error(err.message || 'Upload failed');
     } finally {
@@ -58,7 +58,7 @@
 <div class="space-y-4">
   <div class="flex items-center justify-between">
     <span class="text-xs font-semibold uppercase tracking-wider text-(--chrome-text)">
-      Companion Asset Gallery
+      Character Asset Gallery
     </span>
     <input
       type="file"
@@ -85,7 +85,7 @@
 
   {#if uploadedImages.length === 0}
     <div class="flex h-28 items-center justify-center rounded-xl border border-dashed border-(--chrome-line) text-xs text-(--chrome-text)/50">
-      No assets uploaded to this companion yet.
+      No assets uploaded to this character yet.
     </div>
   {:else}
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -93,7 +93,7 @@
         <div class="group relative aspect-square overflow-hidden rounded-xl border border-(--chrome-line) bg-(--chrome-surface)">
           <img
             src={imgPath}
-            alt="Companion gallery item"
+            alt="Character gallery item"
             class="h-full w-full object-cover select-none"
             loading="lazy"
             decoding="async"

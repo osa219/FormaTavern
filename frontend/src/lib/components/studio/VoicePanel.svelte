@@ -47,7 +47,7 @@
   <div class="flex items-center justify-between rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-4 py-3 text-xs">
     <div>
       <span class="font-semibold text-(--chrome-text)">System Prompt & Greeting Context</span>
-      <p class="text-(--chrome-text)/60 mt-0.5">These fields build the companion's core mind, memories, and voice.</p>
+      <p class="text-(--chrome-text)/60 mt-0.5">These fields build the character's core mind, memories, and voice.</p>
     </div>
     <div class="text-right font-mono text-xs">
       <span class="text-(--chrome-text)/60">Total Voice Weight:</span>

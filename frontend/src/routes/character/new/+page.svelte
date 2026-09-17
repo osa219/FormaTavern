@@ -24,12 +24,12 @@
 </script>
 
 <svelte:head>
-  <title>New Companion — FormaTavern Studio</title>
+  <title>New Character — FormaTavern Studio</title>
 </svelte:head>
 
 {#if showRestoreBanner}
   <div class="fixed top-16 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-2xl border border-accent/40 bg-(--chrome-surface) px-5 py-3 shadow-2xl backdrop-blur-md text-xs text-(--chrome-text)">
-    <span>An unsaved companion draft was found from a previous session.</span>
+    <span>An unsaved character draft was found from a previous session.</span>
     <button
       type="button"
       onclick={handleRestore}

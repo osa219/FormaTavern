@@ -140,7 +140,7 @@
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Companion Lore and Info"
+      aria-label="Character Lore and Info"
       class="flex h-full w-full max-w-[28rem] flex-col border-l border-neutral-800 bg-neutral-900/95 font-sans text-neutral-100 shadow-2xl backdrop-blur-md {HOOKS.chat.loreDrawer}"
     >
       <!-- Drawer Header -->
@@ -148,7 +148,7 @@
         <div class="flex items-center gap-2.5">
           <Icon name="book" size={16} class="text-accent" />
           <h2 class="text-xs font-bold uppercase tracking-wider text-neutral-200">
-            Lore & Companion Codex
+            Lore & Character Codex
           </h2>
         </div>
 
@@ -281,7 +281,7 @@
                   <a
                     href="/studio/{character.id || character.name}"
                     class="text-accent hover:underline ml-auto"
-                    title="Edit companion layout in Studio"
+                    title="Edit character layout in Studio"
                   >
                     Edit in Studio
                   </a>
@@ -364,7 +364,7 @@
 
               {#if busy}
                 <p class="mb-2 text-[11px] text-amber-400/90 font-mono">
-                  Persona switching is disabled while the companion is generating.
+                  Persona switching is disabled while the character is generating.
                 </p>
               {/if}
 
@@ -411,7 +411,7 @@
             </div>
 
             {#if !character.stateSchema || Object.keys(character.stateSchema).length === 0}
-              <p class="text-neutral-500 italic">This companion has no state schema variables configured.</p>
+              <p class="text-neutral-500 italic">This character has no state schema variables configured.</p>
             {:else}
               <div class="overflow-hidden rounded-xl border border-neutral-800">
                 <table class="w-full text-left text-xs font-mono">

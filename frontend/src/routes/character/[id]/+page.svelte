@@ -30,7 +30,7 @@
   let chats = $state<ChatView[]>([]);
   const personas = $derived((data.personas ?? []) as Persona[]);
 
-  // Showcase is a theme root for this companion: character.style only
+  // Showcase is a theme root for this character: character.style only
   // (no bindings, no persona), per the Phase 5 blueprint. Static content
   // page, so transitions stay off. Derived from the resolved theme so the
   // a11y kill-switch (disableCharacterThemes) is honored for backdrop too.

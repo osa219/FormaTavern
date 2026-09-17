@@ -208,7 +208,7 @@
 <!-- Confirm Delete Dialog -->
 <ConfirmDialog
   open={confirmDeleteOpen}
-  title="Delete Companion"
+  title="Delete Character"
   message={storiesCount > 0
     ? `Are you sure you want to delete "${character.name}" and its ${storiesCount} ${storiesCount === 1 ? 'story' : 'stories'}? All associated messages and data will be permanently deleted.`
     : `Are you sure you want to delete "${character.name}"? This action cannot be undone.`}

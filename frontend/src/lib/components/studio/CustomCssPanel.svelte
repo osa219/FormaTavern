@@ -49,9 +49,9 @@
     onsubtabchange?.(sub);
   }
 
-  const isCompanionMode = $derived(Boolean(draft || scope !== 'shell'));
+  const isCharacterMode = $derived(Boolean(draft || scope !== 'shell'));
   const targetScope = $derived<SurfaceScope>(
-    !isCompanionMode ? 'shell' : currentSubtab
+    !isCharacterMode ? 'shell' : currentSubtab
   );
 
   // Partition extraction & storage
@@ -59,7 +59,7 @@
   const partitions = $derived(splitCustomCss(rawUnifiedCode));
 
   const code = $derived(
-    !isCompanionMode
+    !isCharacterMode
       ? rawUnifiedCode
       : currentSubtab === 'chat'
         ? partitions.chat
@@ -67,7 +67,7 @@
   );
 
   function updateCode(newVal: string) {
-    if (!isCompanionMode) {
+    if (!isCharacterMode) {
       if (draft) {
         draft.card.customCss = newVal;
       } else {
@@ -128,11 +128,11 @@
       ? `/* Shell custom CSS.\n   Example:\n   .ft-foyer-header {\n     border-bottom: 1px solid var(--theme-accent);\n   }\n*/`
       : targetScope === 'chat'
         ? `/* Chat experience custom CSS.\n   Example:\n   .ft-topbar {\n     background: rgba(20, 15, 10, 0.95);\n   }\n   .ft-composer {\n     border-top: 1px solid var(--theme-accent);\n   }\n*/`
-        : `/* Companion showcase custom CSS.\n   Example:\n   .ft-hero {\n     border: 1px solid var(--theme-accent);\n   }\n   .ft-showcase-body {\n     font-family: serif;\n   }\n*/`
+        : `/* Character showcase custom CSS.\n   Example:\n   .ft-hero {\n     border: 1px solid var(--theme-accent);\n   }\n   .ft-showcase-body {\n     font-family: serif;\n   }\n*/`
   );
 
   const visiblePresets = $derived(
-    !isCompanionMode
+    !isCharacterMode
       ? CUSTOM_CSS_PRESETS
       : currentSubtab === 'chat'
         ? CHAT_PRESETS
@@ -304,7 +304,7 @@
 </script>
 
 <div class="flex flex-col h-full space-y-4">
-  {#if isCompanionMode}
+  {#if isCharacterMode}
     <!-- Surface Subtabs Bar -->
     <div class="flex flex-wrap items-center justify-between gap-2 border-b border-(--chrome-line) pb-3 shrink-0">
       <div class="flex items-center gap-2">
@@ -316,7 +316,7 @@
               ? 'bg-(--chrome-surface) text-accent shadow-xs border border-(--chrome-line)'
               : 'text-(--chrome-text)/60 hover:text-(--chrome-text)'}"
           >
-            <span>Companion Showcase</span>
+            <span>Character Showcase</span>
             <span class="rounded px-1.5 py-0.5 text-[10px] font-mono bg-(--chrome-bg) text-(--chrome-text)/50">character</span>
           </button>
           <button
@@ -333,7 +333,7 @@
       </div>
       <div class="text-[11px] text-(--chrome-text)/50 hidden sm:block">
         {currentSubtab === 'character'
-          ? 'Styles applied to Companion Profile & Author Showcase'
+          ? 'Styles applied to Character Profile & Author Showcase'
           : 'Styles applied to Chat Viewport, MessageLog, TopBar & Composer'}
       </div>
     </div>
@@ -352,7 +352,7 @@
         </button>
         <button
           type="button"
-          onclick={() => insertSnippet('.ft-foyer-grid {\n  /* Companion grid styling */\n}\n')}
+          onclick={() => insertSnippet('.ft-foyer-grid {\n  /* Character grid styling */\n}\n')}
           class="rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1 text-xs font-mono text-(--chrome-text) hover:bg-(--chrome-line)/40 transition-colors"
         >
           .ft-foyer-grid
@@ -522,7 +522,7 @@
     <div class="xl:col-span-2 flex flex-col min-h-[350px] h-full rounded-xl border border-(--chrome-line) bg-(--chrome-bg) overflow-hidden">
       <div class="flex items-center justify-between border-b border-(--chrome-line) bg-(--chrome-surface) px-3 py-1.5 text-xs text-(--chrome-text)/70">
         <span class="font-mono text-[11px]">custom.css <span class="text-(--chrome-text)/40">({targetScope === 'chat' ? 'chat' : targetScope === 'shell' ? 'shell' : 'showcase'})</span></span>
-        <span class="text-[11px] text-(--chrome-text)/50">Pure CSS • Scoped to {targetScope === 'shell' ? 'Shell Surface' : targetScope === 'chat' ? 'Chat Viewport' : 'Companion Showcase'}</span>
+        <span class="text-[11px] text-(--chrome-text)/50">Pure CSS • Scoped to {targetScope === 'shell' ? 'Shell Surface' : targetScope === 'chat' ? 'Chat Viewport' : 'Character Showcase'}</span>
       </div>
       <textarea
         bind:this={textarea}
@@ -750,7 +750,7 @@
           <!-- Fonts Manager (Slice 5) -->
           <div class="space-y-3">
             <div class="flex items-center justify-between">
-              <span class="text-[11px] font-semibold text-(--chrome-text)">Companion Fonts</span>
+              <span class="text-[11px] font-semibold text-(--chrome-text)">Character Fonts</span>
               <input
                 type="file"
                 accept=".woff2,.woff,.ttf,.otf"
@@ -775,7 +775,7 @@
             </div>
 
             <p class="text-[10px] text-(--chrome-text)/60 leading-relaxed">
-              Upload local font files (.woff2, .woff, .ttf, .otf, max 4 MiB). Declaring <code class="font-mono text-(--chrome-text)">@font-face</code> registers the font with the browser; use <strong>Apply Rule</strong> or set <code class="font-mono text-(--chrome-text)">font-family: '{availableFonts[0]?.name || 'YourFont'}'</code> on selectors like <code class="font-mono text-(--chrome-text)">.ft-hero</code> to style your companion.
+              Upload local font files (.woff2, .woff, .ttf, .otf, max 4 MiB). Declaring <code class="font-mono text-(--chrome-text)">@font-face</code> registers the font with the browser; use <strong>Apply Rule</strong> or set <code class="font-mono text-(--chrome-text)">font-family: '{availableFonts[0]?.name || 'YourFont'}'</code> on selectors like <code class="font-mono text-(--chrome-text)">.ft-hero</code> to style your character.
             </p>
 
             {#if availableFonts.length === 0}

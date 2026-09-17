@@ -199,7 +199,7 @@ describe('Phase 5 Routes', () => {
     await app.handle(new Request('http://127.0.0.1/api/personas/persona-default/default', { method: 'POST' }));
 
     // Create a chat using createdPersona
-    const char = repos.characters.create(makeCardInput('Companion'));
+    const char = repos.characters.create(makeCardInput('Character'));
     repos.chats.create({
       id: 'chat-persona-test',
       title: 'Persona Test Chat',
@@ -266,8 +266,8 @@ describe('Phase 5 Routes', () => {
 
   it('validates and handles GET /api/characters with query string limit and sort', async () => {
     const { app, repos } = setupTestApp();
-    repos.characters.create(makeCardInput('Companion A', ['fantasy']));
-    repos.characters.create(makeCardInput('Companion B', ['scifi']));
+    repos.characters.create(makeCardInput('Character A', ['fantasy']));
+    repos.characters.create(makeCardInput('Character B', ['scifi']));
 
     const res = await app.handle(
       new Request('http://127.0.0.1/api/characters?sort=recent&limit=24')
@@ -276,7 +276,7 @@ describe('Phase 5 Routes', () => {
     const json = (await res.json()) as any;
     expect(Array.isArray(json.items)).toBe(true);
     expect(json.items.length).toBe(4);
-    expect(json.items.some((c: any) => c.name === 'Companion A')).toBe(true);
+    expect(json.items.some((c: any) => c.name === 'Character A')).toBe(true);
   });
 
   it('handles customCss on POST/PATCH, rejects oversized payloads with 422, and clears with null', async () => {

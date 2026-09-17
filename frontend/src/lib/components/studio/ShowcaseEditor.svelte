@@ -115,7 +115,7 @@
         <textarea
           bind:this={textarea}
           bind:value={draft.card.showcase}
-          placeholder="Write rich markdown and inline-styled HTML for your companion's showcase page..."
+          placeholder="Write rich markdown and inline-styled HTML for your character's showcase page..."
           class="flex-1 w-full bg-transparent p-2 text-sm font-mono text-(--chrome-text) placeholder-(--chrome-text)/40 focus:outline-none resize-none leading-relaxed"
         ></textarea>
       </div>

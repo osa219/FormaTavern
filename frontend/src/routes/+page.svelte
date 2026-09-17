@@ -14,7 +14,7 @@
   import SearchBar from '$lib/components/discovery/SearchBar.svelte';
   import TagFilter from '$lib/components/discovery/TagFilter.svelte';
   import SortSelect from '$lib/components/discovery/SortSelect.svelte';
-  import CompanionGrid from '$lib/components/discovery/CompanionGrid.svelte';
+  import CharacterGrid from '$lib/components/discovery/CharacterGrid.svelte';
   import SettingsSheet from '$lib/components/settings/SettingsSheet.svelte';
   import ConfirmDialog from '$lib/components/dialogs/ConfirmDialog.svelte';
   import ShellSurface from '$lib/components/custom/ShellSurface.svelte';
@@ -112,7 +112,7 @@
 </script>
 
 <svelte:head>
-  <title>{shellTheme.theme.labels?.foyerTitle || 'FormaTavern'} — Companion Catalog</title>
+  <title>{shellTheme.theme.labels?.foyerTitle || 'FormaTavern'} — Character Catalog</title>
 </svelte:head>
 
 <ShellSurface>
@@ -139,13 +139,13 @@
         <span class="hidden sm:inline">Personas</span>
       </a>
 
-      <!-- Create New Companion -->
+      <!-- Create New Character -->
       <a
         href="/character/new"
         class="inline-flex items-center gap-1.5 rounded-xl bg-accent px-3.5 py-1.5 text-xs font-semibold text-accent-contrast hover:bg-accent/90 shadow-sm"
       >
         <Icon name="plus" size={13} />
-        <span>New Companion</span>
+        <span>New Character</span>
       </a>
 
       {#if isDev}
@@ -177,10 +177,10 @@
     <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
       <div>
         <h2 class="text-2xl font-bold tracking-tight text-(--chrome-text) sm:text-3xl">
-          Discover Companions
+          Discover Characters
         </h2>
         <p class="mt-1 text-sm text-(--chrome-text)/70">
-          Chameleon roleplay companions with author-designed aesthetics, responsive typography, and atmospheric worlds.
+          Chameleon roleplay characters with author-designed aesthetics, responsive typography, and atmospheric worlds.
         </p>
       </div>
 
@@ -205,10 +205,10 @@
       />
     </section>
 
-    <!-- Companion Grid (Foyer v2) -->
-    <section aria-label="Available Companions" class={HOOKS.shell.foyerGrid}>
-      <CompanionGrid
-        companions={catalogStore.items}
+    <!-- Character Grid (Foyer v2) -->
+    <section aria-label="Available Characters" class={HOOKS.shell.foyerGrid}>
+      <CharacterGrid
+        characters={catalogStore.items}
         loading={catalogStore.loading}
         loadingMore={catalogStore.loadingMore}
         hasMore={catalogStore.hasMore}
@@ -235,7 +235,7 @@
 
       {#if filteredChats.length === 0}
         <div class="flex h-28 items-center justify-center rounded-2xl border border-dashed border-(--chrome-line) text-xs text-(--chrome-text)/50">
-          {catalogStore.q ? 'No recorded stories match your current search.' : 'No stories recorded yet. Select a companion above to begin.'}
+          {catalogStore.q ? 'No recorded stories match your current search.' : 'No stories recorded yet. Select a character above to begin.'}
         </div>
       {:else}
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">

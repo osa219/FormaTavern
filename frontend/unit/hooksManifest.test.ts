@@ -7,8 +7,8 @@ import { HOOKS, SURFACE_ATTR, SURFACES } from '@formatavern/shared';
 // Components under test
 import TopBar from '../src/lib/components/nav/TopBar.svelte';
 import NavDrawer from '../src/lib/components/nav/NavDrawer.svelte';
-import CharacterCard from '../src/lib/components/nav/CharacterCard.svelte';
-import CompanionCard from '../src/lib/components/discovery/CompanionCard.svelte';
+import NavCharacterCard from '../src/lib/components/nav/CharacterCard.svelte';
+import DiscoveryCharacterCard from '../src/lib/components/discovery/CharacterCard.svelte';
 import ConfirmDialog from '../src/lib/components/dialogs/ConfirmDialog.svelte';
 import EditTurnDialog from '../src/lib/components/dialogs/EditTurnDialog.svelte';
 import PersonaPicker from '../src/lib/components/showcase/PersonaPicker.svelte';
@@ -18,7 +18,7 @@ import ActionHub from '../src/lib/components/showcase/ActionHub.svelte';
 import TagChips from '../src/lib/components/showcase/TagChips.svelte';
 import CreatorCredit from '../src/lib/components/showcase/CreatorCredit.svelte';
 import ResumeMenu from '../src/lib/components/showcase/ResumeMenu.svelte';
-import CompanionGrid from '../src/lib/components/discovery/CompanionGrid.svelte';
+import CharacterGrid from '../src/lib/components/discovery/CharacterGrid.svelte';
 import SettingsSheet from '../src/lib/components/settings/SettingsSheet.svelte';
 import Backdrop from '../src/lib/components/chat/Backdrop.svelte';
 import MessageLog from '../src/lib/components/chat/MessageLog.svelte';
@@ -112,13 +112,13 @@ describe('Hook Contract & Manifest Invariants (Invariant C1)', () => {
       expect(html).toContain(HOOKS.chrome.navdrawer);
     });
 
-    it('renders CompanionCard with ft-char-card', () => {
-      const { html } = render(CompanionCard, { props: { companion: mockCharacter } });
+    it('renders Discovery CharacterCard with ft-char-card', () => {
+      const { html } = render(DiscoveryCharacterCard, { props: { character: mockCharacter } });
       expect(html).toContain(HOOKS.chrome.card);
     });
 
-    it('renders CharacterCard with ft-char-card', () => {
-      const { html } = render(CharacterCard, { props: { character: mockCharacter } });
+    it('renders Nav CharacterCard with ft-char-card', () => {
+      const { html } = render(NavCharacterCard, { props: { character: mockCharacter } });
       expect(html).toContain(HOOKS.chrome.card);
     });
 
@@ -169,8 +169,8 @@ describe('Hook Contract & Manifest Invariants (Invariant C1)', () => {
       expect(html).toContain(HOOKS.character.resumeMenu);
     });
 
-    it('renders CompanionGrid with ft-foyer-grid', () => {
-      const { html } = render(CompanionGrid, { props: { companions: [mockCharacter] } });
+    it('renders CharacterGrid with ft-foyer-grid', () => {
+      const { html } = render(CharacterGrid, { props: { characters: [mockCharacter] } });
       expect(html).toContain(HOOKS.shell.foyerGrid);
     });
 

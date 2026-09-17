@@ -4,7 +4,7 @@ import { parseEnvelope, type ParseResult } from '@formatavern/shared';
  * Parses author's greeting / firstMessage into narrative segments.
  * Permitted by Invariant U3 Amendment A-U3 for studio live preview.
  */
-export function parseGreeting(firstMessage: string, primaryCharacter = 'Companion'): ParseResult {
+export function parseGreeting(firstMessage: string, primaryCharacter = 'Character'): ParseResult {
   if (!firstMessage) {
     return {
       segments: [],
@@ -20,7 +20,7 @@ export function parseGreeting(firstMessage: string, primaryCharacter = 'Companio
     };
   }
   return parseEnvelope(firstMessage, {
-    primaryCharacter: primaryCharacter || 'Companion',
+    primaryCharacter: primaryCharacter || 'Character',
     streaming: false
   });
 }

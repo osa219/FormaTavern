@@ -623,7 +623,7 @@ dialog:not([open]) {
   display: none !important;
 }
 
-/* Author-authored Companion Showcase styling (A-U2) */
+/* Author-authored Character Showcase styling (A-U2) */
 .showcase-body {
   color: var(--n-200);
   font-family: var(--font-chrome);

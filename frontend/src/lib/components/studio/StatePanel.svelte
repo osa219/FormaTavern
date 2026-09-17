@@ -55,7 +55,7 @@
         Narrative State Schema
       </h3>
       <p class="text-xs text-(--chrome-text)/70 mt-0.5">
-        Define persistent state variables that the companion model can track and mutate in the narrative envelope.
+        Define persistent state variables that the character model can track and mutate in the narrative envelope.
       </p>
     </div>
   </div>

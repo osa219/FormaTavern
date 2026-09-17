@@ -10,8 +10,8 @@ describe('CatalogStore Lifecycle & Pagination (Layer 8)', () => {
 
   const sampleItems: CharacterSummary[] = [
     {
-      id: 'companion-1',
-      name: 'Companion One',
+      id: 'character-1',
+      name: 'Character One',
       tagline: 'A brave warrior',
       avatar: null,
       tags: ['fantasy', 'warrior'],
@@ -20,8 +20,8 @@ describe('CatalogStore Lifecycle & Pagination (Layer 8)', () => {
       style: { colors: { accent: '#38bdf8' } }
     },
     {
-      id: 'companion-2',
-      name: 'Companion Two',
+      id: 'character-2',
+      name: 'Character Two',
       tagline: 'A clever rogue',
       avatar: null,
       tags: ['rogue', 'stealth'],
@@ -122,8 +122,8 @@ describe('CatalogStore Lifecycle & Pagination (Layer 8)', () => {
 
     // Second page mock response
     const secondPageItem: CharacterSummary = {
-      id: 'companion-3',
-      name: 'Companion Three',
+      id: 'character-3',
+      name: 'Character Three',
       tagline: 'A silent monk',
       avatar: null,
       tags: ['monk'],
@@ -147,7 +147,7 @@ describe('CatalogStore Lifecycle & Pagination (Layer 8)', () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
 
     expect(store.items.length).toBe(3);
-    expect(store.items[2].id).toBe('companion-3');
+    expect(store.items[2].id).toBe('character-3');
     expect(store.cursor).toBeNull();
     expect(store.hasMore).toBe(false);
   });
@@ -182,7 +182,7 @@ describe('CatalogStore Lifecycle & Pagination (Layer 8)', () => {
 
     await p2;
     expect(store.items.length).toBe(1);
-    expect(store.items[0].id).toBe('companion-2');
+    expect(store.items[0].id).toBe('character-2');
 
     // Now let request 1 finish
     resolveFirst();
@@ -190,7 +190,7 @@ describe('CatalogStore Lifecycle & Pagination (Layer 8)', () => {
 
     // Items should still be from request 2, request 1 was discarded!
     expect(store.items.length).toBe(1);
-    expect(store.items[0].id).toBe('companion-2');
+    expect(store.items[0].id).toBe('character-2');
   });
 
   it('debounces text search queries', async () => {

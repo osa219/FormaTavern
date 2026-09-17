@@ -226,7 +226,7 @@
           id="persona-desc"
           bind:value={description}
           rows={4}
-          placeholder="Describe your role, backstory, tone, or personality for the AI companion..."
+          placeholder="Describe your role, backstory, tone, or personality for the AI character..."
           class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3.5 py-2.5 text-sm text-(--chrome-text) placeholder:text-(--chrome-text)/40 focus:border-accent focus:outline-none"
         ></textarea>
         <p class="mt-1 text-xs text-(--chrome-text)/60">

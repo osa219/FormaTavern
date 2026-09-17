@@ -142,7 +142,7 @@
     <div class="space-y-4 flex-1 w-full">
       <div>
         <label for="identity-name" class="block text-xs font-semibold text-(--chrome-text) uppercase tracking-wider mb-1.5">
-          Companion Name <span class="text-accent">*</span>
+          Character Name <span class="text-accent">*</span>
         </label>
         <input
           id="identity-name"
