@@ -3,8 +3,8 @@
   "private": true,
   "workspaces": ["backend", "frontend", "packages/*"],
   "scripts": {
-    "dev": "bun run --parallel --filter @formatavern/backend --filter @formatavern/frontend dev",
-    "dev:backend": "bun run --cwd backend dev",
+    "dev": "bun run --parallel dev:backend dev:frontend",
+    "dev:backend": "bun --watch backend/src/index.ts",
     "dev:frontend": "bun run --cwd frontend dev",
     "stop": "bun scripts/stop.ts",
     "build": "bun run --cwd frontend build",

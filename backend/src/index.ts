@@ -55,20 +55,76 @@ console.log(dbLog);
 
 // 6. Hub & Providers
 const hub = new GenerationHubImpl();
+
+if (!PROD && process.env.FORMATAVERN_LOG !== 'silent') {
+  const origRegister = hub.register.bind(hub);
+  hub.register = (input) => {
+    const started = performance.now();
+    const shortChat = input.chatId.length > 8 ? input.chatId.slice(-8) : input.chatId;
+    let completionTokens = 0;
+    console.log(`  \x1b[35m[generation]\x1b[0m Chat ..${shortChat} → registered`);
+
+    const reg = origRegister(input);
+    const origEmit = reg.emit;
+    reg.emit = (ev) => {
+      if (ev.type === 'usage') {
+        completionTokens = ev.completionTokens;
+      } else if (ev.type === 'done') {
+        const elapsed = ((performance.now() - started) / 1000).toFixed(2);
+        const tokensInfo = completionTokens > 0 ? ` (${completionTokens} tokens)` : '';
+        console.log(`  \x1b[35m[generation]\x1b[0m Chat ..${shortChat} → \x1b[32mcompleted\x1b[0m in ${elapsed}s${tokensInfo}`);
+      } else if (ev.type === 'error') {
+        const elapsed = ((performance.now() - started) / 1000).toFixed(2);
+        console.log(`  \x1b[35m[generation]\x1b[0m Chat ..${shortChat} → \x1b[31merror\x1b[0m in ${elapsed}s: ${ev.error.message}`);
+      }
+      origEmit(ev);
+    };
+    return reg;
+  };
+
+  const origAbort = hub.abort.bind(hub);
+  hub.abort = (messageId, reason) => {
+    const res = origAbort(messageId, reason);
+    if (res) {
+      const shortMsg = messageId.length > 8 ? messageId.slice(-8) : messageId;
+      console.log(`  \x1b[33m[generation]\x1b[0m Message ..${shortMsg} → aborted (${reason})`);
+    }
+    return res;
+  };
+}
+
 const providers = new ProviderRegistryImpl();
 
 const settings = repos.settings.getAll();
+const configs = repos.providerConfigs.list();
+
 const hasOpenRouterKey = Boolean(
-  (settings.openrouter?.apiKey && settings.openrouter.apiKey.trim().length > 0) ||
+  configs.some((c) => c.providerType === 'openrouter' && (c.apiKey?.trim().length ?? 0) > 0) ||
+    (settings.openrouter?.apiKey && settings.openrouter.apiKey.trim().length > 0) ||
     process.env.OPENROUTER_API_KEY
 );
-const hasCustom = Boolean(settings.custom?.baseUrl && settings.custom.baseUrl.trim().length > 0);
+const hasCustom = Boolean(
+  configs.some((c) => c.providerType === 'custom' && (c.baseUrl?.trim().length ?? 0) > 0) ||
+    (settings.custom?.baseUrl && settings.custom.baseUrl.trim().length > 0)
+);
 const hasGeminiKey = Boolean(
-  (settings.gemini?.apiKey && settings.gemini.apiKey.trim().length > 0) ||
+  configs.some(
+    (c) =>
+      (c.providerType === 'gemini' || c.providerType === 'gemini-interactions') &&
+      (c.apiKey?.trim().length ?? 0) > 0
+  ) ||
+    (settings.gemini?.apiKey && settings.gemini.apiKey.trim().length > 0) ||
     process.env.GEMINI_API_KEY
 );
+
+const activeConfigId = settings.provider?.activeConfigId;
+const activeConfig = activeConfigId ? repos.providerConfigs.get(activeConfigId) : null;
+const activeLabel = activeConfig
+  ? `active: "${activeConfig.name}" (${activeConfig.providerType}/${activeConfig.model ?? 'default'})`
+  : `active: ${settings.provider?.id ?? 'mock'}`;
+
 console.log(
-  `[providers] mock ready, openrouter ${hasOpenRouterKey ? 'ready' : 'disabled (no key)'}, custom ${hasCustom ? 'ready' : 'disabled (no base URL)'}, gemini ${hasGeminiKey ? 'ready' : 'disabled (no key)'}`
+  `[providers] ${activeLabel} | openrouter ${hasOpenRouterKey ? 'ready' : 'disabled (no key)'}, custom ${hasCustom ? 'ready' : 'disabled (no base URL)'}, gemini ${hasGeminiKey ? 'ready' : 'disabled (no key)'}`
 );
 
 // 7. Graceful shutdown
@@ -100,7 +156,76 @@ if (PROD && !existsSync(BUILD_DIR)) {
   throw new Error(`Production build missing: ${BUILD_DIR}. Run 'bun run build'.`);
 }
 
-const server = new Elysia()
+const requestStartTimes = new WeakMap<Request, number>();
+
+const parseStatusCode = (status: unknown): number => {
+  if (typeof status === 'number') return status;
+  if (typeof status === 'string') {
+    const parsed = parseInt(status, 10);
+    if (!isNaN(parsed)) return parsed;
+    const statusMap: Record<string, number> = {
+      OK: 200,
+      Created: 201,
+      'No Content': 204,
+      'Bad Request': 400,
+      Unauthorized: 401,
+      Forbidden: 403,
+      'Not Found': 404,
+      Conflict: 409,
+      'Internal Server Error': 500
+    };
+    return statusMap[status] ?? 200;
+  }
+  return 200;
+};
+
+const statusColor = (status: number) => {
+  if (status >= 500) return `\x1b[31m${status}\x1b[0m`;
+  if (status >= 400) return `\x1b[33m${status}\x1b[0m`;
+  if (status >= 300) return `\x1b[36m${status}\x1b[0m`;
+  return `\x1b[32m${status}\x1b[0m`;
+};
+
+const server = new Elysia();
+
+if (!PROD && process.env.FORMATAVERN_LOG !== 'silent') {
+  server
+    .onRequest(({ request }) => {
+      requestStartTimes.set(request, performance.now());
+    })
+    .onAfterResponse(({ request, set, responseValue }) => {
+      try {
+        const url = new URL(request.url);
+        // Suppress asset polling, icons, and health check pings
+        if (
+          url.pathname.startsWith('/assets') ||
+          url.pathname === '/favicon.ico' ||
+          url.pathname === '/api/health'
+        ) {
+          return;
+        }
+
+        const startTime = requestStartTimes.get(request);
+        requestStartTimes.delete(request);
+        const duration = startTime ? (performance.now() - startTime).toFixed(1) : '?';
+
+        const rawStatus = (responseValue as Response | undefined)?.status ?? set.status ?? 200;
+        const statusCode = parseStatusCode(rawStatus);
+        const method = request.method.padEnd(6);
+
+        console.log(`  \x1b[2m[api]\x1b[0m ${method} ${url.pathname} ${statusColor(statusCode)} \x1b[2m(${duration}ms)\x1b[0m`);
+      } catch {
+        // Defensive: malformed URLs or unexpected exceptions do not disrupt server
+      }
+    });
+}
+
+if (!PROD) {
+  // Dev-only redirect: visiting port 3000 root in a browser opens the Vite dev server
+  server.get('/', ({ redirect }) => redirect('http://127.0.0.1:5173/'));
+}
+
+server
   .use(app)
   .use(
     staticPlugin({
@@ -146,4 +271,21 @@ const server = new Elysia()
   });
 
 server.listen({ hostname: HOST, port: PORT });
-console.log(`[formatavern] ${PROD ? 'prod' : 'dev'} backend → http://${HOST}:${PORT}`);
+
+if (!PROD) {
+  const displayHost = HOST === '0.0.0.0' ? '127.0.0.1' : HOST;
+  const bold = (s: string) => `\x1b[1m${s}\x1b[0m`;
+  const cyan = (s: string) => `\x1b[36m${s}\x1b[0m`;
+  const green = (s: string) => `\x1b[32m${s}\x1b[0m`;
+  const dim = (s: string) => `\x1b[2m${s}\x1b[0m`;
+
+  console.log(`
+  ${bold('FormaTavern')} ${dim('— LLM Roleplay Studio')}
+  ${dim('──────────────────────────────────────────────')}
+  ➜ ${bold('Web UI:')}   ${cyan('http://127.0.0.1:5173/')}  ${dim('(Vite dev server)')}
+  ➜ ${bold('API:')}      ${green(`http://${displayHost}:${PORT}/`)}    ${dim(`(Elysia backend${HOST === '0.0.0.0' ? ' [0.0.0.0]' : ''})`)}
+  ${dim('──────────────────────────────────────────────')}
+`);
+} else {
+  console.log(`[formatavern] prod backend → http://${HOST}:${PORT}`);
+}
