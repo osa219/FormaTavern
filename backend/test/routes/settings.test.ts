@@ -538,6 +538,7 @@ describe('routes/settings', () => {
     expect(cleared.status).toBe(200);
     const view2 = (await cleared.json()) as SettingsView;
     expect(view2.narrative.example).toBeUndefined();
-    expect(view2.exampleRenderings.directive).toContain('morning mist');
+    expect(view2.exampleRenderings.directive).toContain('glances up');
+    expect(view2.preambleDefault).toBeDefined();
   });
 });

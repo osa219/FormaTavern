@@ -253,7 +253,7 @@ describe('PromptBuilder', () => {
 
     // Without an override the built-in example applies.
     const builtDefault = buildPrompt(makeContext());
-    expect(builtDefault.blocks.find((b) => b.id === '1b')!.text).toContain('morning mist');
+    expect(builtDefault.blocks.find((b) => b.id === '1b')!.text).toContain('glances up');
   });
 
   it('attaches the closing instruction exactly once (no double bottom attach)', () => {
@@ -456,7 +456,7 @@ describe('PromptBuilder', () => {
       const text = built.systemPrompt;
       expect(text).toContain('Extra rule for Eldrin the Mage: keep replies terse, Traveler.');
       const idxPrompt = text.indexOf('Extra rule for Eldrin');
-      const idxGrammar = text.indexOf('[Narrative Mode: directive]');
+      const idxGrammar = text.indexOf('[Response Format]');
       const idxChar = text.indexOf('Ancient wizard in starry robes.');
       expect(idxGrammar).toBeGreaterThanOrEqual(0);
       expect(idxChar).toBeGreaterThan(0);

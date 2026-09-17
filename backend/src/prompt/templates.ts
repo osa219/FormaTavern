@@ -3,51 +3,41 @@ import { parseEnvelope, serializeSegments, type ParseResult } from '@formatavern
 export type NarrativeDialect = 'directive' | 'xml' | 'prefix';
 
 export const PREAMBLE_DEFAULT =
-  'You are an expert roleplay assistant. Stay in character, maintain fidelity to the world and established personalities, and craft vivid, engaging prose.';
+  'You are an expert roleplay assistant. Stay in character, maintain fidelity to the world and established personalities, and craft vivid, engaging prose. Never write dialogue, thoughts, feelings, or actions for {{user}}. Stop and yield when {{user}} must react or decide.';
 
 export const AGENCY_CLAUSE =
   'Never write dialogue, thoughts, feelings, or actions for {{user}}. Stop and yield when {{user}} must react or decide.';
 
 export const DIRECTIVE_SYNTAX_EXAMPLE = `:::narrator
-The morning mist clears over the valley.
+{{char}} glances up from their work, noticing your arrival.
 :::
 
 :::character[{{char}}]
-We should press on before the scouts spot us.
-:::
-
-:::npc[Side character]
-The road ahead looks clear, for now.
+"I wasn't expecting you yet, but I'm glad you're here."
 :::
 
 \`\`\`state
-{"mood":"calm"}
+{"mood":"curious","scene":"quiet room"}
 \`\`\``;
 
 export const XML_SYNTAX_EXAMPLE = `<narrator>
-The morning mist clears over the valley.
+{{char}} glances up from their work, noticing your arrival.
 </narrator>
 
 <character name="{{char}}">
-We should press on before the scouts spot us.
+"I wasn't expecting you yet, but I'm glad you're here."
 </character>
 
-<npc name="Side character">
-The road ahead looks clear, for now.
-</npc>
-
 <state>
-{"mood":"calm"}
+{"mood":"curious","scene":"quiet room"}
 </state>`;
 
-export const PREFIX_SYNTAX_EXAMPLE = `Narrator: The morning mist clears over the valley.
+export const PREFIX_SYNTAX_EXAMPLE = `Narrator: {{char}} glances up from their work, noticing your arrival.
 
-{{char}}: We should press on before the scouts spot us.
-
-Side character: The road ahead looks clear, for now.
+{{char}}: "I wasn't expecting you yet, but I'm glad you're here."
 
 \`\`\`state
-{"mood":"calm"}
+{"mood":"curious","scene":"quiet room"}
 \`\`\``;
 
 export const CONTINUATION_PREFILL_REMINDER =

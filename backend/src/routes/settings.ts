@@ -10,6 +10,7 @@ import {
 import type { Repositories } from '../db/contracts';
 import { ApiError } from '../engine/errors';
 import {
+  PREAMBLE_DEFAULT,
   renderExampleForDialect,
   validateNarrativeExample,
   type NarrativeDialect
@@ -64,7 +65,8 @@ export function toSettingsView(stored: AppSettings): SettingsView {
     generation: stored.generation,
     narrative: stored.narrative,
     exampleRenderings: exampleRenderings(stored),
-    preamble: stored.preamble
+    preamble: stored.preamble,
+    preambleDefault: PREAMBLE_DEFAULT
   };
 }
 

@@ -100,7 +100,8 @@ export const SettingsViewSchema = Type.Object({
     xml: Type.String(),
     prefix: Type.String()
   }),
-  preamble: Type.Optional(Type.String())
+  preamble: Type.Optional(Type.String()),
+  preambleDefault: Type.Optional(Type.String())
 });
 export type SettingsView = Static<typeof SettingsViewSchema>;
 

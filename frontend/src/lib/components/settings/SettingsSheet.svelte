@@ -297,6 +297,16 @@ import { api } from '$lib/api';
   const exampleDirty = $derived(exampleDraft !== null && exampleDraft !== (exampleOverride ?? exampleDefault));
   const exampleCustomized = $derived(exampleOverride !== null);
   const exampleIssues = $derived(exampleDraft === null ? [] : validateNarrativeExample(exampleDraft));
+
+  // System preamble editor (§4)
+  const preambleDefault = $derived(s?.preambleDefault ?? '');
+  const preambleCustomized = $derived(
+    s?.preamble !== undefined && s?.preamble !== null && s?.preamble.trim() !== '' && s?.preamble !== preambleDefault
+  );
+
+  function resetPreamble() {
+    queuePatch({ preamble: null }, 0);
+  }
 </script>
 
 <dialog
@@ -1068,52 +1078,82 @@ import { api } from '$lib/api';
         </div>
 
         <div>
-          <label for="narrative-dialect" class="mb-1 block font-medium text-(--chrome-text)">
-            Envelope Grammar Dialect
-          </label>
-          <select
-            id="narrative-dialect"
-            value={s.narrative.defaultDialect}
-            onchange={(e) => settingsStore.patch({ narrative: { defaultDialect: e.currentTarget.value as any } })}
-            class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text) focus:border-accent focus:outline-none"
-          >
-            <option value="directive">Directive (::: narrator / ::: speech)</option>
-            <option value="xml">XML Tags (&lt;narrator&gt; / &lt;speech&gt;)</option>
-            <option value="prefix">Prefix (Narrator: / Character:)</option>
-          </select>
-          {#if dialectMismatch && dialectMismatch.count > 0}
-            <details class="mt-1.5 rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 px-3 py-2">
-              <summary class="cursor-pointer text-[11px] text-(--chrome-text)/70 select-none">
-                {dialectMismatch.count} existing chat{dialectMismatch.count === 1 ? '' : 's'} speak{dialectMismatch.count === 1 ? 's' : ''} another format — changing the default never rewrites them
-              </summary>
-              <ul class="mt-1.5 space-y-1">
-                {#each dialectMismatch.chats as c (c.id)}
-                  <li class="flex items-center gap-2 text-[11px]">
-                    <a href="/chat/{c.id}" class="text-accent underline hover:text-accent/80">{c.title}</a>
-                    <span class="font-mono text-(--chrome-text)/50">{c.dialect}</span>
-                  </li>
-                {/each}
-              </ul>
-              <p class="mt-1.5 text-[11px] text-(--chrome-text)/60">
-                Open a chat → About tab → Convert to re-render it explicitly.
-              </p>
-            </details>
-          {/if}
-        </div>
-
-        <div>
-          <label for="system-preamble" class="mb-1 block font-medium text-(--chrome-text)">
-            Custom System Preamble
-          </label>
+          <div class="mb-1 flex items-center justify-between gap-2">
+            <label for="system-preamble" class="font-medium text-(--chrome-text)">
+              System Preamble (Global)
+            </label>
+            {#if preambleCustomized}
+              <span class="rounded border border-accent/40 bg-accent/10 px-1.5 py-0.5 font-mono text-[10px] text-accent">
+                customized
+              </span>
+            {/if}
+          </div>
           <textarea
             id="system-preamble"
             value={s.preamble ?? ''}
-            placeholder="Optional guidance injected into Block 1 of the prompt..."
+            placeholder={preambleDefault || 'Optional guidance injected into Block 1 of the prompt...'}
             rows={4}
-            oninput={(e) => queuePatch({ preamble: e.currentTarget.value }, 600)}
-            class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) p-3 font-mono text-xs text-(--chrome-text) focus:border-accent focus:outline-none"
+            oninput={(e) => queuePatch({ preamble: e.currentTarget.value.trim() ? e.currentTarget.value : null }, 600)}
+            class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) p-3 font-mono text-xs text-(--chrome-text) placeholder:text-(--chrome-text)/40 focus:border-accent focus:outline-none"
           ></textarea>
+          <div class="mt-1.5 flex items-center justify-between gap-2 text-[11px] text-(--chrome-text)/60">
+            <span>Injected into Block 1 of the prompt across all modes.</span>
+            {#if preambleCustomized}
+              <button
+                type="button"
+                onclick={resetPreamble}
+                class="rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1 text-[11px] font-medium text-(--chrome-text) hover:bg-(--chrome-line)/40"
+                title="Restore default preamble"
+              >
+                Reset to default
+              </button>
+            {:else if !s.preamble && preambleDefault}
+              <button
+                type="button"
+                onclick={() => queuePatch({ preamble: preambleDefault }, 0)}
+                class="rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2.5 py-1 text-[11px] font-medium text-(--chrome-text)/70 hover:text-(--chrome-text) hover:bg-(--chrome-line)/40"
+                title="Copy default preamble into editor to customize"
+              >
+                Edit default
+              </button>
+            {/if}
+          </div>
         </div>
+
+        {#if s.narrative.defaultMode === 'narrative'}
+          <div>
+            <label for="narrative-dialect" class="mb-1 block font-medium text-(--chrome-text)">
+              Envelope Grammar Dialect
+            </label>
+            <select
+              id="narrative-dialect"
+              value={s.narrative.defaultDialect}
+              onchange={(e) => settingsStore.patch({ narrative: { defaultDialect: e.currentTarget.value as any } })}
+              class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text) focus:border-accent focus:outline-none"
+            >
+              <option value="directive">Directive (::: narrator / ::: speech)</option>
+              <option value="xml">XML Tags (&lt;narrator&gt; / &lt;speech&gt;)</option>
+              <option value="prefix">Prefix (Narrator: / Character:)</option>
+            </select>
+            {#if dialectMismatch && dialectMismatch.count > 0}
+              <details class="mt-1.5 rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 px-3 py-2">
+                <summary class="cursor-pointer text-[11px] text-(--chrome-text)/70 select-none">
+                  {dialectMismatch.count} existing chat{dialectMismatch.count === 1 ? '' : 's'} speak{dialectMismatch.count === 1 ? 's' : ''} another format — changing the default never rewrites them
+                </summary>
+                <ul class="mt-1.5 space-y-1">
+                  {#each dialectMismatch.chats as c (c.id)}
+                    <li class="flex items-center gap-2 text-[11px]">
+                      <a href="/chat/{c.id}" class="text-accent underline hover:text-accent/80">{c.title}</a>
+                      <span class="font-mono text-(--chrome-text)/50">{c.dialect}</span>
+                    </li>
+                  {/each}
+                </ul>
+                <p class="mt-1.5 text-[11px] text-(--chrome-text)/60">
+                  Open a chat → About tab → Convert to re-render it explicitly.
+                </p>
+              </details>
+            {/if}
+          </div>
 
         <details class="rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50">
           <summary class="cursor-pointer px-4 py-3 font-medium text-(--chrome-text) select-none">
@@ -1195,7 +1235,19 @@ import { api } from '$lib/api';
             </div>
           </div>
         </details>
-      </div>
+      {:else}
+        <div class="rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 p-3.5 text-xs text-(--chrome-text)/70">
+          <div class="mb-1 flex items-center gap-2 font-medium text-(--chrome-text)">
+            <span class="inline-flex h-4 w-4 items-center justify-center rounded-full bg-accent/20 text-[10px] font-bold text-accent">i</span>
+            <span>Classic Roleplay Mode Active</span>
+          </div>
+          <p class="text-[11px] leading-relaxed text-(--chrome-text)/60">
+            Classic mode outputs standard prose without XML/directive envelope tags or state blocks. 
+            Envelope grammar dialects and multi-track instruction templates apply when Three-Track Narrative Envelope is enabled.
+          </p>
+        </div>
+      {/if}
+    </div>
     {:else if activeTab === 'appearance'}
       <div class="flex flex-col gap-5">
         <p class="text-[11px] text-(--chrome-text)/60">

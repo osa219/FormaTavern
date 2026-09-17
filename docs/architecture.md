@@ -13,6 +13,7 @@
 5. **Byte-exact, version-agnostic wire contracts** (S9).
 6. **Self-contained companion ecosystem.** Complete author showcase, companion studio with OCC, persona roster with atomic defaults, FTS5 discovery catalog, and local SHA-256 asset store (P1–P7).
 7. **Neutral layout as data.** The chat log is neutral by default (uniform-left, row container, plain names, zero avatars, dimmed narrator in flow). Layout is owned strictly by the character card (`CharacterLayout`), resolved purely via `resolveLayout`, and expressed through DOM data attributes rather than role conditionals (L1–L8).
+8. **The co-author paradigm (collaborative narrative studio).** FormaTavern treats the LLM as an expressive creative writing partner in a shared writer's room rather than an adversarial 1st-person chatbot. The human user acts as lead author and creative director; the model contributes multi-track dialogue, environmental narration, and scene progression. Conversational boundaries (such as "never speak for the user") are creator-owned stylistic options, not immutable engine dogma.
 
 ---
 
@@ -215,7 +216,7 @@ Pure `buildPrompt(PromptContext) → BuiltPrompt` (E6). Fourteen ordered block i
 | Id | Block | When |
 |---|---|---|
 | 1 | System preamble | always |
-| 1b | Narrative format directive (dialect syntax, agency clause, state field list from `stateSchema`) | narrative mode |
+| 1b | Narrative response format (dialect grammar, clean structural template, state field list) | narrative mode |
 | 2 / 3 / 4 | Description / Personality / Scenario | non-blank |
 | 5 | Example dialogue (verbatim; dialect conversion deferred) | non-blank |
 | 6 | Lorebook entries (pre-matched; engine deferred) | provided |

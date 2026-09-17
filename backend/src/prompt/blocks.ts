@@ -2,7 +2,6 @@ import { applyMacros } from '@formatavern/shared';
 import type { PromptContext, BlockId } from './types';
 import {
   PREAMBLE_DEFAULT,
-  AGENCY_CLAUSE,
   CONTINUATION_PREFILL_REMINDER,
   renderExampleForDialect
 } from './templates';
@@ -35,11 +34,30 @@ export function generateBlock(id: BlockId, ctx: PromptContext, warnings: string[
     case '1b': {
       if (mode !== 'narrative') return null;
 
-      let syntaxDesc = 'Use the directive block syntax (:::kind[name] ... :::).';
+      let syntaxDesc = [
+        'Structure your response using directive blocks:',
+        '- :::narrator ... ::: for scene description, environment, and physical actions.',
+        '- :::character[{{char}}] ... ::: for {{char}}\'s spoken dialogue and thoughts.',
+        '- :::npc[Name] ... ::: when a side character speaks or acts (use their actual name).',
+        '- ```state ... ``` at the very end with current mood and scene as JSON.'
+      ].join('\n');
+
       if (dialect === 'xml') {
-        syntaxDesc = 'Use XML tags (<kind name="name"> ... </kind>).';
+        syntaxDesc = [
+          'Structure your response using XML tags:',
+          '- <narrator> ... </narrator> for scene description, environment, and physical actions.',
+          '- <character name="{{char}}"> ... </character> for {{char}}\'s spoken dialogue and thoughts.',
+          '- <npc name="..."> ... </npc> when a side character speaks or acts (use their actual name).',
+          '- <state> ... </state> at the very end with current mood and scene as JSON.'
+        ].join('\n');
       } else if (dialect === 'prefix') {
-        syntaxDesc = 'Use prefix speaker lines (Speaker: text).';
+        syntaxDesc = [
+          'Structure your response using speaker prefix lines:',
+          '- Narrator: ... for scene description, environment, and physical actions.',
+          '- {{char}}: ... for {{char}}\'s spoken dialogue and thoughts.',
+          '- Name: ... when a side character speaks or acts (use their actual name).',
+          '- ```state ... ``` at the very end with current mood and scene as JSON.'
+        ].join('\n');
       }
       // Single canonical example (directive-authored), rendered into the active
       // dialect; falls back to built-in with a warning on render failure.
@@ -68,12 +86,11 @@ export function generateBlock(id: BlockId, ctx: PromptContext, warnings: string[
       }
 
       const content = [
-        `[Narrative Mode: ${dialect}]`,
+        '[Response Format]',
         syntaxDesc,
-        'One turn may contain narrator, {{char}}, and side characters.',
+        'Example structure:',
         example,
-        'The example above teaches format only. Never reuse its names, places, or lines — draw every name and place from the character, scenario, and story.',
-        AGENCY_CLAUSE,
+        'The example above teaches format only. Draw all characters, settings, and dialogue from the ongoing story.',
         stateDesc
       ].join('\n\n');
 
