@@ -15,11 +15,30 @@ export class ShellThemeStore {
 
   constructor(client: any = api) {
     this.client = client;
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('formatavern_shell_theme');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && typeof parsed === 'object') {
+            this.theme = parsed as ShellTheme;
+          }
+        }
+      } catch {
+        // Ignore JSON parse failure
+      }
+    }
     if (typeof BroadcastChannel !== 'undefined') {
       this.channel = new BroadcastChannel('formatavern_sync');
       this.channel.onmessage = (e) => {
         if (e.data && e.data.tabId !== TAB_ID && e.data.type === 'shell_theme_updated') {
-          this.theme = e.data.theme ?? DEFAULT_SHELL_THEME;
+          const updated = e.data.theme ?? DEFAULT_SHELL_THEME;
+          this.theme = updated;
+          if (typeof localStorage !== 'undefined') {
+            try {
+              localStorage.setItem('formatavern_shell_theme', JSON.stringify(updated));
+            } catch {}
+          }
         }
       };
     }
@@ -33,6 +52,11 @@ export class ShellThemeStore {
       if (!res.error && res.data) {
         this.theme = res.data as ShellTheme;
         this.error = null;
+        if (typeof localStorage !== 'undefined') {
+          try {
+            localStorage.setItem('formatavern_shell_theme', JSON.stringify(res.data));
+          } catch {}
+        }
       } else if (res.error) {
         const uiErr = toUiError(res.error);
         this.error = uiErr.message;
@@ -53,6 +77,11 @@ export class ShellThemeStore {
       if (!res.error && res.data) {
         if (currentSeq === this.seq) {
           this.theme = res.data as ShellTheme;
+          if (typeof localStorage !== 'undefined') {
+            try {
+              localStorage.setItem('formatavern_shell_theme', JSON.stringify(res.data));
+            } catch {}
+          }
           try {
             this.channel?.postMessage({
               type: 'shell_theme_updated',

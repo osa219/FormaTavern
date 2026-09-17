@@ -4,6 +4,107 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
 		<meta name="color-scheme" content="light dark" />
+		<script>
+			// Frame-0 shell bootstrap: sync tokens + verified sheet, C8 + A-SURF1 compliant.
+			// Never writes to documentElement; targets [data-ft-surface="shell"] only.
+			try {
+				var prefsRaw = localStorage.getItem('formatavern_prefs');
+				var prefs = prefsRaw ? JSON.parse(prefsRaw) : null;
+				// C8 viewer supremacy: hideCustomStyling suppresses all shell custom styling.
+				// Note: disableCharacterThemes applies to character surfaces only, not shell.
+				if (prefs && prefs.hideCustomStyling) throw new Error('c8-hidden');
+				var themeRaw = localStorage.getItem('formatavern_shell_theme');
+				var theme = themeRaw ? JSON.parse(themeRaw) : null;
+
+				function safeToken(s) {
+					return typeof s === 'string' && s.length > 0 && s.length <= 256 && /^[^;{}<>]*$/.test(s);
+				}
+				function isLight(c) {
+					if (typeof c !== 'string') return false;
+					var m = c.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+					if (m) {
+						var h = m[1];
+						if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+						var r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+						return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.45;
+					}
+					var rgb = c.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+					if (rgb) return (0.299 * +rgb[1] + 0.587 * +rgb[2] + 0.114 * +rgb[3]) / 255 > 0.45;
+					return false;
+				}
+				function djb2(str) {
+					var hash = 5381;
+					for (var i = 0; i < str.length; i++) hash = ((hash << 5) + hash) ^ str.charCodeAt(i);
+					return (hash >>> 0).toString(36);
+				}
+
+				// 1. Token bootstrap from cached theme (mirrors ShellSurface chromeVars).
+				if (theme && typeof theme === 'object') {
+					var vars = [];
+					var c = theme.chrome || {};
+					var card = theme.card || {};
+					var accent = (theme.colors && theme.colors.accent) || c.accent;
+					if (safeToken(accent)) {
+						vars.push('--theme-accent: ' + accent);
+						vars.push('--theme-accent-contrast: ' + (isLight(accent) ? '#0a0a0c' : '#ffffff'));
+					}
+					if (safeToken(c.surface)) vars.push('--chrome-bg: ' + c.surface);
+					if (safeToken(c.surfaceRaised)) vars.push('--chrome-surface: ' + c.surfaceRaised);
+					if (safeToken(c.border)) vars.push('--chrome-line: ' + c.border);
+					if (safeToken(c.text)) vars.push('--chrome-text: ' + c.text);
+					if (safeToken(c.font)) vars.push('--chrome-font: ' + c.font);
+					if (theme.font && safeToken(theme.font.family)) vars.push('--theme-font-family: ' + theme.font.family);
+					if (c.surface || c.text) {
+						var lightBg = c.surface ? isLight(c.surface) : !isLight(c.text);
+						vars.push('color-scheme: ' + (lightBg ? 'light' : 'dark'));
+					}
+					if (safeToken(card.radius)) vars.push('--chrome-card-radius: ' + card.radius);
+					if (card.density === 'compact') vars.push('--chrome-card-padding: 0.75rem; --chrome-card-gap: 0.75rem');
+					else if (card.density === 'airy') vars.push('--chrome-card-padding: 1.25rem; --chrome-card-gap: 1.5rem');
+					else if (card.density === 'regular') vars.push('--chrome-card-padding: 1rem; --chrome-card-gap: 1rem');
+					if (prefs && prefs.forceSolidChrome) {
+						vars.push('--chrome-scrim: 1');
+						vars.push('--chrome-backdrop-filter: none');
+					} else if (safeToken(theme.scrim)) vars.push('--chrome-scrim: ' + theme.scrim);
+					if (theme.tint !== undefined && safeToken(String(theme.tint))) vars.push('--chrome-tint-strength: ' + theme.tint);
+					if (theme.background && typeof theme.background === 'object') {
+						var bg = theme.background;
+						if (typeof bg.image === 'string' && bg.image && bg.image.indexOf("'") < 0 && bg.image.indexOf('"') < 0 && bg.image.indexOf('\n') < 0 && bg.image.length <= 512) {
+							vars.push("--theme-bg-img: url('" + bg.image + "')");
+						}
+						if (safeToken(bg.overlay)) vars.push('--theme-bg-overlay: ' + bg.overlay);
+						if (safeToken(bg.blur)) vars.push('--theme-bg-blur: ' + bg.blur);
+					}
+					if (vars.length > 0) {
+						var varsEl = document.createElement('style');
+						varsEl.setAttribute('data-ft-bootstrap', 'shell-vars');
+						varsEl.textContent = '[data-ft-surface="shell"]{' + vars.join('; ') + '}';
+						document.head.appendChild(varsEl);
+					}
+				}
+
+				// 2. Verified sheet bootstrap: hash must match cached theme customCss.
+				var rawCss = theme && typeof theme.customCss === 'string' ? theme.customCss : null;
+				if (rawCss && rawCss.trim()) {
+					var sheetRaw = localStorage.getItem('formatavern_sheet_shell');
+					if (sheetRaw) {
+						var sheet = JSON.parse(sheetRaw);
+						var expectedHash = djb2(rawCss);
+						if (
+							sheet && sheet.sanitizerVersion === 1 &&
+							sheet.rawHash === expectedHash &&
+							typeof (sheet.fullCss || sheet.css) === 'string' &&
+							(sheet.fullCss || sheet.css).length <= 131072
+						) {
+							var style = document.createElement('style');
+							style.setAttribute('data-ft-sheet', 'shell');
+							style.textContent = sheet.fullCss || sheet.css;
+							document.head.appendChild(style);
+						}
+					}
+				}
+			} catch (_) {}
+		</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover" class="bg-(--chrome-bg) text-(--chrome-text)">

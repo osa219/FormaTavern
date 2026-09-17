@@ -183,10 +183,17 @@ describe('Surface Completeness & Dialog Scoping (Invariant C14)', () => {
   });
 
   it('ensures data-ft-surface is only present on authorized surface roots and never on html or layout', () => {
-    // 1. Verify app.html never sets data-ft-surface
+    // 1. Verify app.html never sets data-ft-surface as a DOM attribute.
+    // Frame-0 bootstrap references the shell surface via CSS selector text inside
+    // <script>; strip scripts before asserting so the selector is allowed while
+    // an actual attribute on html/body remains forbidden (A-SURF1).
     const appHtmlPath = resolve(SRC_DIR, 'app.html');
     const appHtmlContent = readFileSync(appHtmlPath, 'utf-8');
-    expect(appHtmlContent).not.toContain('data-ft-surface');
+    const appHtmlNoScript = appHtmlContent.replace(/<script[\s\S]*?<\/script>/gi, '');
+    expect(appHtmlNoScript).not.toContain('data-ft-surface');
+    expect(appHtmlContent).not.toContain("setAttribute('data-ft-surface'");
+    expect(appHtmlContent).not.toContain('setAttribute("data-ft-surface"');
+    expect(appHtmlContent).not.toContain('documentElement.style');
 
     // 2. Verify +layout.svelte never sets data-ft-surface on html/document (uses data-ft-active-surface)
     const layoutPath = resolve(ROUTES_DIR, '+layout.svelte');
