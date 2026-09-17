@@ -57,7 +57,6 @@ describe('Surface Completeness & Dialog Scoping (Invariant C14)', () => {
   it('ensures every route establishes or delegates to an authorized surface root', () => {
     for (const file of allRouteFiles) {
       const normalizedPath = file.replace(/\\/g, '/');
-      if (normalizedPath.includes('/routes/dev/')) continue;
 
       const hasAuthorizedSurface = establishesSurface(file);
 
