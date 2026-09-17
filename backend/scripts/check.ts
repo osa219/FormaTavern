@@ -31,8 +31,8 @@ try {
     console.error(`[check] ERROR: foreign_keys is not 1`);
     hasFailure = true;
   }
-  if (user_version !== 7) {
-    console.error(`[check] ERROR: user_version is ${user_version}, expected 7`);
+  if (user_version !== 8) {
+    console.error(`[check] ERROR: user_version is ${user_version}, expected 8`);
     hasFailure = true;
   }
 

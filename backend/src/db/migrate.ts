@@ -194,6 +194,13 @@ export const migrations: readonly Migration[] = [
         updateStmt.run(JSON.stringify(classicDoc), row.id);
       }
     }
+  },
+  {
+    version: 8,
+    name: 'chats_primary_character_idx',
+    up: (db) => {
+      db.run(`CREATE INDEX IF NOT EXISTS idx_chats_primary_character ON chats(primary_character_id, updated_at DESC);`);
+    }
   }
 ];
 

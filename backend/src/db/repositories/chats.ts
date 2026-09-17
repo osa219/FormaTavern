@@ -58,30 +58,45 @@ export class SQLiteChatRepository implements ChatRepository {
   }
 
   list(opts?: { characterId?: string; limit?: number; cursor?: string }): Array<ChatRow & { messageCount: number; turnCount: number }> {
-    let sql = `SELECT c.*,
-      COUNT(m.id) AS message_count,
-      COUNT(CASE WHEN m.role = 'assistant' THEN 1 END) AS turn_count
-      FROM chats c
-      LEFT JOIN messages m ON m.chat_id = c.id`;
     const params: any[] = [];
     const wheres: string[] = [];
 
     if (opts?.characterId) {
-      wheres.push(`c.primary_character_id = ?`);
+      wheres.push(`primary_character_id = ?`);
       params.push(opts.characterId);
     }
     if (opts?.cursor) {
-      wheres.push(`c.updated_at < ?`);
+      wheres.push(`updated_at < ?`);
       params.push(Number(opts.cursor));
     }
-    if (wheres.length > 0) {
-      sql += ` WHERE ` + wheres.join(' AND ');
-    }
-    sql += ` GROUP BY c.id ORDER BY c.updated_at DESC`;
+    const whereClause = wheres.length > 0 ? ` WHERE ` + wheres.join(' AND ') : '';
+
+    let sql: string;
     if (opts?.limit) {
-      sql += ` LIMIT ?`;
+      sql = `WITH recent_chats AS (
+        SELECT * FROM chats${whereClause}
+        ORDER BY updated_at DESC
+        LIMIT ?
+      )
+      SELECT c.*,
+        COUNT(m.id) AS message_count,
+        COUNT(CASE WHEN m.role = 'assistant' THEN 1 END) AS turn_count
+      FROM recent_chats c
+      LEFT JOIN messages m ON m.chat_id = c.id
+      GROUP BY c.id
+      ORDER BY c.updated_at DESC;`;
       params.push(opts.limit);
+    } else {
+      sql = `SELECT c.*,
+        COUNT(m.id) AS message_count,
+        COUNT(CASE WHEN m.role = 'assistant' THEN 1 END) AS turn_count
+      FROM chats c
+      LEFT JOIN messages m ON m.chat_id = c.id
+      ${wheres.length > 0 ? ' WHERE ' + wheres.map((w) => 'c.' + w).join(' AND ') : ''}
+      GROUP BY c.id
+      ORDER BY c.updated_at DESC;`;
     }
+
     const rows = this.db.query(sql).all(...params) as any[];
 
     return rows.map((r) => ({
