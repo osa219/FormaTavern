@@ -3,7 +3,7 @@
 **Document:** `walkthrough.md`  
 **Status:** Completed & Verified  
 **Related Report:** [`reports/fouc_and_scaling_report.md`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/reports/fouc_and_scaling_report.md)  
-**Persistent Repo Walkthrough:** [`walkthroughs/fouc_and_scaling_walkthrough.md`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/walkthroughs/fouc_and_scaling_walkthrough.md)  
+**Persistent Repo Walkthrough:** [`docs/history/walkthroughs/fouc_and_scaling_walkthrough.md`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/docs/history/walkthroughs/fouc_and_scaling_walkthrough.md)  
 
 ---
 

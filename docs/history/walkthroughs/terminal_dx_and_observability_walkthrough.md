@@ -1,6 +1,6 @@
 # Walkthrough: Monorepo Developer Experience, Watcher Boundary Scoping, and Zero-Leak Dev Observability
 
-**Document:** `walkthroughs/terminal_dx_and_observability_walkthrough.md`  
+**Document:** `docs/history/walkthroughs/terminal_dx_and_observability_walkthrough.md`  
 **Status:** Completed & Verified  
 **Related Report:** [`reports/terminal_dx_and_observability_proposal.md`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/reports/terminal_dx_and_observability_proposal.md)  
 **Invariants Enforced:** `I6 / S7` (Purity Boundary), `S8` (Zero Secret Exposure), `S9` (Byte-Exact SSE Integrity)  
