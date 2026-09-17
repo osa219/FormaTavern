@@ -74,8 +74,8 @@
   async function loadNavData() {
     try {
       const [chatsRes, charsRes, personasRes] = await Promise.all([
-        api.api.chats.get(),
-        api.api.characters.get(),
+        api.api.chats.get({ query: { limit: 20 } }),
+        api.api.characters.get({ query: { limit: 20 } }),
         api.api.personas.get()
       ]);
       if (chatsRes.data && Array.isArray(chatsRes.data)) {

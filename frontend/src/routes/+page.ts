@@ -5,7 +5,7 @@ export const load: PageLoad = async ({ fetch }) => {
   try {
     const [charsRes, chatsRes] = await Promise.all([
       fetch('/api/characters').then((r) => (r.ok ? r.json() : { items: [] })),
-      fetch('/api/chats').then((r) => (r.ok ? r.json() : []))
+      fetch('/api/chats?limit=12').then((r) => (r.ok ? r.json() : []))
     ]);
 
     const characters = Array.isArray(charsRes) ? charsRes : charsRes?.items ?? [];

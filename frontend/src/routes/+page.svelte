@@ -43,7 +43,7 @@
 
   async function refreshChats() {
     try {
-      const res = await api.api.chats.get();
+      const res = await api.api.chats.get({ query: { limit: 12 } });
       if (res.data && Array.isArray(res.data)) {
         chats = res.data as ChatView[];
       }
