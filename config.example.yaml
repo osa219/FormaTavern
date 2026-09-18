@@ -1,0 +1,34 @@
+# FormaTavern Host Configuration
+# Copy this file to config.yaml to customize host and network settings.
+
+network:
+  # Network mode: 'localhost' (local machine only), 'lan' (accessible across Wi-Fi), or 'custom'
+  mode: localhost
+  # Explicit host IP or hostname (required only when mode is 'custom')
+  # host: 127.0.0.1
+  # Server listening port
+  port: 3000
+  # Print a scannable QR code in terminal for mobile devices
+  qrCode: true
+  # Announce LAN addresses in terminal banner
+  announceLan: true
+
+security:
+  # Auth mode: 'none' (open on local network) or 'pin' (requires 4-64 character access PIN)
+  authMode: none
+  # Access PIN required from remote mobile devices when authMode is 'pin'
+  # pin: "1337"
+  # List of trusted reverse proxy IPs (for X-Forwarded-For header extraction)
+  trustedProxies:
+    - 127.0.0.1
+    - "::1"
+
+storage: {}
+  # Custom data path override (defaults to ./formatavern.db in backend or data dir)
+  # dataPath: ./formatavern.db
+  # Custom assets directory override
+  # assetsPath: ./data/assets
+
+tunnel:
+  # External tunnel integration: 'none', 'cloudflare', or 'tailscale'
+  provider: none

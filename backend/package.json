@@ -22,13 +22,16 @@
     "smoke:openrouter": "bun scripts/smoke-openrouter.ts"
   },
   "dependencies": {
+    "@elysiajs/static": "^1.2.0",
     "@formatavern/shared": "workspace:*",
     "elysia": "^1.2.0",
-    "@elysiajs/static": "^1.2.0",
+    "gpt-tokenizer": "^4.0.0",
+    "qrcode-generator": "^2.0.4",
     "ulid": "^2.3.0",
-    "gpt-tokenizer": "^4.0.0"
+    "yaml": "^2.9.1"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/qrcode-generator": "^1.0.6"
   }
 }
