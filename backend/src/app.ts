@@ -36,6 +36,7 @@ export interface AppDeps {
       rateLimitMaxFails?: number;
     };
     resolveIp?: (req: Request) => string | null;
+    auditor?: InboundAuditor;
   };
 }
 
@@ -60,7 +61,7 @@ export function createApp({ repos, hub, providers, assets, options }: AppDeps) {
     rateLimitMaxFails: options?.auth?.rateLimitMaxFails
   };
   const authRouter = createAuthRouter(authDeps);
-  const auditor = new InboundAuditor();
+  const auditor = options?.auditor ?? new InboundAuditor();
 
   return new Elysia({ prefix: '/api' })
     .onError(({ code, error, set, path }) => {
@@ -112,7 +113,7 @@ export function createApp({ repos, hub, providers, assets, options }: AppDeps) {
       const url = new URL(request.url);
       const path = url.pathname;
 
-      // Sampled inbound audit logging
+      // Effective client IP resolution respecting trustedProxies (Invariant N5)
       const remote = options?.resolveIp ? options.resolveIp(request) : null;
       const xff = request.headers.get('x-forwarded-for');
       const clientIp = effectiveClientIp(
@@ -120,21 +121,36 @@ export function createApp({ repos, hub, providers, assets, options }: AppDeps) {
         xff,
         options?.auth?.trustedProxies ?? ['127.0.0.1', '::1']
       );
-      auditor.audit(clientIp, request.method, path);
-
-      if (isPublicAuthPath(path)) return;
+      const rawUa = request.headers.get('user-agent');
 
       const isLoopback = isLoopbackIp(clientIp);
-      const authEnabled = options?.auth?.enabled ?? false;
-      if (!authEnabled || isLoopback) return;
 
+      // Public auth endpoints are always accessible without tokens
+      if (isPublicAuthPath(path)) {
+        if (!isLoopback) auditor.audit(clientIp, request.method, path, rawUa);
+        return;
+      }
+
+      // Loopback traffic and disabled-auth installations bypass authentication
+      const authEnabled = options?.auth?.enabled ?? false;
+      if (!authEnabled || isLoopback) {
+        if (!isLoopback) auditor.audit(clientIp, request.method, path, rawUa);
+        return;
+      }
+
+      // Valid Bearer tokens grant access to protected routes
       const authHeader = request.headers.get('authorization');
       if (authHeader?.startsWith('Bearer ') && options?.auth?.verifyToken) {
         const token = authHeader.slice(7).trim();
         if (options.auth.verifyToken(token)) {
+          if (!isLoopback) auditor.audit(clientIp, request.method, path, rawUa);
           return;
         }
       }
+
+      // Blocked unauthenticated request: fire audit after 401 verdict.
+      // Loopback traffic stays silent by construction since it bypassed above.
+      auditor.auditBlocked(clientIp, request.method, path, rawUa);
 
       return Response.json(
         {

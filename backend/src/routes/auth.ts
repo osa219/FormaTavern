@@ -132,26 +132,107 @@ export class RateLimiter {
   }
 }
 
+const ANSI_REGEX = /\x1b(?:\][^\x07\x1b]*(?:\x07|\x1b\\)|\[[0-?]*[ -/]*[@-~]|[@-Z\\-_])/g;
+const CONTROL_REGEX = /[\x00-\x1F\x7F]/g;
+const WHITESPACE_REGEX = /\s+/g;
+
 /**
- * Sampled inbound audit logging (Section 4.4).
- * Logs at most once per 10 minutes per effective IP.
+ * Sanitize client User-Agent string:
+ * - Strip ANSI escape sequences to prevent terminal escape injection.
+ * - Collapse whitespace, carriage returns, and newlines into single spaces.
+ * - Strip non-printable ASCII control characters.
+ * - Truncate to 100 characters max, appending '…' if truncated.
+ * - Fall back to 'unknown-device' if missing or blank.
+ *
+ * Security Invariant (R2): User-Agent is strictly a cosmetic diagnostic hint
+ * and must NEVER influence authentication, bypass, or rate-limiting decisions.
+ */
+export function sanitizeUserAgent(raw?: string | null): string {
+  if (!raw) return 'unknown-device';
+  const stripped = raw
+    .replace(ANSI_REGEX, '')
+    .replace(WHITESPACE_REGEX, ' ')
+    .replace(CONTROL_REGEX, '')
+    .trim();
+  if (!stripped) return 'unknown-device';
+  if (stripped.length > 100) {
+    return stripped.slice(0, 100) + '…';
+  }
+  return stripped;
+}
+
+/**
+ * Sampled inbound audit logging.
+ *
+ * Features:
+ * - Sampled per (effective IP + sanitized User-Agent) with a quiet window (default 10m).
+ * - Debounce map is strictly bounded to maxEntries (default 200) with FIFO/oldest eviction (R1).
+ * - Client IP passed here is the N5 effective IP (post-trustedProxies resolution),
+ *   ensuring distinct clients proxied via Vite dev server are tracked independently.
+ * - Separate tracking for inbound connection vs blocked unauthenticated request.
+ * - Loopback addresses ('127.0.0.1', '::1') and 'unknown' are completely silent.
  */
 export class InboundAuditor {
   private lastLogged = new Map<string, number>();
   private intervalMs: number;
+  private maxEntries: number;
 
-  constructor(intervalMs = 10 * 60 * 1000) {
+  constructor(intervalMs = 10 * 60 * 1000, maxEntries = 200) {
     this.intervalMs = intervalMs;
+    this.maxEntries = maxEntries;
   }
 
-  audit(ip: string, method: string, path: string): void {
-    if (isLoopbackIp(ip) || ip === 'unknown') return;
-    const now = Date.now();
-    const last = this.lastLogged.get(ip);
-    if (!last || now - last > this.intervalMs) {
-      this.lastLogged.set(ip, now);
-      console.log(`  \x1b[36m[network]\x1b[0m Inbound connection from ${ip} (${method} ${path})`);
+  /** Current number of tracked debounce entries (for testing). */
+  get entryCount(): number {
+    return this.lastLogged.size;
+  }
+
+  private shouldLog(prefix: string, ip: string, rawUa?: string | null): { should: boolean; ua: string } {
+    if (isLoopbackIp(ip) || ip === 'unknown') {
+      return { should: false, ua: '' };
     }
+    const ua = sanitizeUserAgent(rawUa);
+    const key = `${prefix}:${ip}::${ua}`;
+    const now = Date.now();
+    const last = this.lastLogged.get(key);
+
+    if (last && now - last <= this.intervalMs) {
+      return { should: false, ua };
+    }
+
+    if (this.lastLogged.has(key)) {
+      this.lastLogged.delete(key);
+    } else if (this.lastLogged.size >= this.maxEntries) {
+      const oldestKey = this.lastLogged.keys().next().value;
+      if (oldestKey !== undefined) {
+        this.lastLogged.delete(oldestKey);
+      }
+    }
+
+    this.lastLogged.set(key, now);
+    return { should: true, ua };
+  }
+
+  /**
+   * Log an allowed inbound connection from an external client (sampled).
+   */
+  audit(ip: string, method: string, path: string, rawUa?: string | null): void {
+    const { should, ua } = this.shouldLog('inbound', ip, rawUa);
+    if (!should) return;
+    console.log(`  \x1b[36m[network]\x1b[0m Inbound connection from ${ip} (${ua}) → ${method} ${path}`);
+  }
+
+  /**
+   * Log a blocked unauthenticated request from an external client (sampled).
+   * Fires from the onRequest gate after reaching the 401 verdict.
+   */
+  auditBlocked(ip: string, method: string, path: string, rawUa?: string | null): void {
+    const { should, ua } = this.shouldLog('blocked', ip, rawUa);
+    if (!should) return;
+    console.log(
+      `  \x1b[33m[security]\x1b[0m Blocked unauthenticated request from ${ip} (${ua}) → ${method} ${path}\n` +
+      `             → Enter PIN on device to unlock, or set security.authMode: none in config.yaml`
+    );
   }
 }
 

@@ -154,3 +154,12 @@ Following peer review, 7 targeted hardening fixes and 1 DX optimization were app
    - Printing static troubleshooting advice on every successful server boot was misleading and cluttered the console.
    - Real dynamic diagnostics remain cleanly scoped to actual runtime socket failures in `index.ts` (intercepting `EACCES` / `WSAEACCES 10013` to guide the user when Windows Firewall, Hyper-V port exclusions, or antivirus web shields actively deny port binding).
    - Removed obsolete static string assertions from `resolveBind.test.ts`.
+10. **Hardened User-Agent & Security Inbound Auditing (`auth.ts`, `app.ts`, `inboundAuditor.test.ts`):**
+    - High-signal diagnostic visibility into local network connections and unauthenticated blocked probes (e.g. recognizing mobile browsers and antivirus background port scans like `Avast Antivirus`).
+    - **R1 (Bounded Map / DoS Defense):** In-memory debounce tracking map is capped to max 200 entries with FIFO/oldest key eviction, eliminating memory-exhaustion risks from rotating User-Agent strings.
+    - **R2 (Zero-Trust Display Hint):** User-Agent is treated strictly as cosmetic display context; it never influences authentication verdicts, loopback bypass, or rate limiting. Spoofed friendly UAs without tokens return HTTP 401.
+    - **R3 & R4 (Sanitization & Raw Excerpts):** `sanitizeUserAgent()` strips ANSI escape sequences (CSI and OSC), ASCII control characters (`[\x00-\x1F\x7F]`), collapses whitespace/CR/LF into single spaces, truncates to $\le 100$ characters + `…`, and falls back to `'unknown-device'` when missing. No fragile device-fingerprint parsers; strictly isolates User-Agent with zero credential or header leakage (Invariant **S8**).
+    - **Precision Nit 1 (N5 Effective IP):** Uses N5 effective IP (post-`trustedProxies` resolution) in the debounce key (`${prefix}:${ip}::${ua}`), properly attributing and sampling distinct mobile devices forwarded through the Vite dev proxy.
+    - **Precision Nit 2 (Post-Verdict Block Auditing):** Blocked-request logging fires from the `onRequest` gate strictly *after* reaching the 401 verdict; loopback desktop traffic is bypassed prior to that and remains completely silent by construction.
+    - **Verification:** 13 new unit tests in `backend/test/routes/inboundAuditor.test.ts` covering the sanitization corpus, debounce quiet window, bounded map FIFO eviction, and zero-trust auth gate integration.
+
