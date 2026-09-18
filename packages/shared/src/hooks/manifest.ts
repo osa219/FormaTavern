@@ -50,6 +50,8 @@ export const HOOKS = {
     rowHeader: 'ft-row-header',
     avatar: 'ft-avatar',
     turnName: 'ft-turn-name',
-    turnBody: 'ft-turn-body'
+    turnBody: 'ft-turn-body',
+    segmentEdit: 'ft-segment-edit',
+    segmentEditor: 'ft-segment-editor'
   }
 } as const satisfies Record<string, Record<string, `ft-${string}`>>;

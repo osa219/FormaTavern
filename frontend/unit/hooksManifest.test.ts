@@ -34,6 +34,9 @@ import JumpToLatest from '../src/lib/components/chat/JumpToLatest.svelte';
 import ChatViewport from '../src/lib/components/chat/ChatViewport.svelte';
 import StudioShell from '../src/lib/components/studio/StudioShell.svelte';
 import DecorLayers from '../src/lib/components/custom/DecorLayers.svelte';
+import TurnRow from '../src/lib/components/chat/TurnRow.svelte';
+import SegmentEditor from '../src/lib/components/chat/SegmentEditor.svelte';
+import { NEUTRAL_LAYOUT_DOC } from '@formatavern/shared';
 import { CharacterDraft } from '../src/lib/studio/draft.svelte';
 
 function walkDir(dir: string, fileList: string[] = []): string[] {
@@ -68,7 +71,7 @@ describe('Hook Contract & Manifest Invariants (Invariant C1)', () => {
 
     const uniqueHooks = new Set(allHooks);
     expect(uniqueHooks.size).toBe(allHooks.length);
-    expect(allHooks.length).toBe(41);
+    expect(allHooks.length).toBe(43);
   });
 
   it('prohibits hardcoded ft- class literal strings in frontend/src outside manifest', () => {
@@ -239,6 +242,16 @@ describe('Hook Contract & Manifest Invariants (Invariant C1)', () => {
     it('renders JumpToLatest with ft-jump-to-latest', () => {
       const { html } = render(JumpToLatest, { props: { visible: true } });
       expect(html).toContain(HOOKS.chat.jumpToLatest);
+    });
+
+    it('renders TurnRow edit button with ft-segment-edit', () => {
+      const { html } = render(TurnRow, { props: { kind: 'character', editable: true, layout: NEUTRAL_LAYOUT_DOC } });
+      expect(html).toContain(HOOKS.chat.segmentEdit);
+    });
+
+    it('renders SegmentEditor with ft-segment-editor', () => {
+      const { html } = render(SegmentEditor, { props: { initial: 'text' } });
+      expect(html).toContain(HOOKS.chat.segmentEditor);
     });
 
     it('renders ChatViewport with ft-viewport and data-ft-surface="chat"', () => {

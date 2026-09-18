@@ -1,5 +1,7 @@
 <script lang="ts">
   import Icon from '../ui/Icon.svelte';
+  import { HOOKS } from '@formatavern/shared';
+  import { autosize } from '$lib/actions/autosize';
 
   let {
     initial = '',
@@ -43,39 +45,40 @@
   }
 </script>
 
-<div class="w-full rounded-xl border border-accent/40 bg-neutral-950 p-2">
+<div class="relative w-full rounded-xl border border-accent/40 bg-(--chrome-surface)/95 shadow-md backdrop-blur-sm transition-colors focus-within:border-accent/80 focus-within:ring-1 focus-within:ring-accent/30 {HOOKS.chat.segmentEditor}">
+  <!-- Floating action bar outside top-right (Janitor-style header alignment) -->
+  <div class="absolute -top-7.5 right-0 z-20 flex items-center gap-1 rounded-md border border-(--chrome-line)/40 bg-(--chrome-surface)/95 px-1 py-0.5 shadow-sm backdrop-blur-sm">
+    <button
+      type="button"
+      onclick={() => onCancel?.()}
+      disabled={saving}
+      class="flex h-6 w-6 items-center justify-center rounded text-(--chrome-text)/60 hover:bg-(--chrome-line)/40 hover:text-(--chrome-text) transition-colors disabled:opacity-40"
+      title="Cancel edit (Esc)"
+      aria-label="Cancel edit"
+    >
+      <Icon name="close" size={13} />
+    </button>
+    <button
+      type="button"
+      onclick={commit}
+      disabled={saving || !dirty}
+      class="flex h-6 w-6 items-center justify-center rounded text-accent hover:bg-accent/20 transition-colors disabled:opacity-40"
+      title="Save edit (Ctrl+Enter)"
+      aria-label="Save edit"
+    >
+      <Icon name="check" size={13} />
+    </button>
+  </div>
+
   <textarea
+    use:autosize={{ minRows: 1, maxRows: 30 }}
     bind:this={ta}
     bind:value={draft}
     onkeydown={handleKeydown}
     disabled={saving}
-    rows={3}
+    rows={1}
+    title="Plain prose — Ctrl+Enter saves, Esc cancels"
     aria-label="Edit segment text"
-    class="w-full resize-y rounded-lg border border-neutral-800 bg-neutral-950 p-3 text-sm leading-relaxed text-neutral-100 placeholder-neutral-600 focus:border-neutral-600 focus:outline-none disabled:opacity-60"
+    class="w-full resize-y border-0 bg-transparent px-3 py-2 text-sm leading-relaxed text-(--chrome-text) placeholder:text-(--chrome-text)/40 focus:outline-none focus:ring-0 disabled:opacity-60 max-h-[65vh] overflow-y-auto block"
   ></textarea>
-  <div class="mt-1.5 flex items-center justify-between gap-2">
-    <span class="px-1 text-[11px] text-neutral-500">Plain prose — markers stay hidden. Ctrl+Enter saves, Esc cancels.</span>
-    <div class="flex shrink-0 items-center gap-1">
-      <button
-        type="button"
-        onclick={() => onCancel?.()}
-        disabled={saving}
-        class="flex h-7 w-7 items-center justify-center rounded text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200 disabled:opacity-40"
-        title="Cancel edit"
-        aria-label="Cancel edit"
-      >
-        <Icon name="close" size={14} />
-      </button>
-      <button
-        type="button"
-        onclick={commit}
-        disabled={saving || !dirty}
-        class="flex h-7 w-7 items-center justify-center rounded text-emerald-300 hover:bg-emerald-950/60 hover:text-emerald-200 disabled:opacity-40"
-        title="Save edit"
-        aria-label="Save edit"
-      >
-        <Icon name="check" size={14} />
-      </button>
-    </div>
-  </div>
 </div>

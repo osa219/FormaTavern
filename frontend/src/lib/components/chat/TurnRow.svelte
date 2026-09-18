@@ -158,7 +158,7 @@
       <button
         type="button"
         onclick={() => onStartEdit?.()}
-        class="absolute top-0 right-1 z-10 flex h-7 w-7 items-center justify-center rounded bg-neutral-900/80 text-neutral-400 opacity-100 shadow-sm backdrop-blur transition-opacity duration-150 hover:bg-neutral-800 hover:text-neutral-200 focus-visible:opacity-100 md:opacity-0 md:group-hover/row:opacity-100 md:group-focus-within/row:opacity-100 [@media(hover:none)]:opacity-100"
+        class="absolute top-0 right-1 z-10 flex h-7 w-7 items-center justify-center rounded bg-transparent text-(--chrome-text)/40 transition-colors duration-150 hover:bg-(--chrome-surface)/80 hover:text-(--chrome-text) focus-visible:opacity-100 md:opacity-0 md:group-hover/row:opacity-100 md:group-focus-within/row:opacity-100 [@media(hover:none)]:opacity-40 [@media(hover:none)]:hover:opacity-100 active:scale-95 {HOOKS.chat.segmentEdit}"
         title="Edit segment"
         aria-label="Edit segment {editIndex + 1}"
       >
