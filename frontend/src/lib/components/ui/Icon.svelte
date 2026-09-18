@@ -28,7 +28,8 @@
       | 'upload'
       | 'more-horizontal'
       | 'star'
-      | 'book';
+      | 'book'
+      | 'lock';
     size?: number;
     class?: string;
   } = $props();
@@ -115,5 +116,8 @@
     <path d="M12 5v14" />
   {:else if name === 'sparkles'}
     <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+  {:else if name === 'lock'}
+    <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
   {/if}
 </svg>

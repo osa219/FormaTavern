@@ -1,8 +1,27 @@
 import { treaty } from '@elysiajs/eden';
 import type { App } from '@formatavern/backend';
 import { errorToCopy, type UiError } from './errors';
+import { authStore } from '../auth/store.svelte';
 
-export const api = treaty<App>(typeof window !== 'undefined' ? window.location.origin : 'http://127.0.0.1:3000');
+export const api = treaty<App>(
+  typeof window !== 'undefined' ? window.location.origin : 'http://127.0.0.1:3000',
+  {
+    onRequest: (_path, init) => {
+      const headers = authStore.authHeaders();
+      return {
+        headers: {
+          ...headers,
+          ...(init.headers as Record<string, string>)
+        }
+      };
+    },
+    onResponse: (res) => {
+      if (res.status === 401) {
+        authStore.handleUnauthorized();
+      }
+    }
+  }
+);
 
 export function toUiError(err: any): UiError {
   if (!err) {

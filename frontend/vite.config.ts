@@ -2,17 +2,36 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig, searchForWorkspaceRoot } from 'vite';
 
+const lan =
+  process.env.FORMATAVERN_NETWORK_MODE === 'lan' ||
+  process.env.FORMATAVERN_NETWORK_MODE === 'custom';
+const backendPort = Number(process.env.FORMATAVERN_PORT ?? 3000);
+
 export default defineConfig({
   plugins: [sveltekit(), tailwindcss()],
+  optimizeDeps: {
+    include: [
+      '@sinclair/typebox',
+      '@sinclair/typebox/value',
+      '@elysiajs/eden',
+      'jsonrepair',
+      'marked',
+      'dompurify',
+      'css-tree',
+      'gpt-tokenizer'
+    ]
+  },
   server: {
-    host: '127.0.0.1',
+    host: lan ? '0.0.0.0' : '127.0.0.1',
     port: 5173,
     strictPort: true,
+    allowedHosts: ['.ts.net'],
     fs: { allow: [searchForWorkspaceRoot(process.cwd())] }, // serve ../packages/shared/src (symlink resolves outside frontend/)
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:3000', // IPv4 literal. NOT "localhost". See §4.3
+        target: `http://127.0.0.1:${backendPort}`, // IPv4 literal. NOT "localhost". See §4.3
         changeOrigin: true,
+        xfwd: true,
         ws: false,
         // http-proxy pipes chunked responses without buffering by default.
         // The hooks below are defensive: forbid compression negotiation and
@@ -32,8 +51,9 @@ export default defineConfig({
         }
       },
       '/assets': {
-        target: 'http://127.0.0.1:3000',
-        changeOrigin: true
+        target: `http://127.0.0.1:${backendPort}`,
+        changeOrigin: true,
+        xfwd: true
       }
     }
   }

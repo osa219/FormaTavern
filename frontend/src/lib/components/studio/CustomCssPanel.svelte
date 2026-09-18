@@ -8,6 +8,7 @@
   import { SHOWCASE_PRESETS, CHAT_PRESETS, CUSTOM_CSS_PRESETS, type CustomCssPreset } from '$lib/custom/presets';
   import Icon from '$lib/components/ui/Icon.svelte';
   import Spinner from '$lib/components/ui/Spinner.svelte';
+  import { copyToClipboard } from '$lib/utils/clipboard';
 
   interface Props {
     draft?: CharacterDraft;
@@ -211,14 +212,14 @@
 
   async function copyHook(hookName: string) {
     const selector = `.${hookName}`;
-    try {
-      await navigator.clipboard.writeText(selector);
+    const ok = await copyToClipboard(selector);
+    if (ok) {
       copiedHook = hookName;
       setTimeout(() => {
         if (copiedHook === hookName) copiedHook = null;
       }, 1500);
       toasts.success(`Copied ${selector}`);
-    } catch {
+    } else {
       toasts.error(`Failed to copy ${selector}`);
     }
   }
@@ -819,8 +820,12 @@
                         type="button"
                         onclick={async () => {
                           const snippet = `@font-face {\n  font-family: '${font.name}';\n  src: url('${font.path}') format('${font.format}');\n  font-display: swap;\n}`;
-                          await navigator.clipboard.writeText(snippet);
-                          toasts.success('Copied @font-face snippet');
+                          const ok = await copyToClipboard(snippet);
+                          if (ok) {
+                            toasts.success('Copied @font-face snippet');
+                          } else {
+                            toasts.error('Failed to copy snippet');
+                          }
                         }}
                         class="rounded bg-(--chrome-surface) border border-(--chrome-line) px-2 py-1 text-[11px] text-(--chrome-text)/70 hover:text-(--chrome-text) hover:bg-(--chrome-line)/40 transition-colors"
                       >

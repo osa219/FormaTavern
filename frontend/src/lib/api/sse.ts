@@ -1,4 +1,5 @@
 import type { ChatStreamEvent, StreamEvent } from '@formatavern/shared';
+import { authStore } from '../auth/store.svelte';
 
 export interface StreamCallbacks {
   onEvent(e: StreamEvent): void;
@@ -11,8 +12,17 @@ export async function readSse<T = ChatStreamEvent>(
   cb: (event: T) => void,
   signal?: AbortSignal
 ): Promise<void> {
-  const res = await fetch(url, { ...init, signal });
+  const authHeaders = authStore.authHeaders();
+  const headers = {
+    ...authHeaders,
+    ...(init?.headers as Record<string, string>)
+  };
+
+  const res = await fetch(url, { ...init, headers, signal });
   if (!res.ok) {
+    if (res.status === 401) {
+      authStore.handleUnauthorized();
+    }
     let errorDetail: any = null;
     try {
       errorDetail = await res.json();

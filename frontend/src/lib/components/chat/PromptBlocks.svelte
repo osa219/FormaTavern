@@ -3,14 +3,15 @@
   import { prefs } from '$lib/state/prefs.svelte';
   import Icon from '../ui/Icon.svelte';
   import { blockLabel, type PreviewData } from '$lib/prompt/preview';
+  import { copyToClipboard } from '$lib/utils/clipboard';
 
   let { data }: { data: PreviewData } = $props();
 
   async function copyText(text: string, label: string) {
-    try {
-      await navigator.clipboard.writeText(text);
+    const ok = await copyToClipboard(text);
+    if (ok) {
       toasts.success(`${label} copied to clipboard`);
-    } catch {
+    } else {
       toasts.error('Failed to copy to clipboard');
     }
   }

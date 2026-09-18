@@ -112,6 +112,28 @@ describe('Architecture & Boundary Police (Invariant U2, U3, U6)', () => {
     expect(log).toMatch(/overflow-y-auto/);
   });
 
+  it('permits safe-area insets ONLY as zero-fallback env() additions, never as fixed geometry (mobile LAN hardening)', () => {
+    for (const file of allSourceFiles) {
+      const content = readFileSync(file, 'utf-8');
+      // max(<fixed>, calc(<fixed> + env(safe-area-inset-bottom))) collapses to a fixed
+      // inset on desktop (env() >= 0 always) — fixed geometry disguised as responsive.
+      // Bare env(..., 0px), optionally inside calc(), is the only permitted shape.
+      expect(content).not.toMatch(/max\(\s*[\d.]+r?em[^;]*env\(safe-area-inset-bottom/);
+    }
+
+    // The ChatViewport footer wraps Composer, which owns its own p-3 box: any fixed
+    // padding utility here doubles the inset and visibly breaks author .ft-composer
+    // theming (unthemed gutters + dead bottom band). Bottom env() inset only.
+    const viewport = readFileSync(join(SRC_DIR, 'lib/components/chat/ChatViewport.svelte'), 'utf-8');
+    const footerMatch = viewport.match(/<footer\b[^>]*>/);
+    expect(footerMatch).not.toBeNull();
+    const footerTag = footerMatch![0];
+    expect(footerTag).not.toMatch(/\bpx-\d/);
+    expect(footerTag).not.toMatch(/\bpt-\d/);
+    expect(footerTag).not.toMatch(/\bpb-\d/);
+    expect(footerTag).toContain('env(safe-area-inset-bottom');
+  });
+
   it('prohibits role-branched justify-end in chat turn rendering components (Invariant L2)', () => {
     const turnFiles = [
       'SpeechBubble.svelte',

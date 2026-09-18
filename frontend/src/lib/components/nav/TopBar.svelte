@@ -3,6 +3,7 @@
   import { HOOKS } from '@formatavern/shared';
   import Icon from '../ui/Icon.svelte';
   import StateHud from '../hud/StateHud.svelte';
+  import { authStore } from '$lib/auth/store.svelte';
 
   let {
     character = null,
@@ -103,6 +104,18 @@
         title="Codex & Lore (Alt+L)"
       >
         <Icon name="book" size={16} />
+      </button>
+    {/if}
+
+    {#if authStore.status === 'authed' || authStore.status === 'pin-locked'}
+      <button
+        type="button"
+        onclick={() => authStore.forgetDevice()}
+        class="flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-800 bg-neutral-900 {authStore.status === 'pin-locked' ? 'text-rose-400' : 'text-accent'} transition-colors hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        aria-label={authStore.status === 'pin-locked' ? 'PIN Required' : 'PIN Protected (Click to lock)'}
+        title={authStore.status === 'pin-locked' ? 'PIN Required' : 'PIN Protected (Click to lock)'}
+      >
+        <Icon name="lock" size={16} />
       </button>
     {/if}
 

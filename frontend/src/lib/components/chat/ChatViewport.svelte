@@ -422,7 +422,14 @@
   </main>
 
   <!-- Composer & Director Drawer -->
-  <footer class="relative z-20 w-full border-t border-neutral-800/40 bg-transparent backdrop-blur-md">
+  <!-- Safe-area rule: the ONLY geometry added here is bottom env() inset (0 on
+       desktop, notch height on phones). Fixed px/pt/pb utilities are forbidden
+       on this footer — Composer owns its own p-3 box, and any wrapper inset
+       doubles it and breaks author .ft-composer theming (see boundaries test). -->
+  <footer
+    class="relative z-20 w-full border-t border-neutral-800/40 bg-transparent backdrop-blur-md"
+    style="padding-bottom: env(safe-area-inset-bottom, 0px);"
+  >
     <Composer
       busy={session.busy}
       personaName={session.persona?.name || 'Traveler'}

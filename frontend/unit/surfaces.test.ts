@@ -196,17 +196,25 @@ describe('Surface Completeness & Dialog Scoping (Invariant C14)', () => {
     expect(appHtmlContent).not.toContain('setAttribute("data-ft-surface"');
     expect(appHtmlContent).not.toContain('documentElement.style');
 
-    // 2. Verify +layout.svelte never sets data-ft-surface on html/document (uses data-ft-active-surface)
+    // 2. Verify +layout.svelte never sets data-ft-surface on html/document (uses data-ft-active-surface).
+    // Sole exception: the PinPromptModal shell host — a display:contents sibling of (never an
+    // ancestor of) page surfaces, so dialogs still render inside a surface boundary (C14).
+    // A neutral-chrome gate is deliberate: security UI stays visually consistent
+    // instead of adopting per-character chameleon theming.
     const layoutPath = resolve(ROUTES_DIR, '+layout.svelte');
     const layoutContent = readFileSync(layoutPath, 'utf-8');
     expect(layoutContent).not.toContain("setAttribute('data-ft-surface'");
-    expect(layoutContent).not.toContain('data-ft-surface=');
     expect(layoutContent).toContain("setAttribute('data-ft-active-surface'");
+    const layoutSurfaceUses = layoutContent.match(/data-ft-surface=/g) ?? [];
+    expect(layoutSurfaceUses.length).toBe(1);
+    expect(layoutContent).toContain('data-ft-surface="shell"');
+    expect(layoutContent.indexOf('data-ft-surface="shell"') < layoutContent.indexOf('<PinPromptModal')).toBe(true);
 
     // 3. Verify all occurrences of data-ft-surface in templates are only in authorized surface roots
     const allowedSurfaceFiles = [
       'ShellSurface.svelte',
       'ChatViewport.svelte',
+      '+layout.svelte',
       '+page.svelte',
       'LivePreview.svelte',
       'ShowcaseEditor.svelte'

@@ -4,6 +4,7 @@
   import { toasts } from '$lib/state/toasts.svelte';
   import Icon from '$lib/components/ui/Icon.svelte';
   import Spinner from '$lib/components/ui/Spinner.svelte';
+  import { copyToClipboard } from '$lib/utils/clipboard';
 
   let {
     draft,
@@ -49,9 +50,13 @@
     }
   }
 
-  function copyPath(path: string) {
-    navigator.clipboard.writeText(`![Image](${path})`);
-    toasts.success('Copied markdown snippet to clipboard');
+  async function copyPath(path: string) {
+    const ok = await copyToClipboard(`![Image](${path})`);
+    if (ok) {
+      toasts.success('Copied markdown snippet to clipboard');
+    } else {
+      toasts.error('Failed to copy to clipboard');
+    }
   }
 </script>
 

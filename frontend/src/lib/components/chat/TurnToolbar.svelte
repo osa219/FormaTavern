@@ -3,6 +3,7 @@
   import SwipeCarousel from './SwipeCarousel.svelte';
   import { toasts } from '$lib/state/toasts.svelte';
   import { stripOutOfBand, HOOKS } from '@formatavern/shared';
+  import { copyToClipboard } from '$lib/utils/clipboard';
 
   let {
     messageId,
@@ -33,11 +34,11 @@
   } = $props();
 
   async function handleCopy() {
-    try {
-      const cleanText = stripOutOfBand(content);
-      await navigator.clipboard.writeText(cleanText);
+    const cleanText = stripOutOfBand(content);
+    const ok = await copyToClipboard(cleanText);
+    if (ok) {
       toasts.success('Turn copied to clipboard');
-    } catch {
+    } else {
       toasts.error('Failed to copy to clipboard');
     }
   }

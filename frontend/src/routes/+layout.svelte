@@ -4,6 +4,8 @@
   import '../app.css';
   import favicon from '$lib/assets/favicon.svg';
   import Toaster from '$lib/components/ui/Toaster.svelte';
+  import PinPromptModal from '$lib/components/auth/PinPromptModal.svelte';
+  import { authStore } from '$lib/auth/store.svelte';
   import { shellTheme } from '$lib/state/shellTheme.svelte';
   import { media } from '$lib/state/media.svelte';
   import { prefs } from '$lib/state/prefs.svelte';
@@ -13,6 +15,7 @@
 
   onMount(() => {
     shellTheme.load();
+    authStore.checkStatus();
   });
 
   const activeSurface = $derived.by<SurfaceScope>(() => {
@@ -37,5 +40,15 @@
 </svelte:head>
 
 {@render children()}
+
+{#if authStore.status === 'pin-locked'}
+  <!-- C14: dialogs render inside a surface boundary. This host is a sibling of
+       (never nested in) page surfaces; fixed positioning is viewport-relative,
+       so display:contents changes no geometry. Chrome vars resolve to :root
+       neutral defaults here — full shell-theme sync is a deferred polish. -->
+  <div data-ft-surface="shell" style="display: contents">
+    <PinPromptModal />
+  </div>
+{/if}
 
 <Toaster />
