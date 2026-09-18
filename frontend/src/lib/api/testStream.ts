@@ -1,11 +1,16 @@
 import type { StreamCallbacks } from './sse';
+import { authStore } from '../auth/store.svelte';
 
 export async function readTestStream(
   cb: StreamCallbacks,
   opts?: { script?: string; signal?: AbortSignal }
 ) {
   const url = '/api/chat/test-stream' + (opts?.script ? `?script=${encodeURIComponent(opts.script)}` : '');
-  const res = await fetch(url, { method: 'POST', signal: opts?.signal });
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: authStore.authHeaders(),
+    signal: opts?.signal
+  });
   if (!res.ok || !res.body) throw new Error(`stream failed: ${res.status}`);
 
   const reader = res.body.getReader();

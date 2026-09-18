@@ -240,6 +240,25 @@ export function loadServerConfig(options: LoadConfigOptions = {}): LoadedConfig 
     warnings.push('[config] security.pin is set but security.authMode is "none". PIN will not be enforced.');
   }
 
+  // Cross-layer authMode conflict visibility: an explicit file authMode that lost to a
+  // higher layer is almost always a stale FORMATAVERN_PIN/--pin, and silent flips in
+  // either direction are the worst outcome for a security gate. The higher layer still
+  // wins (N2 precedence, fail-closed), but the override is announced loudly with the
+  // effective posture, so `none` in the file can never silently mean `pin` or vice versa.
+  if (
+    fileConfig?.security?.authMode !== undefined &&
+    fileConfig.security.authMode !== validated.security.authMode
+  ) {
+    const winner = sourceMap['security.authMode'];
+    const winnerLabel = winner === 'cli' ? 'CLI flags' : winner === 'env' ? 'environment variables' : winner;
+    warnings.push(
+      `[config] config.yaml sets security.authMode: "${fileConfig.security.authMode}" but ${winnerLabel} selected "${validated.security.authMode}" (higher precedence wins). ` +
+        (validated.security.authMode === 'pin'
+          ? 'Server is PIN-protected; unset FORMATAVERN_PIN/--pin for an open server.'
+          : 'Server is OPEN on the network; no PIN will be enforced.')
+    );
+  }
+
   return {
     config: validated,
     warnings,

@@ -153,4 +153,20 @@ describe('Architecture & Boundary Police (Invariant U2, U3, U6)', () => {
     const turn = readFileSync(join(SRC_DIR, 'lib/components/chat/MessageTurn.svelte'), 'utf-8');
     expect(turn).toContain('<TurnRow');
   });
+
+  it('ensures raw fetch to /api endpoints references authHeaders (Invariant N6, N7)', () => {
+    // Regex matching fetch('/api...', fetch("/api...", or fetch(`/api...`
+    const rawApiFetchRegex = /fetch\(\s*['"`]\/api/;
+    for (const file of allSourceFiles) {
+      const normalizedPath = file.replace(/\\/g, '/');
+      const content = readFileSync(file, 'utf-8');
+      if (rawApiFetchRegex.test(content)) {
+        // Exemption: auth store itself manages public /api/auth/status and /api/auth/verify calls
+        const isAuthStore = normalizedPath.endsWith('/lib/auth/store.svelte.ts');
+        if (!isAuthStore) {
+          expect(content).toContain('authHeaders');
+        }
+      }
+    }
+  });
 });

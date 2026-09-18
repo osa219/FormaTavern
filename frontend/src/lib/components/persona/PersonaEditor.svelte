@@ -2,6 +2,7 @@
   import type { Persona, PersonaCreate, PersonaPatch, ThemeOverrides } from '@formatavern/shared';
   import { cropImageToBlob, loadImage } from '$lib/assets/crop';
   import { toasts } from '$lib/state/toasts.svelte';
+  import { authStore } from '$lib/auth/store.svelte';
   import Icon from '$lib/components/ui/Icon.svelte';
   import Spinner from '$lib/components/ui/Spinner.svelte';
   import BubblePreview from './BubblePreview.svelte';
@@ -81,6 +82,7 @@
 
       const res = await fetch('/api/assets/upload', {
         method: 'POST',
+        headers: authStore.authHeaders(),
         body: formData
       });
 

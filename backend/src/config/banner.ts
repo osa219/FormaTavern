@@ -11,6 +11,8 @@ export interface BannerOptions {
   isTty?: boolean;
   columns?: number;
   sourceSummary?: string;
+  /** Where security.pin came from (file CLI/env), if known — printed so env-over-file surprises are self-diagnosing. */
+  pinSource?: string;
 }
 
 /**
@@ -25,7 +27,8 @@ export function formatBanner(options: BannerOptions): string {
     isDev,
     isTty = true,
     columns = 80,
-    sourceSummary
+    sourceSummary,
+    pinSource
   } = options;
 
   const bold = (s: string) => `\x1b[1m${s}\x1b[0m`;
@@ -95,7 +98,9 @@ export function formatBanner(options: BannerOptions): string {
   }
 
   if (config.security.authMode === 'pin') {
-    lines.push(`  ➜ ${bold('Security:')} ${green('PIN Protected [••••]')}`);
+    const origin =
+      pinSource === 'file' ? 'config.yaml' : pinSource === 'cli' ? 'CLI flags' : pinSource === 'env' ? 'environment' : '';
+    lines.push(`  ➜ ${bold('Security:')} ${green('PIN Protected [••••]')}${origin ? dim(` (pin from ${origin})`) : ''}`);
   } else {
     lines.push(`  ➜ ${bold('Security:')} ${yellow('OPEN — anyone on Wi-Fi can access chats')}`);
   }

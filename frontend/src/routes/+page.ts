@@ -1,18 +1,23 @@
 import type { PageLoad } from './$types';
 import type { CharacterSummary, ChatView } from '@formatavern/shared';
+import { api } from '$lib/api';
 
-export const load: PageLoad = async ({ fetch }) => {
+export const load: PageLoad = async () => {
   try {
     const [charsRes, chatsRes] = await Promise.all([
-      fetch('/api/characters').then((r) => (r.ok ? r.json() : { items: [] })),
-      fetch('/api/chats?limit=12').then((r) => (r.ok ? r.json() : []))
+      api.api.characters.get(),
+      api.api.chats.get({ query: { limit: 12 } })
     ]);
 
-    const characters = Array.isArray(charsRes) ? charsRes : charsRes?.items ?? [];
+    const characters = Array.isArray(charsRes.data)
+      ? (charsRes.data as CharacterSummary[])
+      : ((charsRes.data as any)?.items as CharacterSummary[]) ?? [];
+
+    const chats = Array.isArray(chatsRes.data) ? (chatsRes.data as ChatView[]) : [];
 
     return {
-      characters: characters as CharacterSummary[],
-      chats: (Array.isArray(chatsRes) ? chatsRes : []) as ChatView[]
+      characters,
+      chats
     };
   } catch {
     return {

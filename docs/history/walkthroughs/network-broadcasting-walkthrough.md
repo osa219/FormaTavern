@@ -41,7 +41,7 @@
 - **Network Security & Auth Gate (`backend/src/routes/`):**
   - `ip.ts`: `effectiveClientIp()` (resolves client IP with trusted proxy check) and `isLoopbackIp()`.
   - `auth.ts`: `createAuthRouter` (`/auth/status`, `/auth/verify`), HMAC token generation/verification, constant-time PIN comparison, `RateLimiter` (5 fails/min sliding window), and `InboundAuditor` (10-min interval sampled logger).
-  - `backend/src/app.ts`: Injected `onRequest` pre-parse authentication gate protecting all `/api` routes wholesale while keeping public endpoints accessible and redacting `/health` to `{ ok: true }` when unauthenticated.
+  - `backend/src/app.ts`: Injected `onRequest` pre-parse authentication gate protecting all `/api` routes wholesale with `!path.startsWith('/api')` early return, strictly exempting static assets (`/assets/*`), shell, and public endpoints, while redacting `/health` to `{ ok: true }` when unauthenticated.
   - `backend/src/index.ts`: Config-first boot sequence, dynamic storage path resolution, ephemeral HMAC secret generation, socket error diagnostics (`EADDRINUSE`, `EACCES`/`WSAEACCES`), and terminal banner output.
   - `backend/src/db/paths.ts`: Added `resolveStoragePath()` and customized target directories.
 
@@ -67,6 +67,19 @@
 - [`frontend/src/lib/auth/store.svelte.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/auth/store.svelte.ts): Svelte 5 runes auth store managing status (`'unknown' | 'none' | 'pin-locked' | 'authed'`), token persistence in `localStorage`, and header injection.
 - [`frontend/src/lib/api/client.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/api/client.ts): Eden client interceptor injecting `authHeaders()` and handling 401 responses.
 - [`frontend/src/lib/api/sse.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/api/sse.ts): `readSse()` helper injecting `authHeaders()` and handling 401 responses.
+- [`frontend/src/routes/chat/[chatId]/+page.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/routes/chat/[chatId]/+page.ts): Migrated route data load to Eden Treaty (`api.api.chats({ id }).get()`, `messages.get()`, `characters.get()`, `personas.get()`), using `{ data, error }` pattern and mapping HTTP 401 (`Authentication required`) vs 404 (`Story not found`).
+- [`frontend/src/routes/+page.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/routes/+page.ts): Migrated foyer catalog load to Eden Treaty (`api.api.characters.get()`, `chats.get()`), guaranteeing authenticated queries.
+- Raw API calls authenticated with `authHeaders()`:
+  - [`frontend/src/lib/api/testStream.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/api/testStream.ts): Injected `headers: authStore.authHeaders()` into the streaming diagnostic harness.
+  - 5 Asset upload components injected with `headers: authStore.authHeaders()`:
+    - [`frontend/src/lib/components/persona/PersonaEditor.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/persona/PersonaEditor.svelte) (persona avatar)
+    - [`frontend/src/lib/components/studio/AestheticPanel.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/studio/AestheticPanel.svelte) (character avatar & background)
+    - [`frontend/src/lib/components/studio/CustomCssPanel.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/studio/CustomCssPanel.svelte) (custom CSS fonts)
+    - [`frontend/src/lib/components/studio/GalleryManager.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/studio/GalleryManager.svelte) (gallery assets)
+    - [`frontend/src/lib/components/studio/IdentityPanel.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/studio/IdentityPanel.svelte) (character avatar)
+  - Developer workbench:
+    - [`frontend/src/routes/dev/+page.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/routes/dev/+page.svelte): Injected `...authStore.authHeaders()` into scratch prompt-builder and stream test calls.
+- [`frontend/unit/boundaries.test.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/unit/boundaries.test.ts): Static boundary police rule enforcing that any raw `/api` fetch call in `frontend/src` must reference `authHeaders` unless explicitly allowlisted.
 - [`frontend/src/lib/components/ui/Icon.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/ui/Icon.svelte): Added `lock` icon.
 - [`frontend/src/lib/components/auth/PinPromptModal.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/auth/PinPromptModal.svelte): Full-screen PIN entry card with numeric inputmode, failure shake animation, and "Forget this device" option.
 - [`frontend/src/lib/components/nav/TopBar.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/nav/TopBar.svelte): Added lock status button before settings sheet trigger.
@@ -88,14 +101,15 @@
   - `backend/test/config/resolveBind.test.ts`: 8/8 tests passed.
 - **Route & Security Suites:**
   - `backend/test/routes/ip.test.ts`: 6/6 tests passed.
-  - `backend/test/routes/auth.test.ts`: 8/8 tests passed.
+  - `backend/test/routes/auth.test.ts`: 9/9 tests passed (including N6 non-API /assets bypass test).
 - **Frontend Suites:**
   - `frontend/unit/clipboard.test.ts`: 4/4 tests passed.
   - `frontend/unit/authStore.test.ts`: 6/6 tests passed.
   - `frontend/unit/surfaces.test.ts`: 11/11 tests passed (Invariant C14 surface audit with modal shell host allowlist).
+  - `frontend/unit/boundaries.test.ts`: 12/12 tests passed (including static police rule for `/api` fetch authHeaders).
 - **Monorepo Verification Gates:**
   - `bun run typecheck`: 0 errors, 0 warnings across `packages/shared`, `backend`, and `frontend` (`svelte-check`).
-  - `bun run test`: 100% green across all packages (325/325 backend tests, 241/241 frontend tests, 215/215 shared tests).
+  - `bun run test`: 100% green across all packages (326/326 backend tests, 243/243 frontend tests, 215/215 shared tests).
   - `bun run db:check`: Clean database and table integrity.
 
 ---
@@ -162,4 +176,16 @@ Following peer review, 7 targeted hardening fixes and 1 DX optimization were app
     - **Precision Nit 1 (N5 Effective IP):** Uses N5 effective IP (post-`trustedProxies` resolution) in the debounce key (`${prefix}:${ip}::${ua}`), properly attributing and sampling distinct mobile devices forwarded through the Vite dev proxy.
     - **Precision Nit 2 (Post-Verdict Block Auditing):** Blocked-request logging fires from the `onRequest` gate strictly *after* reaching the 401 verdict; loopback desktop traffic is bypassed prior to that and remains completely silent by construction.
     - **Verification:** 13 new unit tests in `backend/test/routes/inboundAuditor.test.ts` covering the sanitization corpus, debounce quiet window, bounded map FIFO eviction, and zero-trust auth gate integration.
+11. **Exact Invariant N6 Gate Boundary Confined to `/api/*` (Resolving Mobile Asset 401s):**
+    - **Root cause:** In `backend/src/app.ts`, `createApp` registers an `.onRequest` hook. In Elysia, `.onRequest` is a server-level global lifecycle hook that runs on every request hitting the server before any route prefix matching. Because it lacked `if (!path.startsWith('/api')) return;`, requests for `/assets/*` (avatars, character galleries, custom fonts, backgrounds) and public root files were intercepted by the PIN gate. Because browser native subresource loaders (`<img src="...">`, `@font-face`, CSS `url()`) do not send custom Authorization headers, they received 401 Unauthorized from non-loopback mobile clients. In production, this would also have blocked `/` and `/manifest.webmanifest`, preventing the app shell from loading at all.
+    - **Fix:** Added `if (!path.startsWith('/api')) return;` at the very beginning of `onRequest` in `app.ts`. Static assets and public shell files now bypass the API PIN gate cleanly, strictly fulfilling Invariant **N6**.
+    - **Verification:** Added a unit test in `backend/test/routes/auth.test.ts` asserting non-401 for `/assets/avatars/test.webp` and `/` through `createApp` from unauthenticated LAN IPs, and verifying that `InboundAuditor` is not triggered for non-API traffic.
+12. **Explicit Frontend Network Auth, Eden Treaty Migration for Chat / Root Routes, and Static Boundary Police (Resolving Mobile 404s & Uploads):**
+    - **Root cause:** `routes/chat/[chatId]/+page.ts` used raw native `fetch(...)` without `Authorization: Bearer <token>`, received HTTP 401 on mobile, and blind-cast any non-ok status to `error(404, \`Story ${chatId} not found\`)`. The same vulnerability affected `routes/+page.ts` (silently returning empty arrays), `testStream.ts`, all 5 asset uploads, and the 2 dev workbench call sites.
+    - **Fix:**
+      - Migrated `routes/chat/[chatId]/+page.ts` to Eden Treaty (`api`), adopting the precedent `{ data, error }` pattern and distinguishing HTTP 401 (`Authentication required`) from 404 (`Story not found`).
+      - Migrated `routes/+page.ts` to Eden Treaty (`api`).
+      - Injected `headers: authStore.authHeaders()` at all raw fetch call sites: 5 asset uploads (`PersonaEditor.svelte`, `AestheticPanel.svelte`, `CustomCssPanel.svelte`, `GalleryManager.svelte`, `IdentityPanel.svelte`), `testStream.ts`, and 2 dev workbench sites (`dev/+page.svelte:301`, `:424`).
+      - Added a static boundary police test in `frontend/unit/boundaries.test.ts` using regex `/fetch\(\s*['"`]\/api/` ensuring that every file in `frontend/src` making a raw API fetch either references `authHeaders` or is in the public auth store allowlist.
+    - **Verification:** All 243 frontend unit tests passing, `boundaries.test.ts` passing 12/12, `bun run typecheck` 3/3 clean (0 errors, 0 warnings), `bun run db:check` clean.
 

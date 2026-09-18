@@ -13,6 +13,7 @@
     type SettingsView
   } from '@formatavern/shared';
   import { api, readSse, readTestStream } from '$lib/api';
+  import { authStore } from '$lib/auth/store.svelte';
   import ShellSurface from '$lib/components/custom/ShellSurface.svelte';
   import Icon from '$lib/components/ui/Icon.svelte';
 
@@ -300,7 +301,10 @@
       try {
         const res = await fetch(`/api/chats/${selectedChatId}/messages`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...authStore.authHeaders()
+          },
           body: JSON.stringify(payload)
         });
         if (res.ok) {
@@ -423,7 +427,10 @@
       const parsedState = JSON.parse(stateOverrideJson);
       const res = await fetch(`/api/chats/${selectedChatId}/state`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...authStore.authHeaders()
+        },
         body: JSON.stringify({ state: parsedState })
       });
       const data = await res.json();

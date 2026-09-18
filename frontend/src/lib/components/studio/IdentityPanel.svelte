@@ -3,6 +3,7 @@
   import { normalizeTag, SUGGESTED_TAGS, displayTag } from '@formatavern/shared';
   import { cropImageToBlob, loadImage } from '$lib/assets/crop';
   import { toasts } from '$lib/state/toasts.svelte';
+  import { authStore } from '$lib/auth/store.svelte';
   import Icon from '$lib/components/ui/Icon.svelte';
   import Spinner from '$lib/components/ui/Spinner.svelte';
 
@@ -64,6 +65,7 @@
 
       const res = await fetch('/api/assets/upload', {
         method: 'POST',
+        headers: authStore.authHeaders(),
         body: formData
       });
 

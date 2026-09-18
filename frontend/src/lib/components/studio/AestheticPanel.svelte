@@ -2,6 +2,7 @@
   import type { CharacterDraft } from '$lib/studio/draft.svelte';
   import { DEFAULT_CHARACTER_THEME } from '@formatavern/shared';
   import { toasts } from '$lib/state/toasts.svelte';
+  import { authStore } from '$lib/auth/store.svelte';
   import Icon from '$lib/components/ui/Icon.svelte';
   import Spinner from '$lib/components/ui/Spinner.svelte';
 
@@ -35,6 +36,7 @@
 
       const res = await fetch('/api/assets/upload', {
         method: 'POST',
+        headers: authStore.authHeaders(),
         body: formData
       });
 

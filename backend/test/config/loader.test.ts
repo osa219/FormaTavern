@@ -200,6 +200,28 @@ network:
     expect(warnRes.warnings.some((w) => w.includes('PIN will not be enforced'))).toBe(true);
   });
 
+  it('announces cross-layer authMode conflicts loudly while higher layer still wins (fail-closed)', () => {
+    // File says none, stale env PIN implies pin -> PIN enforced (N2) + loud warning
+    writeFileSync(tmpConfigPath, `security:\n  authMode: none\n`, 'utf-8');
+    const conflict = loadServerConfig({
+      configPath: tmpConfigPath,
+      argv: [],
+      env: { FORMATAVERN_PIN: 'stale-session-pin' }
+    });
+    expect(conflict.config.security.authMode).toBe('pin');
+    expect(
+      conflict.warnings.some((w) =>
+        w.includes('config.yaml sets security.authMode: "none" but environment variables selected "pin"'))
+    ).toBe(true);
+    expect(conflict.warnings.some((w) => w.includes('Server is PIN-protected'))).toBe(true);
+
+    // Agreement across layers stays silent (no conflict to announce)
+    writeFileSync(tmpConfigPath, `security:\n  authMode: none\n`, 'utf-8');
+    const agreed = loadServerConfig({ configPath: tmpConfigPath, argv: [], env: {} });
+    expect(agreed.config.security.authMode).toBe('none');
+    expect(agreed.warnings.some((w) => w.includes('higher precedence wins'))).toBe(false);
+  });
+
   it('honors FORMATAVERN_CONFIG_PATH and defaults to the repo-root config.yaml', () => {
     const yamlContent = `network:\n  port: 4123\n`;
     writeFileSync(tmpConfigPath, yamlContent, 'utf-8');

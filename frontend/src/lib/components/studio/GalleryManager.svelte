@@ -5,6 +5,7 @@
   import Icon from '$lib/components/ui/Icon.svelte';
   import Spinner from '$lib/components/ui/Spinner.svelte';
   import { copyToClipboard } from '$lib/utils/clipboard';
+  import { authStore } from '$lib/auth/store.svelte';
 
   let {
     draft,
@@ -32,6 +33,7 @@
 
       const res = await fetch('/api/assets/upload', {
         method: 'POST',
+        headers: authStore.authHeaders(),
         body: formData
       });
 

@@ -1,37 +1,46 @@
 import { error } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
 import type { CharacterCard, ChatView, MessageWithTree, Persona } from '@formatavern/shared';
+import { api } from '$lib/api';
 
-export const load: PageLoad = async ({ params, fetch }) => {
+export const load: PageLoad = async ({ params }) => {
   const { chatId } = params;
 
-  // Fetch chat and initial window of messages in parallel
+  // Fetch chat and initial window of messages in parallel via Eden Treaty
   const [chatRes, messagesRes] = await Promise.all([
-    fetch(`/api/chats/${chatId}`),
-    fetch(`/api/chats/${chatId}/messages?limit=60`)
+    api.api.chats({ id: chatId }).get(),
+    api.api.chats({ id: chatId }).messages.get({ query: { limit: 60 } })
   ]);
 
-  if (!chatRes.ok) {
+  if (chatRes.error || !chatRes.data) {
+    const status = chatRes.error ? (chatRes.error.status as number) : 404;
+    if (status === 401) {
+      throw error(401, 'Authentication required');
+    }
     throw error(404, `Story ${chatId} not found`);
   }
 
-  const chat = (await chatRes.json()) as ChatView;
-  const messages = (messagesRes.ok ? await messagesRes.json() : []) as MessageWithTree[];
+  const chat = chatRes.data as ChatView;
+  const messages = (messagesRes.data && Array.isArray(messagesRes.data) ? messagesRes.data : []) as MessageWithTree[];
 
   // Fetch character and persona in parallel
   const [charRes, personaRes] = await Promise.all([
-    fetch(`/api/characters/${chat.primaryCharacterId}`),
-    chat.activePersonaId ? fetch(`/api/personas/${chat.activePersonaId}`) : Promise.resolve(null)
+    api.api.characters({ id: chat.primaryCharacterId }).get(),
+    chat.activePersonaId ? api.api.personas({ id: chat.activePersonaId }).get() : Promise.resolve(null)
   ]);
 
-  if (!charRes.ok) {
+  if (charRes.error || !charRes.data) {
+    const status = charRes.error ? (charRes.error.status as number) : 404;
+    if (status === 401) {
+      throw error(401, 'Authentication required');
+    }
     throw error(404, `Character ${chat.primaryCharacterId} not found`);
   }
 
-  const character = (await charRes.json()) as CharacterCard;
+  const character = charRes.data as CharacterCard;
   let persona: Persona | null = null;
-  if (personaRes && personaRes.ok) {
-    persona = (await personaRes.json()) as Persona;
+  if (personaRes && personaRes.data) {
+    persona = personaRes.data as Persona;
   }
 
   return {

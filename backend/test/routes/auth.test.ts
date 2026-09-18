@@ -5,7 +5,7 @@ import { runMigrations } from '../../src/db/migrate';
 import { createRepositories } from '../../src/db/repositories';
 import { GenerationHubImpl } from '../../src/engine/hub';
 import { ProviderRegistryImpl } from '../../src/engine/providers';
-import { createHmacToken, verifyHmacToken, verifyPinTimingSafe } from '../../src/routes/auth';
+import { createHmacToken, verifyHmacToken, verifyPinTimingSafe, InboundAuditor } from '../../src/routes/auth';
 
 describe('Auth Gate & Route Protection (Invariants N5, N6, N7, N10)', () => {
   let repos: any;
@@ -239,5 +239,41 @@ describe('Auth Gate & Route Protection (Invariants N5, N6, N7, N10)', () => {
       const body = (await res.json()) as any;
       expect(body.error?.code).toBe('auth_required');
     }
+  });
+
+  it('ensures non-API requests (static assets, shell) bypass the auth gate without 401 (Invariant N6)', async () => {
+    const auditor = new InboundAuditor();
+    let auditBlockedCalled = false;
+    auditor.auditBlocked = () => {
+      auditBlockedCalled = true;
+    };
+
+    const app = createApp({
+      repos,
+      hub,
+      providers,
+      options: {
+        nodeEnv: 'test',
+        auth: {
+          enabled: true,
+          verifyPin: (cand) => verifyPinTimingSafe(cand, correctPin),
+          signToken: () => createHmacToken(authSecret),
+          verifyToken: (tok) => verifyHmacToken(authSecret, tok),
+          trustedProxies: ['127.0.0.1', '::1']
+        },
+        resolveIp: () => '192.168.1.50',
+        auditor
+      }
+    });
+
+    // Asset paths return non-401 (unmatched by API router) instead of 401 auth_required
+    const assetRes = await app.handle(new Request('http://localhost/assets/avatars/test.webp'));
+    expect(assetRes.status).not.toBe(401);
+    expect(auditBlockedCalled).toBe(false);
+
+    // Root / shell path returns non-401 through createApp
+    const rootRes = await app.handle(new Request('http://localhost/'));
+    expect(rootRes.status).not.toBe(401);
+    expect(auditBlockedCalled).toBe(false);
   });
 });

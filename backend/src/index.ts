@@ -378,7 +378,8 @@ if (!LOG_SILENT) {
     isDev: !PROD,
     isTty: process.stdout.isTTY ?? false,
     columns: process.stdout.columns ?? 80,
-    sourceSummary
+    sourceSummary,
+    pinSource: configResult.sourceMap['security.pin']
   });
   console.log(banner);
 }

@@ -56,6 +56,37 @@ describe('formatBanner (Invariants N8, N9)', () => {
     expect(banner).not.toContain('1337');
   });
 
+  it('names the PIN source so env-over-file surprises are self-diagnosing', () => {
+    const fromEnv = formatBanner({
+      config: lanConfig({}, 'pin'),
+      candidates: [wifi],
+      primaryCandidate: wifi,
+      tailscaleCandidate: null,
+      isDev: false,
+      pinSource: 'env'
+    });
+    expect(fromEnv).toContain('(pin from environment)');
+
+    const fromFile = formatBanner({
+      config: lanConfig({}, 'pin'),
+      candidates: [wifi],
+      primaryCandidate: wifi,
+      tailscaleCandidate: null,
+      isDev: false,
+      pinSource: 'file'
+    });
+    expect(fromFile).toContain('(pin from config.yaml)');
+
+    const unknown = formatBanner({
+      config: lanConfig({}, 'pin'),
+      candidates: [wifi],
+      primaryCandidate: wifi,
+      tailscaleCandidate: null,
+      isDev: false
+    });
+    expect(unknown).not.toContain('pin from');
+  });
+
   it('dev QR targets Vite :5173, prod QR targets the backend port', () => {
     const dev = formatBanner({
       config: lanConfig(),

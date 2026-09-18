@@ -113,6 +113,12 @@ export function createApp({ repos, hub, providers, assets, options }: AppDeps) {
       const url = new URL(request.url);
       const path = url.pathname;
 
+      // Only /api routes are subject to the API authentication gate (Invariant N6).
+      // Static shell, /assets/*, manifest, and public assets remain accessible.
+      if (!path.startsWith('/api')) {
+        return;
+      }
+
       // Effective client IP resolution respecting trustedProxies (Invariant N5)
       const remote = options?.resolveIp ? options.resolveIp(request) : null;
       const xff = request.headers.get('x-forwarded-for');
