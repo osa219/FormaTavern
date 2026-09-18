@@ -54,6 +54,7 @@ Detailed invariants & test mappings are indexed in [`docs/development.md §6.3`]
 - **Phase 4 (UI):** **U1** Pure theme cascade order (`NEUTRAL → character → bindings → persona → a11y`); **U2** Zero runtime CSS injection (`--theme-*` custom properties only, static Tailwind utilities; Amendment A-U2 permits safe inline styles on author showcase markdown via `rebuildStyle`); **U3** Persisted rows never parsed client-side (`parseEnvelope` only in `stream.svelte.ts`; Amendment A-U3 permits `parseGreeting` in studio live preview); **U4** Frame budget (rAF buffer, ≤ 1 commit/frame); **U5** Scroll auto-follow only while stuck (≤ 48 px); **U6** Reserved layout stability (no `transition-all`, CLS ≤ 0.02); **U7** Terminal event replaces turn wholesale; **U8** High-contrast neutral chrome, 0 ms motion on preference, zero axe violations; **U9** Route-scoped `ChatSession` under `{#key chatId}`; **U10** Monorepo purity boundaries maintained (`svelte-check` clean).
 - **Phase 5 (Companion Platform):** **P1** Keyset pagination on `(sort_value, id)` with opaque base64 cursor; **P2** Optimistic Concurrency Control via `expectedUpdatedAt` (409 stale write); **P3** Zero remote asset fetches (`/assets/*` or `data:image/*` only, allowlist validated); **P4** Safe Author Showcase markdown (`renderShowcaseMarkdown` with DOMPurify & style allowlist, Amendment A-U2); **P5** Live studio greeting preview via `parseGreeting` (Amendment A-U3); **P6** FTS5 feature detection with graceful LIKE fallback (`search_backend` in `settings`); **P7** Atomic persona default switching (at most 1 default).
 - **Customization Series (C):** **C1** Manifest sole source of `ft-*` strings; **C2** Single style outlet (`CustomStyleOutlet.svelte`, A-U2b); **C3** Sanitizer is pure & deterministic fixed-point; **C4** Scope containment under `[data-ft-surface]`; **C5** Keyframes namespaced `ftkf-<scope>-<n>-<name>`; **C6** URL policy (`/assets/`, `data:image/`, fonts); **C7** Per-scope profiles are data (`policy.ts`); **C8** Viewer supremacy (`hideCustomStyling`); **C9** Reduced motion guard appended by outlet; **C10** 128 KiB sheet cap; **C11** Import/export symmetry; **C12** SPA style lifecycle cleanup; **C13** Performance budget (≤1 sheet/page, dynamic `css-tree`); **C14** Surface completeness & dialog containment (all routes rooted in a surface; dialogs/sheets never placed outside surface boundaries; accent buttons use `text-accent-contrast`).
+- **Network & Configuration Series (N):** **N1** Two spheres, one write path (`config.yaml` is read-only; SQLite is the only write path; no `writeFile` in `config/`); **N2** Precedence cascade (CLI > Env > File > Defaults); **N3** Non-destructive memory defaulting (`Value.Default` with pre-clean key diff warning); **N4** Vite-only LAN exposure in dev (Vite binds `0.0.0.0:5173` with `xfwd: true`; backend stays loopback `127.0.0.1:3000`); **N5** Effective client IP resolution respecting `trustedProxies`; **N6** Exact public vs. gated boundary (`onRequest` pre-parse auth gate protects `/api/*` wholesale; shell, `/api/auth/*`, and redacted `/api/health` public); **N7** Stateless Access PIN tokens (32-byte boot-ephemeral HMAC-SHA256 secret, 30d expiry, constant-time compare, 5 fails/min sliding rate limit); **N8** QR code encodes URL only (never PIN/token, mode-dependent port); **N9** Localhost default (`mode: localhost`); **N10** Monorepo purity (`app.ts` Bun/socket-free; `shared` isomorphic).
 
 ---
 
@@ -72,6 +73,12 @@ Detailed invariants & test mappings are indexed in [`docs/development.md §6.3`]
 - ❌ **Unbounded `OFFSET` pagination** — breaks P1. Must use keyset pagination `(sort_value, id)`.
 - ❌ **Blind overwrites on character updates** — breaks P2. Must supply `expectedUpdatedAt`.
 - ❌ **Allowing remote `http(s)://` assets** — breaks P3. Reject non-local image URLs.
+- ❌ **Writing or modifying `config.yaml` at runtime** — breaks N1. SQLite is the sole write path.
+- ❌ **Exposing backend on `0.0.0.0` during development** — breaks N4. Only Vite binds `0.0.0.0` with `xfwd: true`.
+- ❌ **Accepting `X-Forwarded-For` from untrusted socket addresses** — breaks N5. Check `trustedProxies`.
+- ❌ **Parsing body or validating multipart payloads before checking auth** — breaks N6. Use pre-parse `onRequest`.
+- ❌ **Encoding PIN, tokens, or credentials in terminal QR codes or URLs** — breaks N8.
+- ❌ **Auto-downloading remote tunnel binaries or executable scripts** — supply-chain security hazard.
 
 ### Shared Domain & Parser
 - ❌ **Instance or module state in the parser** — breaks E1.
@@ -92,6 +99,8 @@ Detailed invariants & test mappings are indexed in [`docs/development.md §6.3`]
 - ❌ **Constructing `ChatSession` in `$derived`** or `setContext` after `await`.
 - ❌ **Suppressing Svelte `a11y-*` warnings** instead of fixing semantic markup.
 - ❌ **Rendering dialogs outside surface boundaries or hardcoding dark text on `bg-accent`** — breaks C14.
+- ❌ **Calling `navigator.clipboard.writeText` without non-secure HTTP fallback** — breaks mobile LAN clipboard support.
+- ❌ **Placing interactive modals or toolbars without safe-area inset protection** — breaks mobile viewport usability.
 
 ---
 

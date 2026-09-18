@@ -68,7 +68,19 @@ FormaTavern/
 bun install
 ```
 
-### 2. Initialize Database & Seeds
+### 2. Configure Settings (Optional)
+
+FormaTavern runs out-of-the-box on `localhost` with secure defaults without requiring any configuration file. To customize the network mode, bind ports, or set an Access PIN for mobile devices, create your own `config.yaml` from the provided template:
+
+```bash
+cp config.example.yaml config.yaml
+# On Windows PowerShell:
+# copy config.example.yaml config.yaml
+```
+
+Edit `config.yaml` to configure your preferred host mode, PIN, or paths. Note that `config.yaml` is git-ignored to protect your secrets and is strictly read-only to the runtime (it will never be overwritten or stripped of comments).
+
+### 3. Initialize Database & Seeds
 
 Run database migrations and populate the initial seed companions (**Eldrin the Mage** and **Alice**):
 
@@ -82,8 +94,9 @@ To audit database constraints and foreign-key integrity at any time:
 bun run db:check
 ```
 
-### 3. Start Development Server
+### 4. Start Development Server
 
+#### Localhost Mode (Default)
 Run both the Elysia backend (`http://127.0.0.1:3000`) and the Vite frontend dev server (`http://127.0.0.1:5173`) concurrently:
 
 ```bash
@@ -92,6 +105,17 @@ bun run dev
 
 Open your browser to:
 👉 **`http://127.0.0.1:5173`**
+
+#### Local Network (LAN) & Mobile Access
+To broadcast on your local Wi-Fi, display a terminal QR code, and access the app from your mobile phone:
+
+```bash
+# With an optional Access PIN:
+$env:FORMATAVERN_PIN="4321"    # Windows PowerShell (or set pin in config.yaml)
+bun run dev:lan
+```
+
+Scan the terminal QR code with your phone camera to open the web app. You can also install it as a standalone PWA via **"Add to Home Screen"**.
 
 *(Requests to `/api/*` and `/assets/*` are automatically reverse-proxied to port 3000 by Vite.)*
 

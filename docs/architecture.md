@@ -21,20 +21,30 @@
 
 ### 2.1 Development
 ```
+[Localhost Dev]
 Browser ──► Vite dev server  http://localhost:5173
-              ├── /api/*, /assets/* ──proxy──► Elysia http://127.0.0.1:3000 (IPv4 literal; SSE unbuffered)
+              ├── /api/*, /assets/* ──proxy (xfwd)──► Elysia http://127.0.0.1:3000 (IPv4 literal; SSE unbuffered)
               └── SvelteKit routes + HMR
+
+[LAN Dev — Invariant N4]
+Mobile/LAN ──► Vite dev server  http://<lan-ip>:5173 (binds 0.0.0.0:5173)
+                ├── /api/*, /assets/* ──proxy (xfwd)──► Elysia http://127.0.0.1:3000 (remains loopback)
+                └── SvelteKit routes + HMR + dynamic backend target
 ```
+In dev LAN mode (`bun run dev:lan`), Vite is the single LAN listener (`0.0.0.0:5173`) while the backend remains securely pinned to loopback (`127.0.0.1:3000`). Vite forwards client IPs via `xfwd: true`, enabling the backend auth gate to evaluate real client addresses against loopback immunity and proxy trust.
+
 ### 2.2 Production (single Bun process)
 ```
-Browser ──► Elysia :3000
-              ├── /api/*          JSON / SSE routes           (unknown → 404 JSON, never index.html)
-              ├── /assets/*       data/assets (traversal-guarded, max-age=3600; missing → 404 JSON)
-              ├── /<built file>   frontend/build (immutable hashed assets)
-              └── /<anything>     frontend/build/index.html (SPA fallback, 200)
+Browser / Mobile ──► Elysia :3000 (binds 127.0.0.1 by default, or 0.0.0.0 when mode: lan/all)
+                      ├── /api/auth/*     Public PIN authentication endpoints
+                      ├── /api/health     Public liveness probe (redacted to { ok: true } when unauthed)
+                      ├── /api/*          JSON / SSE routes (pre-parse PIN auth gated, N6)
+                      ├── /assets/*       data/assets (traversal-guarded, max-age=3600; missing → 404 JSON)
+                      ├── /<built file>   frontend/build (immutable hashed assets)
+                      └── /<anything>     frontend/build/index.html (SPA fallback, 200, PWA manifest)
 Outbound: Elysia → OpenRouter (HTTPS). The browser never talks to an LLM API directly (ADR-004).
 ```
-TLS and auth are delegated to the perimeter (Tailscale / Cloudflare Access, ADR-004/006). The server binds `127.0.0.1` by default; binding `0.0.0.0` prints a security warning.
+Access control is enforced via the pre-parse PIN auth gate (`security.pin`) or delegated perimeter auth (Tailscale / Cloudflare Tunnel). By default, `network.mode: localhost` binds `127.0.0.1:3000`. Selecting `lan` or `all` binds `0.0.0.0:3000` with banner output displaying LAN URLs and a terminal QR code (N8).
 
 ### 2.3 Workspace dependency graph
 ```
@@ -339,9 +349,47 @@ Message rendering in `/chat/[chatId]` decouples structure from role styling:
 ---
 
 ## 12. Security posture (summary)
-Bound to localhost by default; no in-app auth in v1 (perimeter via Tailscale/Cloudflare Access); API keys stored plaintext in `settings` (OS file permissions), never returned by the API or logged (S8); character `CssToken`/`AssetPath` schemas prevent style/URL breakout from imported cards; markdown output sanitized; SPA only fetches relative paths.
+Bound to localhost by default (`network.mode: localhost`, Invariant N9). When bound to LAN/public interfaces, an optional Access PIN gate protects all `/api/*` routes and SSE streams via pre-parse authentication (Invariant N6). Key security invariants:
+- **PIN & HMAC Tokens (N7):** PIN verified in constant time (`timingSafeEqual`). Successful verification issues a stateless 30-day HMAC-SHA256 bearer token signed with an ephemeral 32-byte secret generated fresh on every server boot. Fails are rate-limited by IP to 5 attempts per minute.
+- **Client IP & Trusted Proxies (N5):** `X-Forwarded-For` is only accepted from explicitly configured `trustedProxies` (or Vite dev proxy). Direct untrusted connections use the raw socket IP, neutralizing header spoofing. Loopback IPs enjoy automatic authentication exemption.
+- **Pre-parse Protection (N6):** Gating executes at `app.onRequest`, completely shielding the server from unauthenticated payload parsing, multipart file uploads, or SSE connection holding. `/health` is redacted to `{ ok: true }` for unauthenticated clients.
+- **Secrets & Storage (S8, N1):** API keys stored plaintext in `settings` (OS file permissions), never returned by the API or logged. Runtime server configuration (`config.yaml`) is strictly read-only; user data mutations occur exclusively through SQLite repository write paths.
+- **Content & Styles (P3, C4, C6):** Character schemas enforce `AssetPath` (`/assets/` and `data:image/` only) and `CssToken` sanitization to prevent remote tracking or style breakouts. Markdown output is sanitized via DOMPurify.
 
 ---
 
 ## 13. Known limitations
 No virtual scroller (window capped at 240 turns with `content-visibility`); state edits do not replay downstream turns; example dialogue is not dialect-converted; headers inside generic code fences are still recognized; a persona literally named `{{char}}` is unsupported; same-chat live sync across tabs is out of scope (each tab reattaches to the authoritative row).
+
+---
+
+## 14. Configuration & Network Subsystem (Invariants N1–N10)
+
+### 14.1 Two Spheres, One Write Path (Invariant N1)
+FormaTavern separates infrastructure parameters from user data:
+- **`config.yaml` (Infrastructure):** Server bind host, port, network mode, access PIN, trusted proxies, and base paths. Read-only at runtime; no backend code writes to `config.yaml`.
+- **SQLite `formatavern.db` (User Data):** Characters, chats, messages, personas, settings, and UI preferences. The only write path in the application.
+
+### 14.2 Precedence Cascade & Defaulting (Invariants N2 & N3)
+Startup configuration resolves through a strict four-layer cascade:
+```
+CLI arguments (--host, --port, --mode, --pin, --config)
+  ▼
+Environment variables (FORMATAVERN_HOST, FORMATAVERN_PORT, FORMATAVERN_NETWORK_MODE, FORMATAVERN_PIN, FORMATAVERN_CONFIG_PATH)
+  ▼
+Configuration file (config.yaml)
+  ▼
+Hardcoded defaults (ServerConfigSchema via TypeBox Value.Default)
+```
+Memory defaulting uses TypeBox's non-destructive `validate()`, preserving the user's on-disk `config.yaml` with all comments intact. Unknown keys trigger a descriptive startup warning without failing boot.
+
+### 14.3 Network Topologies & Invariant N4
+- **Localhost (`mode: localhost`):** Binds `127.0.0.1:3000`. Safe for single-user desktop operation.
+- **LAN (`mode: lan`):** Detects non-internal IPv4 interfaces (filtering virtual bridges, keeping RFC1918 `172.16/12`). In production, Elysia binds `0.0.0.0:3000`. In development (`bun run dev:lan`), Vite binds `0.0.0.0:5173` while Elysia remains on `127.0.0.1:3000` (N4).
+- **Tailscale & Tunnels:** Detects CGNAT `100.64/10` Tailscale addresses. Zero auto-downloading of binaries: `scripts/tunnel.ts` checks system PATH for `cloudflared` before starting.
+
+### 14.4 Mobile & PWA Experience
+- **PWA Standalone:** `manifest.webmanifest` and high-contrast SVG icon configure full-screen mobile app feel without browser chrome (`apple-mobile-web-app-capable: yes`).
+- **Safe Area Insets:** Chat composer, navigation drawers, and bottom toolbars respect `env(safe-area-inset-bottom)` and `env(safe-area-inset-top)`.
+- **Non-Secure Context Clipboard:** `copyToClipboard()` utility gracefully degrades from `navigator.clipboard.writeText` to hidden `textarea` + `document.execCommand('copy')` on plain HTTP LAN connections.
+- **Terminal QR Code (Invariant N8):** Formatted using half-block UTF-8 ANSI characters (`▀`, `▄`, `█`) encoding only the target URL (never the PIN), with mode-dependent port selection (:5173 in dev, :3000 in prod).

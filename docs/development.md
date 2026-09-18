@@ -21,7 +21,10 @@ Open the URL Vite prints (e.g. `http://localhost:5173`). First boot creates `for
 | Var | Default | Purpose |
 |---|---|---|
 | `FORMATAVERN_HOST` | `127.0.0.1` | Bind address. `0.0.0.0` exposes the app on the LAN and prints the ADR-006 warning. |
-| `FORMATAVERN_PORT` | `3000` | Backend port (Vite proxy targets `127.0.0.1:3000`). |
+| `FORMATAVERN_PORT` | `3000` | Backend port (Vite proxy targets `127.0.0.1:3000` by default or dynamic port). |
+| `FORMATAVERN_NETWORK_MODE` | `localhost` | Network mode: `localhost`, `lan`, or `all`. Controls bind address and URL banners. |
+| `FORMATAVERN_PIN` | — | Access PIN gating `/api/*` routes and SSE connections from non-loopback clients. |
+| `FORMATAVERN_CONFIG_PATH` | `<repo>/config.yaml` | Path to YAML configuration file. |
 | `FORMATAVERN_DB_PATH` | `<repo>/formatavern.db` | SQLite file. |
 | `FORMATAVERN_ASSETS_DIR` | `<repo>/data/assets` | Served at `/assets`. |
 | `OPENROUTER_API_KEY` | — | Fallback key when none is stored in settings; used by the live smoke script. |
@@ -32,7 +35,9 @@ Open the URL Vite prints (e.g. `http://localhost:5173`). First boot creates `for
 ## 4. Scripts (root `package.json`)
 | Script | Does |
 |---|---|
-| `dev` / `dev:backend` / `dev:frontend` | Development servers. |
+| `dev` / `dev:backend` / `dev:frontend` | Development servers (default loopback). |
+| `dev:lan` | LAN development server: sets `FORMATAVERN_NETWORK_MODE=lan`, binds Vite to `0.0.0.0:5173`, keeps backend on loopback (N4). |
+| `tunnel` | Cloudflare Tunnel launcher probing system PATH for `cloudflared`. |
 | `typecheck` | `tsc --noEmit` in `packages/shared` and `backend`; `svelte-kit sync && svelte-check` in `frontend`. |
 | `test` | `bun test` in `packages/shared`, `backend`, and `frontend` (unit harness). |
 | `build` | SvelteKit static build → `frontend/build/`. |
@@ -122,6 +127,16 @@ The per-phase blueprints list **required tests by name**; a PR that removes or w
 | L6 (Single owner: card only) | `packages/shared/test/schemas.test.ts` |
 | L7 (Measure stability) | `frontend/unit/layoutContract.test.ts`, `app.css` (`--msg-measure: 72ch`) |
 | L8 (Non-owner inline voice tags) | `frontend/unit/layoutContract.test.ts`, `TurnRow.svelte` |
+| N1 (Two spheres, one write path) | `backend/test/config/loader.test.ts` |
+| N2 (Precedence cascade) | `backend/test/config/loader.test.ts` |
+| N3 (Non-destructive defaulting) | `backend/test/config/loader.test.ts`, `backend/test/config/exampleParity.test.ts` |
+| N4 (Vite-only LAN exposure in dev) | `backend/test/config/resolveBind.test.ts`, `frontend/vite.config.ts` |
+| N5 (Effective client IP & proxy trust) | `backend/test/routes/ip.test.ts` |
+| N6 (Exact auth gate boundary) | `backend/test/routes/auth.test.ts` |
+| N7 (Stateless PIN tokens & rate limiting) | `backend/test/routes/auth.test.ts`, `frontend/unit/authStore.test.ts` |
+| N8 (QR code encodes URL only) | `backend/test/config/qr.test.ts` |
+| N9 (Localhost default) | `backend/test/config/network.test.ts` |
+| N10 (Monorepo purity) | `bun run typecheck` (`tsc` + `svelte-check`) |
 
 ### 6.4 Writing tests
 - Prefer table-driven cases over prose-heavy ones; assert on codes/paths (`/style/colors/accent`, `state_unclosed`), not message text.
@@ -174,4 +189,5 @@ Typecheck clean → tests green (with new tests for new behaviour) → `db:check
 - **Add a theme token** — `shared/schemas/theme.ts` (as `CssToken`) → `THEME_PATHS` in `theme/cascade.ts` → `CSS_VAR_NAMES` + fallback in `frontend/lib/theme/cssVars.ts` → `@property` registration + `:root` neutral + `@theme inline` bridge in `app.css` → consume via static utility. Update `cssVars.test.ts` (exact list) and `cascade.test.ts`.
 - **Add a parse warning / lenience** — grammar in `shared/envelope/grammar.ts`; add a case to the lenience table in `parser.test.ts`; if it changes output for existing fixtures, bump `PARSER_VERSION` and re-run `properties.test.ts`; consider a new fixture in `fixtures/envelope.ts` (chunks must satisfy the authoring rules and `chunks.join('') === text`).
 - **Add a mock script** — `fixtures/envelope.ts` with `expect` block and adversarial chunks; it automatically appears in `listModels()`, the `/dev` workbench select, and the contract/property suites.
+- **Add a shared or dynamic frontend dependency** — When adding an external library to `@formatavern/shared` (which frontend imports as source) or introducing a dynamic `await import(...)` in `frontend/src/`, add the package name to `optimizeDeps.include` in `frontend/vite.config.ts`. This ensures Vite pre-bundles it during server boot instead of triggering mid-session browser reloads upon late discovery. After upgrading dependencies, re-run the dev server with `--force` if the pre-bundle goes stale.
 
