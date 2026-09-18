@@ -24,6 +24,9 @@ export type ApiErrorCode =
   | 'persona_is_default'
   | 'persona_in_use'
   | 'forbidden'
+  | 'auth_required'
+  | 'invalid_pin'
+  | 'too_many_requests'
   | 'internal';
 
 export const ApiErrorCodeSchema = Type.Union([
@@ -50,6 +53,9 @@ export const ApiErrorCodeSchema = Type.Union([
   Type.Literal('persona_is_default'),
   Type.Literal('persona_in_use'),
   Type.Literal('forbidden'),
+  Type.Literal('auth_required'),
+  Type.Literal('invalid_pin'),
+  Type.Literal('too_many_requests'),
   Type.Literal('internal')
 ]);
 
@@ -61,3 +67,18 @@ export const ApiErrorSchema = Type.Object({
   })
 });
 export type ApiErrorResponse = Static<typeof ApiErrorSchema>;
+
+export const AuthVerifyRequestSchema = Type.Object({
+  pin: Type.String({ minLength: 1, maxLength: 64 })
+});
+export type AuthVerifyRequest = Static<typeof AuthVerifyRequestSchema>;
+
+export const AuthStatusResponseSchema = Type.Object({
+  authRequired: Type.Union([Type.Literal('pin'), Type.Literal('none')])
+});
+export type AuthStatusResponse = Static<typeof AuthStatusResponseSchema>;
+
+export const AuthVerifyResponseSchema = Type.Object({
+  token: Type.String({ minLength: 16 })
+});
+export type AuthVerifyResponse = Static<typeof AuthVerifyResponseSchema>;

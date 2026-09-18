@@ -1,7 +1,8 @@
 import { Value } from '@sinclair/typebox/value';
-import type { Static, TSchema } from '@sinclair/typebox';
+import { Type, type Static, type TSchema } from '@sinclair/typebox';
 
-export { Value };
+export { Value, Type };
+export type { Static, TSchema };
 
 export interface ValidationIssue {
   path: string;

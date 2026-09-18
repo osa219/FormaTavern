@@ -1,4 +1,4 @@
-export const SHARED_VERSION = '0.7.0-chat-layout';
+export const SHARED_VERSION = '0.7.1-network-auth';
 
 export interface HealthResponse {
   ok: true;
