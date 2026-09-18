@@ -4,6 +4,7 @@
   import { ScrollController } from '$lib/scroll/controller.svelte';
   import MessageTurn from './MessageTurn.svelte';
   import TurnToolbar from './TurnToolbar.svelte';
+  import TurnEditor from './TurnEditor.svelte';
   import JumpToLatest from './JumpToLatest.svelte';
   import type { MessageWithTree, Segment } from '@formatavern/shared';
   import { HOOKS, resolveLayout } from '@formatavern/shared';
@@ -83,13 +84,19 @@
   let segEditing = $state<{ messageId: string; index: number } | null>(null);
   let segSaving = $state(false);
 
+  // Single active inline turn edit
+  let turnEditing = $state<{ messageId: string; saving: boolean } | null>(null);
+
   // A new generation takes over the log — drop any open editor.
   $effect(() => {
-    if (session.busy) segEditing = null;
+    if (session.busy) {
+      segEditing = null;
+      turnEditing = null;
+    }
   });
 
   function canInlineEdit(msg: MessageWithTree): boolean {
-    if (session.busy || segSaving) return false;
+    if (session.busy || segSaving || turnEditing?.saving) return false;
     if (msg.status === 'streaming' || msg.status === 'error') return false;
     if (msg.id.startsWith('tmp-')) return false;
     return true;
@@ -97,6 +104,7 @@
 
   function startSegEdit(msg: MessageWithTree, index: number) {
     if (!canInlineEdit(msg)) return;
+    turnEditing = null; // Close any turn editor
     segEditing = { messageId: msg.id, index };
   }
 
@@ -113,6 +121,28 @@
       segEditing = null;
     } finally {
       segSaving = false;
+    }
+  }
+
+  function startTurnEdit(msg: MessageWithTree) {
+    if (!canInlineEdit(msg)) return;
+    segEditing = null; // Close any segment editor
+    scrollController.stuck = false;
+    turnEditing = { messageId: msg.id, saving: false };
+  }
+
+  function cancelTurnEdit() {
+    if (!turnEditing?.saving) turnEditing = null;
+  }
+
+  async function saveTurnEdit(msg: MessageWithTree, newContent: string) {
+    if (!turnEditing) return;
+    turnEditing.saving = true;
+    try {
+      await session.edit(msg.id, newContent);
+      turnEditing = null;
+    } finally {
+      if (turnEditing) turnEditing.saving = false;
     }
   }
 
@@ -150,45 +180,59 @@
 
     <!-- Persisted Active Branch Turns -->
     {#each session.messages as msg, i (msg.id)}
-      <MessageTurn
-        segments={displaySegments(msg)}
-        status={msg.status}
-        narrativeRole={msg.narrativeRole}
-        {primaryName}
-        {npcs}
-        {fx}
-        layout={resolvedLayout}
-        {characterAvatar}
-        {personaAvatar}
-        isLast={i === lastIndex && !session.live}
-        reasoning={msg.metadata?.reasoning}
-        reasoningDurationMs={msg.metadata?.reasoningDurationMs}
-        onRetry={() => session.regenerate(msg.id)}
-        editable={canInlineEdit(msg)}
-        editingIndex={segEditing?.messageId === msg.id ? segEditing.index : null}
-        editSaving={segEditing?.messageId === msg.id && segSaving}
-        onStartEdit={(index) => startSegEdit(msg, index)}
-        onSaveEdit={(index, text) => saveSegEdit(msg, index, text)}
-        onCancelEdit={cancelSegEdit}
-      >
-        {#snippet toolbar()}
-          <TurnToolbar
-            messageId={msg.id}
-            role={msg.role}
-            isLeaf={msg.id === activeLeafId}
-            siblingIndex={msg.siblingIndex}
-            siblingCount={msg.siblingCount}
-            content={msg.content}
-            busy={session.busy}
-            onRegenerate={() => session.regenerate(msg.id)}
-            onContinue={() => session.continueTurn(msg.id)}
-            onEdit={() => onEditTurn?.(msg)}
-            onDelete={() => onDeleteTurn?.(msg)}
-            onSelectSibling={(id) => session.select(id)}
-          />
-        {/snippet}
-      </MessageTurn>
+      {#if turnEditing?.messageId === msg.id}
+        <TurnEditor
+          message={msg}
+          saving={turnEditing.saving}
+          onSave={(newContent) => saveTurnEdit(msg, newContent)}
+          onCancel={cancelTurnEdit}
+        />
+      {:else}
+        <MessageTurn
+          segments={displaySegments(msg)}
+          status={msg.status}
+          narrativeRole={msg.narrativeRole}
+          {primaryName}
+          {npcs}
+          {fx}
+          layout={resolvedLayout}
+          {characterAvatar}
+          {personaAvatar}
+          isLast={i === lastIndex && !session.live}
+          reasoning={msg.metadata?.reasoning}
+          reasoningDurationMs={msg.metadata?.reasoningDurationMs}
+          onRetry={() => session.regenerate(msg.id)}
+          editable={canInlineEdit(msg)}
+          editingIndex={segEditing?.messageId === msg.id ? segEditing.index : null}
+          editSaving={segEditing?.messageId === msg.id && segSaving}
+          onStartEdit={(index) => startSegEdit(msg, index)}
+          onSaveEdit={(index, text) => saveSegEdit(msg, index, text)}
+          onCancelEdit={cancelSegEdit}
+        >
+          {#snippet toolbar()}
+            <TurnToolbar
+              messageId={msg.id}
+              role={msg.role}
+              isLeaf={msg.id === activeLeafId}
+              siblingIndex={msg.siblingIndex}
+              siblingCount={msg.siblingCount}
+              content={msg.content}
+              busy={session.busy}
+              onRegenerate={() => session.regenerate(msg.id)}
+              onContinue={() => session.continueTurn(msg.id)}
+              onEdit={() => startTurnEdit(msg)}
+              onDelete={() => onDeleteTurn?.(msg)}
+              onSelectSibling={(id) => session.select(id)}
+            />
+          {/snippet}
+        </MessageTurn>
+      {/if}
     {/each}
+
+    {#if turnEditing}
+      <!-- Bottom clearance spacer to guarantee the edited turn can scroll to the top of the log -->
+      <div class="h-[75vh] pointer-events-none" aria-hidden="true"></div>
+    {/if}
 
     <!-- Live Streaming Turn -->
     {#if session.live}

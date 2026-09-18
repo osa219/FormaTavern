@@ -382,6 +382,10 @@ export function createMessagesRouter(deps: {
             finalState = resolved.state;
           }
 
+          if (parseRes.reasoning !== undefined) {
+            updatedMetadata.reasoning = parseRes.reasoning ?? undefined;
+          }
+
           repos.messages.updateContent(target.id, {
             content: patch.content,
             segments: parseRes.segments,

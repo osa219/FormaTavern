@@ -52,6 +52,7 @@ export const HOOKS = {
     turnName: 'ft-turn-name',
     turnBody: 'ft-turn-body',
     segmentEdit: 'ft-segment-edit',
-    segmentEditor: 'ft-segment-editor'
+    segmentEditor: 'ft-segment-editor',
+    turnEditor: 'ft-turn-editor'
   }
 } as const satisfies Record<string, Record<string, `ft-${string}`>>;

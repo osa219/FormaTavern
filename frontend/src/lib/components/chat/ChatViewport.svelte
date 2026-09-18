@@ -20,7 +20,6 @@
   import NavDrawer from '../nav/NavDrawer.svelte';
   import LoreDrawer from './LoreDrawer.svelte';
   import SettingsSheet from '../settings/SettingsSheet.svelte';
-  import EditTurnDialog from '../dialogs/EditTurnDialog.svelte';
   import ConfirmDialog from '../dialogs/ConfirmDialog.svelte';
   import CustomStyleOutlet from '../custom/CustomStyleOutlet.svelte';
   import { selectPartitionSurface } from '@formatavern/shared';
@@ -46,7 +45,6 @@
   let promptDraft = $state<PromptDraft | null>(null);
   let settingsOpen = $state(false);
   let directorOpen = $state(false);
-  let editingTurn = $state<MessageWithTree | null>(null);
   let deletingTurn = $state<MessageWithTree | null>(null);
 
   let navChats = $state<ChatView[]>([]);
@@ -142,13 +140,6 @@
     const id = deletingTurn.id;
     deletingTurn = null;
     await session.remove(id);
-  }
-
-  async function handleSaveEditedTurn(newContent: string) {
-    if (!editingTurn) return;
-    const id = editingTurn.id;
-    editingTurn = null;
-    await session.edit(id, newContent);
   }
 
   async function handleConvertChat(
@@ -263,10 +254,6 @@
   });
 
   function closeActiveOverlay(): boolean {
-    if (editingTurn) {
-      editingTurn = null;
-      return true;
-    }
     if (deletingTurn) {
       deletingTurn = null;
       return true;
@@ -412,9 +399,6 @@
   <main class="relative flex min-h-0 w-full flex-col overflow-hidden">
     <MessageLog
       {session}
-      onEditTurn={(turn) => {
-        editingTurn = turn;
-      }}
       onDeleteTurn={(turn) => {
         deletingTurn = turn;
       }}
@@ -500,19 +484,6 @@
       settingsOpen = false;
     }}
   />
-
-  <!-- Edit Turn Dialog -->
-  {#if editingTurn}
-    <EditTurnDialog
-      open={true}
-      content={editingTurn.content}
-      narrativeRole={editingTurn.narrativeRole}
-      onSave={handleSaveEditedTurn}
-      onClose={() => {
-        editingTurn = null;
-      }}
-    />
-  {/if}
 
   <!-- Confirm Delete Turn Dialog -->
   {#if deletingTurn}

@@ -10,7 +10,7 @@ import NavDrawer from '../src/lib/components/nav/NavDrawer.svelte';
 import NavCharacterCard from '../src/lib/components/nav/CharacterCard.svelte';
 import DiscoveryCharacterCard from '../src/lib/components/discovery/CharacterCard.svelte';
 import ConfirmDialog from '../src/lib/components/dialogs/ConfirmDialog.svelte';
-import EditTurnDialog from '../src/lib/components/dialogs/EditTurnDialog.svelte';
+import TurnEditor from '../src/lib/components/chat/TurnEditor.svelte';
 import PersonaPicker from '../src/lib/components/showcase/PersonaPicker.svelte';
 import ShowcaseHero from '../src/lib/components/showcase/ShowcaseHero.svelte';
 import ShowcaseBody from '../src/lib/components/showcase/ShowcaseBody.svelte';
@@ -71,7 +71,7 @@ describe('Hook Contract & Manifest Invariants (Invariant C1)', () => {
 
     const uniqueHooks = new Set(allHooks);
     expect(uniqueHooks.size).toBe(allHooks.length);
-    expect(allHooks.length).toBe(43);
+    expect(allHooks.length).toBe(44);
   });
 
   it('prohibits hardcoded ft- class literal strings in frontend/src outside manifest', () => {
@@ -127,11 +127,6 @@ describe('Hook Contract & Manifest Invariants (Invariant C1)', () => {
 
     it('renders ConfirmDialog with ft-dialog', () => {
       const { html } = render(ConfirmDialog, { props: { open: true, onConfirm: () => {}, onCancel: () => {} } });
-      expect(html).toContain(HOOKS.chrome.dialog);
-    });
-
-    it('renders EditTurnDialog with ft-dialog', () => {
-      const { html } = render(EditTurnDialog, { props: { open: true, content: 'test', onSave: () => {}, onClose: () => {} } });
       expect(html).toContain(HOOKS.chrome.dialog);
     });
 
@@ -252,6 +247,12 @@ describe('Hook Contract & Manifest Invariants (Invariant C1)', () => {
     it('renders SegmentEditor with ft-segment-editor', () => {
       const { html } = render(SegmentEditor, { props: { initial: 'text' } });
       expect(html).toContain(HOOKS.chat.segmentEditor);
+    });
+
+    it('renders TurnEditor with ft-turn-editor', () => {
+      const mockMsg: any = { id: 'm1', content: 'hello world' };
+      const { html } = render(TurnEditor, { props: { message: mockMsg, onSave: () => {}, onCancel: () => {} } });
+      expect(html).toContain(HOOKS.chat.turnEditor);
     });
 
     it('renders ChatViewport with ft-viewport and data-ft-surface="chat"', () => {
