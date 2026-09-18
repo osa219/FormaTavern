@@ -33,7 +33,7 @@
   style="font-family: var(--chrome-font, var(--theme-font-family)); color: var(--chrome-text, inherit);"
   class="relative z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/80 chrome-bar px-3 {HOOKS.chrome.topbar}"
 >
-  <!-- Left: Navigation Menu & Home -->
+  <!-- Left: Navigation Menu & Back to Character -->
   <div class="flex items-center gap-2">
     <button
       type="button"
@@ -46,12 +46,13 @@
     </button>
 
     <a
-      href="/"
-      class="flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-800/60 bg-neutral-850/60 text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-      aria-label="Return to Foyer"
-      title="Return to Foyer"
+      href={character ? `/character/${character.id}` : '/'}
+      class="flex h-9 items-center gap-1.5 rounded-xl border border-neutral-800/60 bg-neutral-850/60 px-2.5 sm:px-3 text-neutral-300 transition-colors hover:bg-neutral-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      aria-label={character ? `Back to ${character.name}` : 'Back'}
+      title={character ? `Back to ${character.name}` : 'Back'}
     >
-      <Icon name="sparkles" size={14} class="text-accent" />
+      <Icon name="chevron-left" size={16} />
+      <span class="hidden sm:inline text-xs font-medium">Back</span>
     </a>
   </div>
 
