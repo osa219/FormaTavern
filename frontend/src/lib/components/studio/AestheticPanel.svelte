@@ -594,7 +594,7 @@
           if (!draft.card.labels) draft.card.labels = {};
           draft.card.labels.startStory = val ? val : undefined;
         }}
-        placeholder="Start New Story (default)"
+        placeholder="Start New Chat (default)"
         class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-xs font-mono text-(--chrome-text) focus:border-accent focus:outline-none"
       />
     </div>

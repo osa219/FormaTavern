@@ -244,7 +244,7 @@
             bind:checked={isDefault}
             class="h-4 w-4 rounded border-(--chrome-line) bg-(--chrome-surface) accent-accent focus:ring-0"
           />
-          <span class="text-sm text-(--chrome-text)">Set as default persona for new stories</span>
+          <span class="text-sm text-(--chrome-text)">Set as default persona for new chats</span>
         </label>
       {/if}
     </div>

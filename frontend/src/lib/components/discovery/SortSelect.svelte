@@ -20,6 +20,6 @@
   >
     <option value="recent">Recently Active</option>
     <option value="name">Alphabetical (A–Z)</option>
-    <option value="stories">Most Stories</option>
+    <option value="stories">Most Chats</option>
   </select>
 </div>

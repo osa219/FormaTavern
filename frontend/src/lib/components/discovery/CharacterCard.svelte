@@ -93,10 +93,10 @@
       {/if}
     </div>
 
-    <!-- Story count or hover actions -->
+    <!-- Chat count or hover actions -->
     <div class="shrink-0">
       <span class="font-mono text-[11px] text-(--chrome-text)/50 group-hover:hidden">
-        {activeCharacter.storyCount} {activeCharacter.storyCount === 1 ? 'story' : 'stories'}
+        {activeCharacter.storyCount} {activeCharacter.storyCount === 1 ? 'chat' : 'chats'}
       </span>
 
       <div class="hidden group-hover:flex items-center gap-1.5">
@@ -108,9 +108,9 @@
               onStartStory(activeCharacter.id);
             }}
             class="rounded-lg bg-accent px-2 py-1 text-[11px] font-semibold text-accent-contrast hover:bg-accent/90"
-            title="Start new story with default persona"
+            title="Start new chat with default persona"
           >
-            Start
+            Chat
           </button>
         {/if}
         <button

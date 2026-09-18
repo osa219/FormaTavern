@@ -129,7 +129,7 @@
 
 <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-neutral-800/80 bg-neutral-900/60 p-4 backdrop-blur-md {HOOKS.character.actionHub}">
   <div class="flex items-center gap-3">
-    <!-- Start New Story Button -->
+    <!-- Start New Chat Button -->
     <button
       type="button"
       disabled={startingStory}
@@ -141,7 +141,7 @@
         <span>Starting…</span>
       {:else}
         <Icon name="sparkles" size={14} />
-        <span>{character.labels?.startStory || 'Start New Story'}</span>
+        <span>{character.labels?.startStory || 'Start New Chat'}</span>
         <kbd class="ml-1.5 rounded bg-black/20 px-1.5 py-0.5 text-[10px] font-mono text-neutral-800">
           N
         </kbd>
@@ -210,7 +210,7 @@
   open={confirmDeleteOpen}
   title="Delete Character"
   message={storiesCount > 0
-    ? `Are you sure you want to delete "${character.name}" and its ${storiesCount} ${storiesCount === 1 ? 'story' : 'stories'}? All associated messages and data will be permanently deleted.`
+    ? `Are you sure you want to delete "${character.name}" and its ${storiesCount} ${storiesCount === 1 ? 'chat' : 'chats'}? All associated messages and data will be permanently deleted.`
     : `Are you sure you want to delete "${character.name}"? This action cannot be undone.`}
   confirmLabel="Delete Everything"
   danger={true}

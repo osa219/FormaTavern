@@ -40,7 +40,7 @@
       onclick={onToggleNav}
       class="flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-800 bg-neutral-850 text-neutral-300 transition-colors hover:bg-neutral-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       aria-label="Open navigation drawer (Alt+N)"
-      title="Stories (Alt+N)"
+      title="Chats (Alt+N)"
     >
       <Icon name="menu" size={16} />
     </button>
@@ -56,7 +56,7 @@
     </a>
   </div>
 
-  <!-- Center: Character & Story Info -->
+  <!-- Center: Character & Chat Info -->
   {#if character}
     <div class="flex items-center gap-2.5 overflow-hidden px-2 text-center">
       {#if character.avatar}

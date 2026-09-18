@@ -73,7 +73,7 @@
         return;
       }
       chats = chats.filter((c) => c.id !== id);
-      toasts.success('Story deleted');
+      toasts.success('Chat deleted');
     } catch (err: any) {
       toasts.error(toUiError(err).message);
     }
@@ -205,7 +205,7 @@
       {/if}
     </section>
 
-    <!-- Resume Existing Stories Menu -->
+    <!-- Resume Existing Chats Menu -->
     {#if chats.length > 0}
       <ResumeMenu {chats} onDeleteChat={promptDeleteChat} />
     {/if}
@@ -214,8 +214,8 @@
   <!-- Confirm Delete Chat Dialog -->
   <ConfirmDialog
     open={confirmDeleteChatOpen}
-    title="Delete Story"
-    message="Are you sure you want to delete this story? All messages will be permanently lost."
+    title="Delete Chat"
+    message="Are you sure you want to delete this chat? All messages will be permanently lost."
     confirmLabel="Delete"
     danger={true}
     onConfirm={handleConfirmDeleteChat}

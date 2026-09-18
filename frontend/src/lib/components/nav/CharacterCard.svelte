@@ -138,7 +138,7 @@
         <span>Creating chat…</span>
       {:else}
         <Icon name="sparkles" size={14} />
-        <span>Start New Story</span>
+        <span>Start New Chat</span>
       {/if}
     </button>
   </div>

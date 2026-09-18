@@ -130,7 +130,7 @@
   const deleteMessage = $derived.by(() => {
     if (!deletingTurn) return 'Delete this turn?';
     if (deletingTurn.hasChildren) {
-      return 'Delete this turn and all downstream turns in this story branch? This cannot be undone.';
+      return 'Delete this turn and all downstream turns in this branch? This cannot be undone.';
     }
     return 'Delete this turn? This cannot be undone.';
   });
@@ -187,7 +187,7 @@
         return;
       }
       navChats = navChats.filter((c) => c.id !== chatId);
-      toasts.success('Story deleted');
+      toasts.success('Chat deleted');
       if (chatId === session.chatId) {
         goto('/');
       }

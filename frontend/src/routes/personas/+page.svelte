@@ -83,7 +83,7 @@
         Your User Personas
       </h2>
       <p class="mt-1 text-sm text-(--chrome-text)/70">
-        Personas define your role, description, and speech bubble appearance across stories. The default persona is automatically used when starting new stories.
+        Personas define your role, description, and speech bubble appearance across chats. The default persona is automatically used when starting new chats.
       </p>
     </div>
 
@@ -120,7 +120,7 @@
     }}
   />
 
-  <!-- Reassign In-Use Stories Modal -->
+  <!-- Reassign In-Use Chats Modal -->
   {#if reassignModalOpen && deleteTarget}
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
       <div class="w-full max-w-md rounded-2xl border border-(--chrome-line) bg-(--chrome-surface) p-6 shadow-2xl text-(--chrome-text)">
@@ -128,13 +128,13 @@
           Persona In Use
         </h3>
         <p class="mt-2 text-xs leading-relaxed text-(--chrome-text)/70">
-          "{deleteTarget.name}" is currently used by <span class="font-semibold text-(--chrome-text)">{conflictChatsCount} {conflictChatsCount === 1 ? 'story' : 'stories'}</span>.
+          "{deleteTarget.name}" is currently used by <span class="font-semibold text-(--chrome-text)">{conflictChatsCount} {conflictChatsCount === 1 ? 'chat' : 'chats'}</span>.
           Please choose another persona to reassign them to before deleting:
         </p>
 
         <div class="mt-4">
           <label for="reassign-select" class="block text-[11px] font-mono text-(--chrome-text)/60 uppercase tracking-wider mb-1.5">
-            Reassign Stories To
+            Reassign Chats To
           </label>
           <select
             id="reassign-select"

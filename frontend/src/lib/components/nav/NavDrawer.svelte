@@ -191,7 +191,7 @@
                   {:else}
                     <span class="text-(--chrome-text)/30">·</span>
                   {/if}
-                  <span class="truncate">{chat.title || 'Untitled Story'}</span>
+                  <span class="truncate">{chat.title || 'Untitled Chat'}</span>
                 </div>
 
                 <!-- Delete button on hover -->
@@ -215,8 +215,8 @@
 
 <ConfirmDialog
   open={confirmDeleteOpen}
-  title="Delete Story"
-  message="Are you sure you want to delete this story branch? All turns will be permanently removed."
+  title="Delete Chat"
+  message="Are you sure you want to delete this chat branch? All turns will be permanently removed."
   confirmLabel="Delete"
   danger={true}
   onConfirm={handleConfirmDelete}

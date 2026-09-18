@@ -93,13 +93,13 @@
         return;
       }
       chats = chats.filter((c) => c.id !== id);
-      toasts.success('Story deleted');
+      toasts.success('Chat deleted');
     } catch (err: any) {
       toasts.error(toUiError(err).message);
     }
   }
 
-  // Filter recent stories by query if q is present
+  // Filter recent chats by query if q is present
   const filteredChats = $derived.by(() => {
     if (!catalogStore.q.trim()) return chats;
     const qLower = catalogStore.q.trim().toLowerCase();
@@ -222,20 +222,20 @@
       />
     </section>
 
-    <!-- Recent Stories Section -->
-    <section aria-label="Recent Stories" class="border-t border-(--chrome-line) pt-8 space-y-4 {HOOKS.shell.recentStories}">
+    <!-- Recent Chats Section -->
+    <section aria-label="Recent Chats" class="border-t border-(--chrome-line) pt-8 space-y-4 {HOOKS.shell.recentStories}">
       <div class="flex items-center justify-between border-b border-(--chrome-line) pb-2">
         <h3 class="text-xs font-semibold uppercase tracking-wider text-(--chrome-text)/70">
-          Recent Stories
+          Recent Chats
         </h3>
         <span class="text-xs text-(--chrome-text)/50 font-mono">
-          {filteredChats.length} {filteredChats.length === 1 ? 'story' : 'stories'}
+          {filteredChats.length} {filteredChats.length === 1 ? 'chat' : 'chats'}
         </span>
       </div>
 
       {#if filteredChats.length === 0}
         <div class="flex h-28 items-center justify-center rounded-2xl border border-dashed border-(--chrome-line) text-xs text-(--chrome-text)/50">
-          {catalogStore.q ? 'No recorded stories match your current search.' : 'No stories recorded yet. Select a character above to begin.'}
+          {catalogStore.q ? 'No recorded chats match your current search.' : 'No chats recorded yet. Select a character above to begin.'}
         </div>
       {:else}
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -255,7 +255,7 @@
               <div class="flex items-start justify-between gap-2">
                 <div class="flex flex-col overflow-hidden">
                   <span class="truncate text-sm font-semibold text-(--chrome-text)">
-                    {chat.title || 'Untitled Story'}
+                    {chat.title || 'Untitled Chat'}
                   </span>
                   <span class="text-xs text-(--chrome-text)/60 font-mono">
                     ID: {chat.primaryCharacterId}
@@ -280,8 +280,8 @@
                   type="button"
                   onclick={(e) => promptDeleteChat(chat.id, e)}
                   class="rounded p-1 text-(--chrome-text)/50 opacity-0 transition-opacity hover:text-red-400 group-hover:opacity-100 focus:opacity-100"
-                  aria-label="Delete story"
-                  title="Delete story"
+                  aria-label="Delete chat"
+                  title="Delete chat"
                 >
                   <Icon name="trash" size={13} />
                 </button>
@@ -304,8 +304,8 @@
   <!-- Confirm Delete Dialog -->
   <ConfirmDialog
     open={confirmDeleteOpen}
-    title="Delete Story"
-    message="Are you sure you want to delete this story? All branches and messages will be permanently lost."
+    title="Delete Chat"
+    message="Are you sure you want to delete this chat? All branches and messages will be permanently lost."
     confirmLabel="Delete"
     danger={true}
     onConfirm={handleConfirmDelete}

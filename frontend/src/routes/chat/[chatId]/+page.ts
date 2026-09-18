@@ -17,7 +17,7 @@ export const load: PageLoad = async ({ params }) => {
     if (status === 401) {
       throw error(401, 'Authentication required');
     }
-    throw error(404, `Story ${chatId} not found`);
+    throw error(404, `Chat ${chatId} not found`);
   }
 
   const chat = chatRes.data as ChatView;

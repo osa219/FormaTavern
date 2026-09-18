@@ -70,7 +70,7 @@
       </div>
 
       <p class="mt-1 text-xs text-neutral-400">
-        Select the persona you will embody in this story.
+        Select the persona you will embody in this chat.
       </p>
 
       <div class="mt-4 max-h-64 space-y-2 overflow-y-auto pr-1">
@@ -153,7 +153,7 @@
             onclick={handleConfirm}
             class="rounded-xl bg-accent px-4 py-1.5 text-xs font-semibold text-accent-contrast hover:bg-accent/90 disabled:opacity-50"
           >
-            Start Story
+            Start Chat
           </button>
         </div>
       </div>

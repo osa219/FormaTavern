@@ -30,10 +30,10 @@
   <div class="space-y-3 {HOOKS.character.resumeMenu}">
     <div class="flex items-center justify-between border-b border-neutral-800 pb-2">
       <h3 class="text-xs font-semibold uppercase tracking-wider text-neutral-400">
-        Resume Existing Story
+        Resume Existing Chat
       </h3>
       <span class="text-xs font-mono text-neutral-500">
-        {chats.length} {chats.length === 1 ? 'story' : 'stories'}
+        {chats.length} {chats.length === 1 ? 'chat' : 'chats'}
       </span>
     </div>
 
@@ -55,7 +55,7 @@
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-2">
                 <span class="truncate text-sm font-medium text-neutral-200 group-hover:text-white">
-                  {chat.title || 'Untitled Story'}
+                  {chat.title || 'Untitled Chat'}
                 </span>
                 {#if chat.activeGenerationMessageId}
                   <span class="flex items-center gap-1 text-[10px] font-mono text-accent shrink-0">
@@ -83,8 +83,8 @@
                   onDeleteChat(chat.id);
                 }}
                 class="rounded p-1 text-neutral-500 opacity-0 transition-opacity hover:text-red-400 group-hover:opacity-100 focus:opacity-100"
-                aria-label="Delete story"
-                title="Delete story"
+                aria-label="Delete chat"
+                title="Delete chat"
               >
                 <Icon name="trash" size={13} />
               </button>
