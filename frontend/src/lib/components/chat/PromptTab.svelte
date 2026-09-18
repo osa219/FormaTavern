@@ -73,12 +73,12 @@
   });
 </script>
 
-<div class="space-y-4 text-xs leading-relaxed text-neutral-300 {HOOKS.chat.promptPreview}">
+<div class="space-y-4 text-xs leading-relaxed text-(--chrome-text) {HOOKS.chat.promptPreview}">
   <div class="flex items-center justify-between gap-2">
     <div class="flex items-center gap-2">
       <h3 class="font-semibold uppercase tracking-wider text-accent">Prompt preview</h3>
       {#if data}
-        <span class="rounded border border-neutral-800 bg-neutral-950 px-1.5 py-0.5 font-mono text-[10px] text-neutral-400">
+        <span class="rounded border border-(--chrome-line) bg-(--chrome-bg) px-1.5 py-0.5 font-mono text-[10px] text-(--chrome-text)/70">
           {data.dialect}
         </span>
       {/if}
@@ -87,7 +87,7 @@
       type="button"
       onclick={load}
       disabled={status === 'loading'}
-      class="flex items-center gap-1 rounded-lg border border-neutral-800 bg-neutral-950 px-2 py-1 text-[11px] text-neutral-400 hover:text-neutral-200 disabled:opacity-40"
+      class="flex items-center gap-1 rounded-lg border border-(--chrome-line) bg-(--chrome-bg) px-2 py-1 text-[11px] text-(--chrome-text)/70 hover:bg-(--chrome-line)/40 hover:text-(--chrome-text) transition-colors disabled:opacity-40"
       title="Refresh preview"
       aria-label="Refresh preview"
     >
@@ -96,7 +96,7 @@
     </button>
   </div>
 
-  <p class="text-[11px] text-neutral-500">
+  <p class="text-[11px] text-(--chrome-text)/60">
     {#if hasDraft}
       What would be sent on the next turn, <span class="text-amber-300">including your unsent draft</span>.
     {:else}
@@ -105,7 +105,7 @@
   </p>
 
   {#if status === 'loading'}
-    <p class="text-neutral-500" aria-live="polite">Assembling prompt…</p>
+    <p class="text-(--chrome-text)/60" aria-live="polite">Assembling prompt…</p>
   {:else if status === 'error'}
     <div class="rounded-xl border border-red-900/60 bg-red-950/20 p-3 text-red-200" role="alert">
       <p class="font-semibold">Preview failed</p>
@@ -119,18 +119,18 @@
   {:else if data}
     <PromptBlocks {data} />
 
-    <div class="flex items-center gap-2 border-t border-neutral-800 pt-3">
+    <div class="flex items-center gap-2 border-t border-(--chrome-line) pt-3">
       <button
         type="button"
         onclick={() => onEditSettings?.()}
-        class="rounded-lg border border-neutral-800 bg-neutral-950 px-2.5 py-1.5 text-[11px] text-neutral-300 hover:text-neutral-100"
+        class="rounded-lg border border-(--chrome-line) bg-(--chrome-bg) px-2.5 py-1.5 text-[11px] text-(--chrome-text)/80 hover:bg-(--chrome-line)/40 hover:text-(--chrome-text) transition-colors"
       >
         Edit in Settings
       </button>
       <button
         type="button"
         onclick={() => onEditVoice?.()}
-        class="rounded-lg border border-neutral-800 bg-neutral-950 px-2.5 py-1.5 text-[11px] text-neutral-300 hover:text-neutral-100"
+        class="rounded-lg border border-(--chrome-line) bg-(--chrome-bg) px-2.5 py-1.5 text-[11px] text-(--chrome-text)/80 hover:bg-(--chrome-line)/40 hover:text-(--chrome-text) transition-colors"
       >
         Edit in Voice
       </button>

@@ -55,6 +55,10 @@
   --chrome-card-padding: 1rem;
   --chrome-card-gap: 1rem;
 
+  /* Themable Drawer & Dialog Backdrop Scrim Tokens */
+  --drawer-backdrop-bg: rgba(0, 0, 0, 0.45);
+  --drawer-backdrop-filter: blur(4px);
+
   /* Themable Scrollbar Tokens */
   --scrollbar-track: transparent;
   --scrollbar-thumb: color-mix(in oklab, var(--theme-accent) 25%, var(--chrome-text) 25%);
@@ -67,10 +71,17 @@
   --motion-ease: cubic-bezier(.22, 1, .36, 1);
 }
 
+dialog::backdrop {
+  background-color: var(--drawer-backdrop-bg, rgba(0, 0, 0, 0.45));
+  backdrop-filter: var(--drawer-backdrop-filter, blur(4px));
+  -webkit-backdrop-filter: var(--drawer-backdrop-filter, blur(4px));
+}
+
 :root[data-ft-chrome="solid"],
 [data-ft-chrome="solid"] {
   --chrome-scrim: 1;
   --chrome-backdrop-filter: none;
+  --drawer-backdrop-filter: none;
 }
 
 :root[data-ft-chrome="solid"] dialog::backdrop,

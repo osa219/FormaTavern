@@ -313,7 +313,7 @@ import { api } from '$lib/api';
   bind:this={dialogEl}
   oncancel={handleCancel}
   onclick={handleBackdropClick}
-  class="fixed inset-0 m-auto hidden open:flex max-h-[85vh] w-full max-w-2xl flex-col rounded-2xl border border-(--chrome-line) bg-(--chrome-surface) p-6 text-(--chrome-text) shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-sm max-sm:bottom-0 max-sm:top-auto max-sm:max-h-[90vh] max-sm:max-w-none max-sm:rounded-b-none max-sm:border-x-0 max-sm:border-b-0 {HOOKS.shell.settings}"
+  class="fixed inset-0 m-auto hidden open:flex max-h-[85vh] w-full max-w-2xl flex-col rounded-2xl border border-(--chrome-line) bg-(--chrome-surface) p-6 text-(--chrome-text) shadow-2xl max-sm:bottom-0 max-sm:top-auto max-sm:max-h-[90vh] max-sm:max-w-none max-sm:rounded-b-none max-sm:border-x-0 max-sm:border-b-0 {HOOKS.shell.settings}"
   aria-labelledby="settings-title"
 >
   <!-- Header -->

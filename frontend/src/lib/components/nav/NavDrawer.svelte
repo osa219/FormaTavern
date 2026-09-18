@@ -97,15 +97,15 @@
   oncancel={handleCancel}
   onclick={handleBackdropClick}
   style="font-family: var(--chrome-font, var(--theme-font-family)); color: var(--chrome-text, inherit); padding-bottom: env(safe-area-inset-bottom, 0px);"
-  class="fixed inset-y-0 left-0 m-0 hidden open:flex h-full w-full max-w-sm flex-col border-r border-neutral-800 bg-neutral-900/98 p-0 shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-sm max-sm:bottom-0 max-sm:top-auto max-sm:h-[80vh] max-sm:max-w-none max-sm:rounded-t-2xl max-sm:border-r-0 max-sm:border-t {HOOKS.chrome.navdrawer}"
+  class="fixed inset-y-0 left-0 m-0 hidden open:flex h-dvh max-h-none w-full max-w-sm flex-col border-r border-(--chrome-line) bg-(--chrome-surface) p-0 text-(--chrome-text) shadow-2xl max-sm:bottom-0 max-sm:top-auto max-sm:h-[80vh] max-sm:max-h-[80vh] max-sm:max-w-none max-sm:rounded-t-2xl max-sm:border-r-0 max-sm:border-t {HOOKS.chrome.navdrawer}"
   aria-labelledby="nav-drawer-title"
 >
   <!-- Drawer Header -->
-  <div class="flex items-center justify-between border-b border-neutral-800 p-4">
+  <div class="flex items-center justify-between border-b border-(--chrome-line) p-4">
     <div class="flex items-center gap-2">
       <a
         href="/"
-        class="flex items-center gap-2 font-bold text-neutral-100 transition-colors hover:text-accent"
+        class="flex items-center gap-2 font-bold text-(--chrome-text) transition-colors hover:text-accent"
         onclick={onClose}
       >
         <span class="text-accent">◈</span>
@@ -119,7 +119,7 @@
           onClose();
           onNewChat?.();
         }}
-        class="flex items-center gap-1.5 rounded-lg border border-neutral-800 bg-neutral-850 px-2.5 py-1 text-xs font-medium text-neutral-200 hover:bg-neutral-800 hover:text-white"
+        class="flex items-center gap-1.5 rounded-lg border border-(--chrome-line) bg-(--chrome-bg) px-2.5 py-1 text-xs font-medium text-(--chrome-text) hover:bg-(--chrome-line)/50 hover:text-white transition-colors"
         title="Start new chat"
       >
         <Icon name="sparkles" size={13} class="text-accent" />
@@ -128,7 +128,7 @@
       <button
         type="button"
         onclick={onClose}
-        class="rounded-lg p-1.5 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
+        class="rounded-lg p-1.5 text-(--chrome-text)/60 hover:bg-(--chrome-line)/40 hover:text-(--chrome-text) transition-colors"
         aria-label="Close drawer"
       >
         <Icon name="close" size={16} />
@@ -139,7 +139,7 @@
   <!-- Chats List -->
   <div class="flex-1 overflow-y-auto p-3">
     {#if chats.length === 0}
-      <div class="flex h-32 items-center justify-center text-xs text-neutral-500">
+      <div class="flex h-32 items-center justify-center text-xs text-(--chrome-text)/40">
         No conversations yet.
       </div>
     {:else}
@@ -147,7 +147,7 @@
         {#each groupedChats as group (group.characterId)}
           <div class="flex flex-col gap-1">
             <!-- Group Header -->
-            <div class="flex items-center justify-between px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
+            <div class="flex items-center justify-between px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-(--chrome-text)/60">
               <span>{group.character?.name ?? 'Unknown Character'}</span>
               <button
                 type="button"
@@ -155,7 +155,7 @@
                   onClose();
                   onNewChat?.(group.characterId);
                 }}
-                class="text-neutral-500 hover:text-accent"
+                class="text-(--chrome-text)/40 hover:text-accent transition-colors"
                 title="New chat with {group.character?.name}"
               >
                 + new
@@ -178,12 +178,9 @@
                     onSelectChat?.(chat.id);
                   }
                 }}
-                class="group relative flex items-center justify-between rounded-xl px-3 py-2 text-xs transition-colors cursor-pointer"
-                class:bg-neutral-800={chat.id === activeChatId}
-                class:text-neutral-100={chat.id === activeChatId}
-                class:font-medium={chat.id === activeChatId}
-                class:text-neutral-300={chat.id !== activeChatId}
-                class:hover:bg-neutral-850={chat.id !== activeChatId}
+                class="group relative flex items-center justify-between rounded-xl px-3 py-2 text-xs transition-colors cursor-pointer {chat.id === activeChatId
+                  ? 'bg-(--chrome-line)/80 text-(--chrome-text) font-medium'
+                  : 'text-(--chrome-text)/70 hover:bg-(--chrome-line)/30'}"
               >
                 <div class="flex items-center gap-2 overflow-hidden pr-2">
                   {#if chat.activeGenerationMessageId}
@@ -192,7 +189,7 @@
                       <span class="relative inline-flex h-2 w-2 rounded-full bg-accent"></span>
                     </span>
                   {:else}
-                    <span class="text-neutral-600">·</span>
+                    <span class="text-(--chrome-text)/30">·</span>
                   {/if}
                   <span class="truncate">{chat.title || 'Untitled Story'}</span>
                 </div>
@@ -201,7 +198,7 @@
                 <button
                   type="button"
                   onclick={(e) => promptDelete(chat.id, e)}
-                  class="rounded p-1 text-neutral-500 opacity-0 transition-opacity hover:text-red-400 group-hover:opacity-100 focus:opacity-100"
+                  class="rounded p-1 text-(--chrome-text)/40 opacity-0 transition-opacity hover:text-red-400 group-hover:opacity-100 focus:opacity-100"
                   aria-label="Delete chat"
                   title="Delete chat"
                 >
