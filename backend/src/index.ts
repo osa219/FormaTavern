@@ -3,7 +3,7 @@ import { existsSync, statSync } from 'node:fs';
 import { join, resolve, basename } from 'node:path';
 import { staticPlugin } from '@elysiajs/static';
 import { createApp } from './app';
-import { DB_PATH, ASSETS_DIR, ensureDataDirs } from './db/paths';
+import { resolveStoragePath, ensureDataDirs } from './db/paths';
 import { openDatabase } from './db/connection';
 import { runMigrations } from './db/migrate';
 import { createRepositories } from './db/repositories';
@@ -13,38 +13,45 @@ import { recoverStaleGenerations } from './engine/recovery';
 import { GenerationHubImpl } from './engine/hub';
 import { ProviderRegistryImpl } from './engine/providers';
 import { FsAssetStore } from './assets/store';
+import { loadServerConfig } from './config/loader';
+import { listLanCandidates, pickPrimary, detectTailscale, resolveBackendBind } from './config/network';
+import { formatBanner } from './config/banner';
+import { createHmacToken, verifyHmacToken, verifyPinTimingSafe } from './routes/auth';
 
-const HOST = process.env.FORMATAVERN_HOST ?? '127.0.0.1';
-const PORT = Number(process.env.FORMATAVERN_PORT ?? 3000);
+// 1. Load server configuration (Precedence: CLI > Env > config.yaml > Defaults)
+const configResult = loadServerConfig();
+const config = configResult.config;
+if (configResult.warnings.length > 0) {
+  for (const warning of configResult.warnings) {
+    console.warn(`\x1b[33m[config warning]\x1b[0m ${warning}`);
+  }
+}
+
 const PROD = process.env.NODE_ENV === 'production';
 const LOG_SILENT = process.env.FORMATAVERN_LOG === 'silent';
 const DEV_LOG = !PROD && !LOG_SILENT;
 const BUILD_DIR = resolve(import.meta.dir, '../../frontend/build');
 
-if (HOST === '0.0.0.0') {
-  console.warn(`[SECURITY WARNING] Server is bound to 0.0.0.0 without in-app authentication.
-Any device on your local network can access chats and API keys.
-Use Tailscale or Cloudflare Tunnel for secure remote access.`);
-}
+// 2. Ensure directory structures using resolved config paths
+const dbPath = resolveStoragePath(config.storage?.dataPath ?? './formatavern.db');
+const assetsDir = resolveStoragePath(config.storage?.assetsPath ?? './data/assets');
+ensureDataDirs(assetsDir);
 
-// 1. Ensure directory structures
-ensureDataDirs();
+// 3. Open SQLite database & apply pragmas
+const db = openDatabase(dbPath);
 
-// 2. Open SQLite database & apply pragmas
-const db = openDatabase(DB_PATH);
-
-// 3. Run migrations
+// 4. Run migrations
 const { from, to } = runMigrations(db);
 
-// 4. Repositories & boot recovery
+// 5. Repositories & boot recovery
 const repos = createRepositories(db);
 const recoveryResult = recoverStaleGenerations(repos);
 
-// 5. Seed if empty
+// 6. Seed if empty
 const seedResult = seed(repos);
 const pcSeed = seedProviderConfigs(repos);
 
-const dbFileName = basename(DB_PATH);
+const dbFileName = basename(dbPath);
 let dbLog = `[db] ${dbFileName}  migrations: ${from} → ${to}`;
 if (seedResult.seeded) {
   dbLog += `  seeded: ${seedResult.characters} characters, ${seedResult.personas} persona`;
@@ -179,14 +186,32 @@ process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 
 // 8. Assemble Elysia app
-const assets = new FsAssetStore(ASSETS_DIR);
+const assets = new FsAssetStore(assetsDir);
+let server: Elysia;
+
+const authSecret = new Uint8Array(32);
+crypto.getRandomValues(authSecret);
+
+const authOptions = {
+  enabled: config.security.authMode === 'pin',
+  verifyPin: (cand: string) => verifyPinTimingSafe(cand, config.security.pin ?? ''),
+  signToken: () => createHmacToken(authSecret),
+  verifyToken: (tok: string) => verifyHmacToken(authSecret, tok),
+  trustedProxies: config.security.trustedProxies
+};
+
 const app = createApp({
   repos,
   hub,
   providers,
   assets,
   options: {
-    nodeEnv: process.env.NODE_ENV
+    nodeEnv: process.env.NODE_ENV,
+    auth: authOptions,
+    resolveIp: (req) =>
+      (server as any)?.server?.requestIP?.(req)?.address ??
+      (server as any)?.requestIP?.(req)?.address ??
+      null
   }
 });
 
@@ -224,7 +249,7 @@ const statusColor = (status: number) => {
   return `\x1b[32m${status}\x1b[0m`;
 };
 
-const server = new Elysia();
+server = new Elysia();
 
 if (DEV_LOG) {
   server
@@ -267,7 +292,7 @@ server
   .use(app)
   .use(
     staticPlugin({
-      assets: ASSETS_DIR,
+      assets: assetsDir,
       prefix: '/assets',
       headers: {
         'Cache-Control': 'public, max-age=31536000, immutable',
@@ -308,22 +333,52 @@ server
     });
   });
 
-server.listen({ hostname: HOST, port: PORT });
+const bindHost = resolveBackendBind(config.network.mode, config.network.host, !PROD);
+const bindPort = config.network.port;
 
-if (DEV_LOG) {
-  const displayHost = HOST === '0.0.0.0' ? '127.0.0.1' : HOST;
-  const bold = (s: string) => `\x1b[1m${s}\x1b[0m`;
-  const cyan = (s: string) => `\x1b[36m${s}\x1b[0m`;
-  const green = (s: string) => `\x1b[32m${s}\x1b[0m`;
-  const dim = (s: string) => `\x1b[2m${s}\x1b[0m`;
+try {
+  server.listen({ hostname: bindHost, port: bindPort });
+} catch (err: any) {
+  const code = err?.code ?? err?.errno ?? '';
+  if (code === 'EADDRINUSE' || String(err).includes('EADDRINUSE') || String(err).includes('address already in use')) {
+    console.error(`\x1b[31m[ERROR]\x1b[0m Port ${bindPort} is already in use. → bun run stop, or port: in config.yaml / --port.`);
+    process.exit(1);
+  }
+  if (
+    code === 'EACCES' ||
+    code === 'WSAEACCES' ||
+    String(err).includes('EACCES') ||
+    String(err).includes('10013') ||
+    String(err).includes('Access denied')
+  ) {
+    console.error(`\x1b[31m[ERROR]\x1b[0m Access denied binding ${bindHost}:${bindPort}. → allow bun.exe in Defender/Avast-AVG Web Shield (Private networks); or --port 3005/8080 (Hyper-V exclusion range: netsh interface ipv4 show excludedportrange protocol=tcp).`);
+    process.exit(1);
+  }
+  throw err;
+}
 
-  console.log(`
-  ${bold('FormaTavern')} ${dim('— LLM Roleplay Studio')}
-  ${dim('──────────────────────────────────────────────')}
-  ➜ ${bold('Web UI:')}   ${cyan('http://127.0.0.1:5173/')}  ${dim('(Vite dev server)')}
-  ➜ ${bold('API:')}      ${green(`http://${displayHost}:${PORT}/`)}    ${dim(`(Elysia backend${HOST === '0.0.0.0' ? ' [0.0.0.0]' : ''})`)}
-  ${dim('──────────────────────────────────────────────')}
-`);
-} else if (!LOG_SILENT) {
-  console.log(`[formatavern] prod backend → http://${HOST}:${PORT}`);
+if (!LOG_SILENT) {
+  const candidates = listLanCandidates(bindPort);
+  const primaryCandidate = pickPrimary(candidates);
+  const tailscaleCandidate = detectTailscale(candidates);
+
+  const activeSources = Array.from(new Set(Object.values(configResult.sourceMap))).filter(
+    (s) => s !== 'default'
+  );
+  const sourceSummary =
+    activeSources.length > 0
+      ? activeSources.map((s) => (s === 'file' ? 'config.yaml' : s)).join(' + ')
+      : undefined;
+
+  const banner = formatBanner({
+    config,
+    candidates,
+    primaryCandidate,
+    tailscaleCandidate,
+    isDev: !PROD,
+    isTty: process.stdout.isTTY ?? false,
+    columns: process.stdout.columns ?? 80,
+    sourceSummary
+  });
+  console.log(banner);
 }

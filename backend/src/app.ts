@@ -15,6 +15,8 @@ import { createProviderConfigsRouter } from './routes/providerConfigs';
 import { createChatsRouter } from './routes/chats';
 import { createMessagesRouter } from './routes/messages';
 import { createAssetsRouter } from './routes/assets';
+import { createAuthRouter, isPublicAuthPath, InboundAuditor, type AuthDeps } from './routes/auth';
+import { effectiveClientIp, isLoopbackIp } from './routes/ip';
 import type { AssetStore } from './assets/contracts';
 
 export interface AppDeps {
@@ -24,6 +26,16 @@ export interface AppDeps {
   assets?: AssetStore;
   options?: {
     nodeEnv?: string;
+    auth?: {
+      enabled: boolean;
+      verifyPin?: (candidate: string) => boolean;
+      signToken?: () => string;
+      verifyToken?: (token: string) => boolean;
+      trustedProxies?: string[];
+      rateLimitWindowMs?: number;
+      rateLimitMaxFails?: number;
+    };
+    resolveIp?: (req: Request) => string | null;
   };
 }
 
@@ -36,6 +48,19 @@ export function createApp({ repos, hub, providers, assets, options }: AppDeps) {
   const chatsRouter = createChatsRouter({ repos, hub, providers });
   const messagesRouter = createMessagesRouter({ repos, hub, providers });
   const assetsRouter = createAssetsRouter(assets);
+
+  const authDeps: AuthDeps = {
+    enabled: options?.auth?.enabled ?? false,
+    verifyPin: options?.auth?.verifyPin,
+    signToken: options?.auth?.signToken,
+    verifyToken: options?.auth?.verifyToken,
+    resolveIp: options?.resolveIp,
+    trustedProxies: options?.auth?.trustedProxies,
+    rateLimitWindowMs: options?.auth?.rateLimitWindowMs,
+    rateLimitMaxFails: options?.auth?.rateLimitMaxFails
+  };
+  const authRouter = createAuthRouter(authDeps);
+  const auditor = new InboundAuditor();
 
   return new Elysia({ prefix: '/api' })
     .onError(({ code, error, set, path }) => {
@@ -83,18 +108,80 @@ export function createApp({ repos, hub, providers, assets, options }: AppDeps) {
         }
       };
     })
-    .get('/health', () => ({
-      ok: true,
-      service: 'formatavern-backend',
-      sharedVersion: SHARED_VERSION,
-      timestamp: Date.now(),
-      db: {
-        schemaVersion: repos.schemaVersion(),
-        characters: repos.characters.count(),
-        personas: repos.personas.count()
-      },
-      activeGenerations: hub.activeCount ? hub.activeCount() : 0
-    }))
+    .onRequest(({ request }) => {
+      const url = new URL(request.url);
+      const path = url.pathname;
+
+      // Sampled inbound audit logging
+      const remote = options?.resolveIp ? options.resolveIp(request) : null;
+      const xff = request.headers.get('x-forwarded-for');
+      const clientIp = effectiveClientIp(
+        remote,
+        xff,
+        options?.auth?.trustedProxies ?? ['127.0.0.1', '::1']
+      );
+      auditor.audit(clientIp, request.method, path);
+
+      if (isPublicAuthPath(path)) return;
+
+      const isLoopback = isLoopbackIp(clientIp);
+      const authEnabled = options?.auth?.enabled ?? false;
+      if (!authEnabled || isLoopback) return;
+
+      const authHeader = request.headers.get('authorization');
+      if (authHeader?.startsWith('Bearer ') && options?.auth?.verifyToken) {
+        const token = authHeader.slice(7).trim();
+        if (options.auth.verifyToken(token)) {
+          return;
+        }
+      }
+
+      return Response.json(
+        {
+          error: {
+            code: 'auth_required',
+            message: 'Authentication required'
+          }
+        },
+        { status: 401 }
+      );
+    })
+    .use(authRouter)
+    .get('/health', ({ request }): HealthResponse | { ok: true } => {
+      const authEnabled = options?.auth?.enabled ?? false;
+      const remote = options?.resolveIp ? options.resolveIp(request) : null;
+      const xff = request.headers.get('x-forwarded-for');
+      const clientIp = effectiveClientIp(
+        remote,
+        xff,
+        options?.auth?.trustedProxies ?? ['127.0.0.1', '::1']
+      );
+
+      const isAuthed = !authEnabled || isLoopbackIp(clientIp) || (() => {
+        const authHeader = request.headers.get('authorization');
+        if (authHeader?.startsWith('Bearer ') && options?.auth?.verifyToken) {
+          return options.auth.verifyToken(authHeader.slice(7).trim());
+        }
+        return false;
+      })();
+
+      if (!isAuthed) {
+        return { ok: true };
+      }
+
+      return {
+        ok: true,
+        service: 'formatavern-backend',
+        sharedVersion: SHARED_VERSION,
+        timestamp: Date.now(),
+        db: {
+          schemaVersion: repos.schemaVersion(),
+          characters: repos.characters.count(),
+          personas: repos.personas.count()
+        },
+        activeGenerations: hub.activeCount ? hub.activeCount() : 0
+      };
+    })
     .post('/chat/test-stream', ({ query, request, set }) => {
       const isProduction =
         options?.nodeEnv === 'production' || process.env.NODE_ENV === 'production';
