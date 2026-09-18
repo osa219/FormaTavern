@@ -129,6 +129,16 @@
     </div>
 
     <div class="flex items-center gap-2.5">
+      <!-- Chats Hub Quick-Access -->
+      <a
+        href="/chats"
+        class="flex items-center gap-1.5 rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-1.5 text-xs text-(--chrome-text)/80 hover:border-accent/40 transition-colors"
+        title="Manage all conversations"
+      >
+        <Icon name="book" size={13} />
+        <span class="hidden sm:inline">Chats</span>
+      </a>
+
       <!-- Personas Quick-Access -->
       <a
         href="/personas"

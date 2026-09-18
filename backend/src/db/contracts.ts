@@ -21,7 +21,9 @@ import type {
   ShellTheme,
   ProviderConfig,
   ProviderConfigCreate,
-  ProviderConfigPatch
+  ProviderConfigPatch,
+  ChatHubQuery,
+  ChatHubResponse
 } from '@formatavern/shared';
 
 export interface CharacterRepository {
@@ -109,6 +111,8 @@ export interface ChatRepository {
   ): ChatRow;
   setActiveLeaf(id: string, leafId: string | null): void;
   remove(id: string): void;
+  removeByCharacter(characterId: string): { deleted: number };
+  hub(opts?: ChatHubQuery): ChatHubResponse;
   count(): number;
 }
 

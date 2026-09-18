@@ -17,14 +17,14 @@ In conversational LLM clients, users quickly transition from casual experimentat
 3. **Character Profile Page (`/character/:id`):** Displays a character's full showcase and lists chats *only* for that single character, requiring the user to navigate back to the main foyer, search for the character, and open their profile.
 
 ### 1.2 The Goal
-Create a dedicated **Chats Hub** (`/chats`) that acts as a first-class, scalable conversation manager. It groups conversations **hierarchically by character**, allows smooth **infinite scrolling** across hundreds of characters via Invariant P1 keyset pagination, and features **rich showcase accordions** that let users review a character's visual lore and scenario before resuming an existing chat or launching a new one.
+Create a dedicated **Chats Hub** (`/chats`) that acts as a first-class, scalable conversation manager. It groups conversations **hierarchically by character**, allows smooth **infinite scrolling** across hundreds of characters via Invariant P1 keyset pagination, and features **truncated mini-showcase accordions** that let users review a character's visual lore and scenario before resuming an existing chat or launching a new one. Full `ShowcaseBody` rendering stays on `/character/:id`; the hub mounts only a tagline plus a 2–3 line description excerpt to keep per-row DOM cheap. Observed JanitorAI reference behavior is recorded in the local-only study `docs/history/reports/janitorai-behavior/my-chats-hub/REPORT.md` (facts restated inline here since that directory is git-ignored).
 
 ---
 
 ## 2. Product & UX Design (Inspired by Janitor AI, Elevated for FormaTavern)
 
 ### 2.1 Navigation & Placement
-In platforms like Janitor AI, "My Chats" is buried three clicks deep inside an account avatar dropdown (`Profile Menu → My Chats`). In FormaTavern, conversation management is a core daily activity and deserves primary navigation placement:
+JanitorAI exposes My Chats through three paths: the account avatar dropdown (`Home → avatar O → My Chats`), the dedicated `/my_chats` page, and a `My Chats` horizontal `Continue` carousel on the homepage. The dropdown path is buried, but the carousel is first-screen. In FormaTavern, conversation management is a core daily activity and deserves primary navigation placement (better than all three):
 
 - **Top Bar Integration:** Add a dedicated **`Chats`** link in the top navigation bar alongside `Personas`:
   ```
@@ -78,17 +78,18 @@ In platforms like Janitor AI, "My Chats" is buried three clicks deep inside an a
    - High-density row displaying the character's avatar, theme accent dot, name, total chat count, and timestamp of the most recent turn.
    - Chevron icon indicating expansion.
    - Keyboard accessible (`Enter` / `Space` toggles accordion).
-2. **Expanded State (Showcase & Workspace):**
-   - **Showcase & Actions Pane:** Renders the character's tagline, description (or rich `ShowcaseBody` markdown with custom author styles), and action buttons:
-     - `[ View Character Page ]` (navigates to `/character/:id`)
-     - `[ + Start New Chat ]` (triggers persona picker and creates a fresh branch)
-   - **Conversation Branch List:** Chronological list of chats for that character, displaying:
-     - Chat title (or *"Untitled Chat"* with first-turn preview)
-     - Turn count badge
-     - Relative time (*"2h ago"*, *"3d ago"*)
-     - Active generation pulse if the character is currently streaming in the background
-     - Individual delete action button with confirmation
-     - Clicking anywhere on the chat card immediately enters `/chat/:id`.
+2. **Expanded State (Mini-Showcase & Workspace):**
+    - **Showcase & Actions Pane:** Renders a truncated excerpt only — avatar banner, tagline, and a 2–3 line description snippet (never the full `ShowcaseBody` with author styles; measured JanitorAI expanded headers show a banner plus a short styled lore part such as `Get booped! Hah, gotcha.`), and action buttons:
+      - `[ View Character Page ]` (navigates to `/character/:id`)
+      - `[ + Start New Chat ]` (triggers persona picker and creates a fresh branch)
+      - No `Creator Profile` counterpart: FormaTavern is single-user local and has no creator graph.
+    - **Conversation Branch List:** Date-grouped list of chats for that character (JanitorAI groups under dividers such as `TODAY`), displaying:
+      - Chat title (or *"Untitled Chat"* / `no summary :(` fallback with first-turn preview)
+      - Turn/message count badge
+      - Relative time (*"ABOUT 21 HOURS AGO"*, *"2h ago"*, *"3d ago"*)
+      - Active generation pulse if the character is currently streaming in the background
+      - Individual delete action button with confirmation
+      - Clicking anywhere on the chat card immediately enters `/chat/:id`.
 
 ---
 
@@ -98,7 +99,12 @@ In platforms like Janitor AI, "My Chats" is buried three clicks deep inside an a
 Loading all characters and chats into memory at once is an anti-pattern that degrades performance as the database grows. In compliance with **Invariant P1** (`Keyset pagination on (sort_value, id) with opaque base64 cursor; no unbounded OFFSET`), the endpoint must paginate character groups efficiently.
 
 #### Database Strategy:
-Characters with at least one conversation are aggregated using SQLite WAL indices:
+Characters with at least one conversation are aggregated using SQLite WAL indices.
+The draft below is illustrative only: tuple comparison over `MAX(ch.updated_at)`
+in `HAVING` plus `ORDER BY MAX(...)` will not use an index as written, breaks on
+duplicate timestamps, and cannot serve `sort=chats|name` from one cursor. The
+implementation plan must replace it with per-sort keysets (e.g. a latest-chat
+subquery or indexed view) and FTS/subquery matching when `q` covers chat titles:
 ```sql
 SELECT 
   c.id AS character_id,
@@ -187,15 +193,15 @@ All accordion headers and expanded containers strictly utilize semantic chrome t
 
 ## 4. Comparison: Janitor AI vs. FormaTavern Chats Hub
 
-| Capability | Janitor AI (`/my_chats`) | FormaTavern Proposed Hub |
+| Capability | Janitor AI (measured 2026-09-18, 1,647 chars / 2,837 chats) | FormaTavern Proposed Hub |
 |---|---|---|
-| **Access Path** | Buried in User Avatar menu (3 clicks) | Direct top-bar link (`/chats`) + NavDrawer shortcut |
+| **Access Path** | Three paths: avatar `O → My Chats` (buried), dedicated `/my_chats` (`Chats / Published Chats` tabs), homepage `My Chats` carousel with `Continue` | Direct top-bar link (`/chats`) + NavDrawer shortcut — first-class, not buried |
 | **Styling & Theming** | Fixed dark purple palette | Dynamic surface theme cascade (`--theme-*`, `--chrome-*`) |
-| **Character Showcase** | Truncated static text snippet | Rich `ShowcaseBody` markdown with author styles (P4) |
-| **Quick Action** | Only "Continue" button | `Start New Chat` + direct branch selection + Studio edit link |
-| **Data Protocol** | Standard REST pagination | Keyset cursor pagination (P1) with SQLite WAL index |
-| **DOM Overhead** | Large DOM on deep scrolls | Lazy accordion mounting + top-3 eager preview |
-| **Live State** | Polling | Real-time generation indicators (green pulse when generating) |
+| **Character Showcase** | Banner + truncated styled lore part (e.g. `Get booped! Hah, gotcha.`), `Character Page / Creator Profile` buttons | Truncated mini-showcase only (tagline + 2–3 lines); full `ShowcaseBody` stays on `/character/:id` (P4) |
+| **Quick Action** | Hub accordions have per-branch cards (`TODAY / ABOUT 21 HOURS AGO / no summary :(` + count + trash + lock); `Continue` is homepage-carousel-only | `Start New Chat` + direct branch selection; no creator graph |
+| **Data Protocol** | `GET /hamptor/chats/character-chats?page=N&sortBy=latest` over XHR, 10 character groups/page, `{ characters, hasMore, page, totalCharacters, totalChats }` with totals repeated | Keyset cursor pagination (P1) with SQLite WAL index, `limit` default `20` max `50`; totals served once/cached, not per page |
+| **DOM Overhead** | Measured ~813–942 nodes flat while `scrollHeight` grew 2.7k→35k px: collapsed rows cheap, full showcase never mounted per row | Same discipline: lazy accordion mounting + top-3 eager preview, full list lazy via `GET /api/characters/:id/chats` (open question below whether JanitorAI inlines chats or lazy-loads on expand) |
+| **Live State** | Not measured (no generation observed during probe) | Real-time generation indicators via existing `activeGenerationMessageId` pulse |
 
 ---
 
@@ -224,4 +230,6 @@ Before creating the execution blueprint, the following open questions are submit
 
 ## 6. Next Steps & Artifact Registry
 - **File Location:** `docs/history/reports/character-chats-hub-proposal.md`
+- **Reference Aid:** `docs/history/reports/janitorai-behavior/my-chats-hub/REPORT.md` (local-only, git-ignored; load-bearing facts restated in §4 above).
+- **Open measurement:** whether one `characters[N]` entry inlines recent chats or only counts (expand it in Network Preview) and whether accordion expansion fires a request. Answer decides eager top-3 vs fully lazy chat loading in §3.2.
 - **Subsequent Step:** Once aligned with the user and peer agents, draft an Implementation Plan covering database index checks, backend route tests, Svelte 5 runes store, and component authoring.

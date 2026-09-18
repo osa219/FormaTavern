@@ -138,6 +138,19 @@
 
   <!-- Chats List -->
   <div class="flex-1 overflow-y-auto p-3">
+    <!-- All Chats Hub Shortcut -->
+    <a
+      href="/chats"
+      onclick={onClose}
+      class="mb-3 flex items-center justify-between rounded-xl border border-(--chrome-line) bg-(--chrome-bg) px-3 py-2 text-xs font-medium text-(--chrome-text) hover:border-accent/40 hover:text-accent transition-colors"
+    >
+      <div class="flex items-center gap-2">
+        <Icon name="book" size={14} class="text-accent" />
+        <span>All Chats Hub</span>
+      </div>
+      <Icon name="chevron-right" size={14} class="text-(--chrome-text)/40" />
+    </a>
+
     {#if chats.length === 0}
       <div class="flex h-32 items-center justify-center text-xs text-(--chrome-text)/40">
         No conversations yet.

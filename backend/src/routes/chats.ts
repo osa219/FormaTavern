@@ -3,6 +3,7 @@ import {
   ChatConvertBodySchema,
   ChatCreateSchema,
   ChatListQuerySchema,
+  ChatHubQuerySchema,
   ChatPatchSchema,
   PromptPreviewBodySchema,
   SendMessageBodySchema,
@@ -12,6 +13,8 @@ import {
   resolveState,
   type ChatConvertBody,
   type ChatCreate,
+  type ChatHubQuery,
+  type ChatHubResponse,
   type ChatMetadata,
   type ChatPatch,
   type ChatView,
@@ -175,6 +178,27 @@ export function createChatsRouter(deps: {
         query: ChatListQuerySchema
       }
     )
+    .get(
+      '/hub',
+      ({ query }): ChatHubResponse => {
+        const limit = query?.limit !== undefined ? Number(query.limit) : undefined;
+        const res = repos.chats.hub({
+          limit,
+          cursor: query?.cursor,
+          q: query?.q,
+          sort: query?.sort as any
+        });
+        for (const group of res.items) {
+          for (const rc of group.recentChats) {
+            rc.activeGenerationMessageId = hub.activeForChat(rc.id)?.messageId ?? null;
+          }
+        }
+        return res;
+      },
+      {
+        query: ChatHubQuerySchema
+      }
+    )
     .get('/:id', ({ params }): ChatView => {
       const chat = repos.chats.get(params.id);
       if (!chat) {
@@ -222,6 +246,23 @@ export function createChatsRouter(deps: {
         body: ChatPatchSchema
       }
     )
+    .delete('/by-character/:characterId', ({ params }): { deleted: boolean; count: number } => {
+      const chats = repos.chats.list({ characterId: params.characterId });
+      for (const chat of chats) {
+        const active = hub.activeForChat(chat.id);
+        if (active) {
+          throw new ApiError(
+            'chat_has_active_generation',
+            409,
+            'Cannot delete chats while generation is active',
+            { activeGenerationMessageId: active.messageId, chatId: chat.id }
+          );
+        }
+      }
+
+      const result = repos.chats.removeByCharacter(params.characterId);
+      return { deleted: true, count: result.deleted };
+    })
     .delete('/:id', ({ params }): { deleted: boolean } => {
       const active = hub.activeForChat(params.id);
       if (active) {

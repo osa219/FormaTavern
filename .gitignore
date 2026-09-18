@@ -11,3 +11,5 @@ config.yaml
 repomix-output.*
 # Agent harness scratch (auto-generated per session, never tracked)
 .workbuddy-ai/
+# Local-only JanitorAI behavior studies (scraped reference material, never tracked)
+docs/history/reports/janitorai-behavior/

@@ -116,6 +116,14 @@
 
     <div class="flex items-center gap-2">
       <a
+        href="/chats"
+        class="flex items-center gap-1.5 rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-3 py-1.5 text-xs text-(--chrome-text)/80 hover:border-accent/40 hover:text-(--chrome-text) transition-colors"
+      >
+        <Icon name="book" size={13} />
+        <span>Chats</span>
+      </a>
+
+      <a
         href="/personas"
         class="flex items-center gap-1.5 rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-3 py-1.5 text-xs text-(--chrome-text)/80 hover:border-accent/40 hover:text-(--chrome-text) transition-colors"
       >

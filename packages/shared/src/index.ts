@@ -1,4 +1,4 @@
-export const SHARED_VERSION = '0.7.1-network-auth';
+export const SHARED_VERSION = '0.7.2-chats-hub';
 
 export interface HealthResponse {
   ok: true;
