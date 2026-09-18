@@ -4,8 +4,10 @@
   "workspaces": ["backend", "frontend", "packages/*"],
   "scripts": {
     "dev": "bun run --parallel dev:backend dev:frontend",
+    "dev:lan": "bun scripts/dev-lan.ts",
     "dev:backend": "bun --watch backend/src/index.ts",
     "dev:frontend": "bun run --cwd frontend dev",
+    "tunnel": "bun scripts/tunnel.ts",
     "stop": "bun scripts/stop.ts",
     "build": "bun run --cwd frontend build",
     "start": "NODE_ENV=production bun run --cwd backend start",
