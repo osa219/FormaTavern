@@ -2,6 +2,8 @@
   import { onMount, onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
   import type { CharacterDraft } from '$lib/studio/draft.svelte';
+  import { api, toUiError } from '$lib/api';
+  import { toasts } from '$lib/state/toasts.svelte';
   import { HOOKS } from '@formatavern/shared';
   import Icon from '$lib/components/ui/Icon.svelte';
   import Spinner from '$lib/components/ui/Spinner.svelte';
@@ -29,6 +31,11 @@
   let discardConfirmOpen = $state(false);
   let mobilePreviewOpen = $state(false);
   let mobileMenuOpen = $state(false);
+  let deleteConfirmOpen = $state(false);
+  let storiesCount = $state(0);
+  let deleting = $state(false);
+
+  const canDelete = $derived(draft.characterId != null);
 
   onMount(() => {
     draft.startAutosave();
@@ -56,6 +63,44 @@
       }
     } finally {
       saving = false;
+    }
+  }
+
+  async function promptDelete() {
+    if (!draft.characterId) return;
+    mobileMenuOpen = false;
+    try {
+      const res = await (api.api.characters({ id: draft.characterId }).usage.get as any)();
+      if (res.data && typeof res.data.chats === 'number') {
+        storiesCount = res.data.chats;
+      }
+    } catch {
+      storiesCount = 0;
+    }
+    deleteConfirmOpen = true;
+  }
+
+  async function handleConfirmDelete() {
+    if (!draft.characterId) return;
+    const id = draft.characterId;
+    deleting = true;
+    deleteConfirmOpen = false;
+    try {
+      const res = await (api.api.characters({ id }).delete as any)({
+        query: { cascade: 'chats' }
+      });
+      if (res.error) {
+        toasts.error(toUiError(res.error).message);
+        return;
+      }
+      draft.stopAutosave();
+      draft.clearAutosave();
+      toasts.success('Character deleted');
+      goto('/');
+    } catch (err: any) {
+      toasts.error(toUiError(err).message);
+    } finally {
+      deleting = false;
     }
   }
 </script>
@@ -171,6 +216,16 @@
                 Discard changes
               </button>
             {/if}
+            {#if canDelete}
+              <button
+                type="button"
+                disabled={deleting}
+                onclick={() => promptDelete()}
+                class="rounded-lg px-3 py-2 text-left text-xs font-medium text-red-400 hover:bg-(--chrome-line)/40 disabled:opacity-50"
+              >
+                Delete character
+              </button>
+            {/if}
           </div>
         {/if}
       </div>
@@ -208,7 +263,7 @@
       </nav>
 
       <!-- Active Tab Panel -->
-      <div class="flex-1 overflow-y-auto p-6">
+      <div class="flex-1 overflow-y-auto p-6 space-y-6">
         {#if activeTab === 'identity'}
           <IdentityPanel {draft} />
         {:else if activeTab === 'voice'}
@@ -234,6 +289,29 @@
         {:else if activeTab === 'prompt'}
           <StudioPromptPanel {draft} />
         {/if}
+
+        {#if canDelete}
+          <section
+            aria-label="Danger zone"
+            class="rounded-2xl border border-red-500/30 bg-red-500/5 p-4 md:p-5"
+          >
+            <h2 class="text-xs font-semibold uppercase tracking-wider text-red-300">
+              Danger Zone
+            </h2>
+            <p class="mt-1 text-xs leading-relaxed text-(--chrome-text)/60">
+              Permanently delete this character and all of its chats. This cannot be undone.
+            </p>
+            <button
+              type="button"
+              disabled={deleting}
+              onclick={() => promptDelete()}
+              class="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-300 transition-colors hover:bg-red-500/20 disabled:opacity-50"
+            >
+              <Icon name="trash" size={13} />
+              <span>{deleting ? 'Deleting…' : 'Delete Character'}</span>
+            </button>
+          </section>
+        {/if}
       </div>
     </div>
 
@@ -256,6 +334,21 @@
     }}
     onCancel={() => {
       discardConfirmOpen = false;
+    }}
+  />
+
+  <!-- Delete Character Confirm Dialog -->
+  <ConfirmDialog
+    open={deleteConfirmOpen}
+    title="Delete Character"
+    message={storiesCount > 0
+      ? `Are you sure you want to delete "${draft.card.name || 'this character'}" and its ${storiesCount} ${storiesCount === 1 ? 'chat' : 'chats'}? All associated messages and data will be permanently deleted.`
+      : `Are you sure you want to delete "${draft.card.name || 'this character'}"? This action cannot be undone.`}
+    confirmLabel="Delete Everything"
+    danger={true}
+    onConfirm={handleConfirmDelete}
+    onCancel={() => {
+      deleteConfirmOpen = false;
     }}
   />
 </ShellSurface>
