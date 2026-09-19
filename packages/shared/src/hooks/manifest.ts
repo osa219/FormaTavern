@@ -6,6 +6,7 @@ export const HOOKS = {
   chrome: {
     topbar: 'ft-topbar',
     navdrawer: 'ft-navdrawer',
+    bottomnav: 'ft-bottomnav',
     card: 'ft-char-card',
     dialog: 'ft-dialog'
   },

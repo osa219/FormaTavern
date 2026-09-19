@@ -31,7 +31,9 @@
       | 'more-horizontal'
       | 'star'
       | 'book'
-      | 'lock';
+      | 'lock'
+      | 'home'
+      | 'message';
     size?: number;
     class?: string;
   } = $props();
@@ -125,5 +127,10 @@
   {:else if name === 'lock'}
     <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
     <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  {:else if name === 'home'}
+    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    <polyline points="9 22 9 12 15 12 15 22" />
+  {:else if name === 'message'}
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
   {/if}
 </svg>

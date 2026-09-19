@@ -3,8 +3,9 @@
   import { page } from '$app/state';
   import '../app.css';
   import favicon from '$lib/assets/favicon.svg';
-  import Toaster from '$lib/components/ui/Toaster.svelte';
-  import PinPromptModal from '$lib/components/auth/PinPromptModal.svelte';
+import Toaster from '$lib/components/ui/Toaster.svelte';
+import BottomNav from '$lib/components/nav/BottomNav.svelte';
+import PinPromptModal from '$lib/components/auth/PinPromptModal.svelte';
   import { authStore } from '$lib/auth/store.svelte';
   import { shellTheme } from '$lib/state/shellTheme.svelte';
   import { media } from '$lib/state/media.svelte';
@@ -26,6 +27,10 @@
     return SURFACES[0];
   });
 
+  // Mobile bottom nav owns the bottom edge everywhere except the chat view,
+  // where the composer owns it (M2). Studio keeps the nav with padded columns.
+  const showBottomNav = $derived(!page.url.pathname.startsWith('/chat/'));
+
   $effect(() => {
     if (typeof document !== 'undefined') {
       document.documentElement.setAttribute('data-ft-motion', media.reducedMotion ? 'reduce' : 'full');
@@ -40,6 +45,13 @@
 </svelte:head>
 
 {@render children()}
+
+{#if showBottomNav}
+  <!-- C14: same shell-surface hosting precedent as the PIN modal below. -->
+  <div data-ft-surface="shell" style="display: contents">
+    <BottomNav />
+  </div>
+{/if}
 
 {#if authStore.status === 'pin-locked'}
   <!-- C14: dialogs render inside a surface boundary. This host is a sibling of

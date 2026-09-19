@@ -71,7 +71,7 @@ describe('Hook Contract & Manifest Invariants (Invariant C1)', () => {
 
     const uniqueHooks = new Set(allHooks);
     expect(uniqueHooks.size).toBe(allHooks.length);
-    expect(allHooks.length).toBe(44);
+    expect(allHooks.length).toBe(45);
   });
 
   it('prohibits hardcoded ft- class literal strings in frontend/src outside manifest', () => {
@@ -307,6 +307,11 @@ describe('Hook Contract & Manifest Invariants (Invariant C1)', () => {
       const personasSource = readFileSync(resolve(SRC_DIR, 'routes/personas/+page.svelte'), 'utf-8');
       expect(personasSource.includes('data-ft-surface="shell"') || personasSource.includes('<ShellSurface')).toBe(true);
       expect(personasSource).toContain('HOOKS.shell.personas');
+
+      const bottomNavSource = readFileSync(resolve(SRC_DIR, 'lib/components/nav/BottomNav.svelte'), 'utf-8');
+      expect(bottomNavSource).toContain('HOOKS.chrome.bottomnav');
+      const layoutSource = readFileSync(resolve(SRC_DIR, 'routes/+layout.svelte'), 'utf-8');
+      expect(layoutSource).toContain('<BottomNav');
     });
   });
 });
