@@ -27,7 +27,7 @@ import {
   type StatePatchBody
 } from '@formatavern/shared';
 import type { ChatRow, MessageRow, Repositories } from '../db/contracts';
-import { newId } from '../db/ids';
+import { newChatId, newId } from '../db/ids';
 import type { GenerationHub, GenerationJob, ProviderRegistry } from '../engine/contracts';
 import { assembleContext } from '../engine/context';
 import { ConvertError, planDialectConversion } from '../engine/convert';
@@ -105,7 +105,10 @@ export function createChatsRouter(deps: {
           currentState: defaultState(character)
         };
 
-        const chatId = newId();
+        let chatId = newChatId();
+        for (let attempt = 0; attempt < 5 && repos.chats.get(chatId); attempt++) {
+          chatId = newChatId();
+        }
         const title = input.title ?? character.name;
 
         return repos.transaction(() => {

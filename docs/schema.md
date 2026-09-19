@@ -104,7 +104,7 @@ Stores conversation sessions linking a character and a persona, managing active 
 
 ```sql
 CREATE TABLE IF NOT EXISTS chats (
-  id                   TEXT PRIMARY KEY,      -- ULID
+  id                   TEXT PRIMARY KEY,      -- Short crypto-random Base58 (8 chars); legacy rows may hold ULIDs
   title                TEXT NOT NULL,         -- Chat title
   primary_character_id TEXT NOT NULL,         -- FK -> characters(id) ON DELETE RESTRICT
   active_persona_id    TEXT NOT NULL,         -- FK -> personas(id) ON DELETE RESTRICT

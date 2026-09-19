@@ -184,6 +184,30 @@ describe('routes/chats', () => {
     expect(updatedChat!.metadata.stateOverrides?.length).toBe(1);
   });
 
+  it('creates chats with short 8-char Base58 IDs while messages keep ULIDs', async () => {
+    const { app } = setupTestApp();
+
+    const seen = new Set<string>();
+    for (let i = 0; i < 10; i++) {
+      const res = await app.handle(
+        new Request('http://127.0.0.1/api/chats', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            characterId: 'eldrin-the-mage'
+          })
+        })
+      );
+
+      expect(res.status).toBe(201);
+      const chat = (await res.json()) as ChatView;
+      expect(chat.id).toMatch(/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{8}$/);
+      expect(seen.has(chat.id)).toBe(false);
+      seen.add(chat.id);
+      expect(chat.activeLeafId).toMatch(/^[0-9A-HJKMNP-TV-Z]{26}$/);
+    }
+  });
+
   it('filters chat list by characterId and applies limit', async () => {
     const { app, repos } = setupTestApp();
 
