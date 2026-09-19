@@ -1,9 +1,10 @@
 <script lang="ts">
   import type { ChatView, CharacterCard, CharacterSummary } from '@formatavern/shared';
   import { HOOKS } from '@formatavern/shared';
-  import Icon from '../ui/Icon.svelte';
-  import Spinner from '../ui/Spinner.svelte';
-  import ConfirmDialog from '../dialogs/ConfirmDialog.svelte';
+import Icon from '../ui/Icon.svelte';
+import Spinner from '../ui/Spinner.svelte';
+import ConfirmDialog from '../dialogs/ConfirmDialog.svelte';
+import { authStore } from '$lib/auth/store.svelte';
 
   let {
     open = false,
@@ -97,7 +98,7 @@
   oncancel={handleCancel}
   onclick={handleBackdropClick}
   style="font-family: var(--chrome-font, var(--theme-font-family)); color: var(--chrome-text, inherit); padding-bottom: env(safe-area-inset-bottom, 0px);"
-  class="fixed inset-y-0 left-0 m-0 hidden open:flex h-dvh max-h-none w-full max-w-sm flex-col border-r border-(--chrome-line) bg-(--chrome-surface) p-0 text-(--chrome-text) shadow-2xl max-sm:bottom-0 max-sm:top-auto max-sm:h-[80vh] max-sm:max-h-[80vh] max-sm:max-w-none max-sm:rounded-t-2xl max-sm:border-r-0 max-sm:border-t {HOOKS.chrome.navdrawer}"
+  class="fixed inset-y-0 left-0 m-0 hidden open:flex h-dvh max-h-none w-full max-w-sm flex-col overscroll-none border-r border-(--chrome-line) bg-(--chrome-surface) p-0 text-(--chrome-text) shadow-2xl max-md:w-[85vw] max-md:rounded-r-2xl {HOOKS.chrome.navdrawer}"
   aria-labelledby="nav-drawer-title"
 >
   <!-- Drawer Header -->
@@ -125,6 +126,17 @@
         <Icon name="sparkles" size={13} class="text-accent" />
         <span>New</span>
       </button>
+      {#if authStore.status === 'authed' || authStore.status === 'pin-locked'}
+        <button
+          type="button"
+          onclick={() => authStore.forgetDevice()}
+          class="rounded-lg p-1.5 transition-colors {authStore.status === 'pin-locked' ? 'text-rose-400' : 'text-(--chrome-text)/60'} hover:bg-(--chrome-line)/40 hover:text-(--chrome-text)"
+          aria-label={authStore.status === 'pin-locked' ? 'PIN Required' : 'PIN Protected (Click to lock)'}
+          title={authStore.status === 'pin-locked' ? 'PIN Required' : 'PIN Protected (Click to lock)'}
+        >
+          <Icon name="lock" size={14} />
+        </button>
+      {/if}
       <button
         type="button"
         onclick={onClose}
@@ -137,7 +149,7 @@
   </div>
 
   <!-- Chats List -->
-  <div class="flex-1 overflow-y-auto p-3">
+  <div class="flex-1 overflow-y-auto overscroll-contain p-3">
     <!-- All Chats Hub Shortcut -->
     <a
       href="/chats"

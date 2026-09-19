@@ -3,7 +3,6 @@
   import { HOOKS } from '@formatavern/shared';
   import Icon from '../ui/Icon.svelte';
   import StateHud from '../hud/StateHud.svelte';
-  import { authStore } from '$lib/auth/store.svelte';
 
   let {
     character = null,
@@ -34,7 +33,7 @@
   class="relative z-30 flex h-14 w-full items-center justify-between border-b border-neutral-800/80 chrome-bar px-3 {HOOKS.chrome.topbar}"
 >
   <!-- Left: Navigation Menu & Back to Character -->
-  <div class="flex items-center gap-2">
+  <div class="flex min-w-0 items-center gap-1.5 md:gap-2">
     <button
       type="button"
       onclick={onToggleNav}
@@ -66,15 +65,15 @@
           class="h-7 w-7 rounded-lg object-cover ring-1 ring-neutral-700"
         />
       {/if}
-      <div class="flex flex-col items-start leading-tight">
+      <div class="flex min-w-0 flex-col items-start leading-tight">
         <span
-          class="truncate text-sm font-semibold text-neutral-100"
+          class="min-w-0 max-w-full truncate text-sm font-semibold text-neutral-100"
           style="font-family: var(--theme-font-display);"
         >
           {character.name}
         </span>
         {#if chat?.title && chat.title !== character.name}
-          <span class="truncate text-[11px] text-neutral-400">
+          <span class="min-w-0 max-w-full truncate text-[11px] text-neutral-400">
             {chat.title}
           </span>
         {/if}
@@ -85,7 +84,7 @@
   {/if}
 
   <!-- Right: State HUD & Settings -->
-  <div class="flex items-center gap-2">
+  <div class="flex min-w-0 items-center gap-1.5 md:gap-2">
     {#if character}
       <StateHud
         {currentState}
@@ -105,18 +104,6 @@
         title="Codex & Lore (Alt+L)"
       >
         <Icon name="book" size={16} />
-      </button>
-    {/if}
-
-    {#if authStore.status === 'authed' || authStore.status === 'pin-locked'}
-      <button
-        type="button"
-        onclick={() => authStore.forgetDevice()}
-        class="flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-800 bg-neutral-900 {authStore.status === 'pin-locked' ? 'text-rose-400' : 'text-accent'} transition-colors hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-        aria-label={authStore.status === 'pin-locked' ? 'PIN Required' : 'PIN Protected (Click to lock)'}
-        title={authStore.status === 'pin-locked' ? 'PIN Required' : 'PIN Protected (Click to lock)'}
-      >
-        <Icon name="lock" size={16} />
       </button>
     {/if}
 
