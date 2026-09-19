@@ -53,31 +53,33 @@
 
 <ShellSurface class={HOOKS.shell.personas}>
   <!-- Header -->
-  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-(--chrome-line) chrome-bar px-6">
-    <div class="flex items-center gap-3">
+  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-(--chrome-line) chrome-bar px-4 md:px-6">
+    <div class="flex min-w-0 items-center gap-2 md:gap-3">
       <a
         href="/"
-        class="flex items-center gap-1.5 text-xs text-(--chrome-text)/60 hover:text-(--chrome-text)"
+        class="flex items-center gap-1.5 text-xs text-(--chrome-text)/60 hover:text-(--chrome-text) shrink-0"
+        title="Foyer"
       >
         <Icon name="arrow-left" size={14} />
-        <span>Foyer</span>
+        <span class="hidden md:inline">Foyer</span>
       </a>
-      <span class="text-(--chrome-text)/40">/</span>
-      <h1 class="text-sm font-bold tracking-wide text-(--chrome-text) uppercase">
+      <span class="text-(--chrome-text)/40 hidden md:inline">/</span>
+      <h1 class="truncate text-sm font-bold tracking-wide text-(--chrome-text) uppercase">
         Personas & Aliases
       </h1>
     </div>
 
     <a
       href="/personas/new"
-      class="inline-flex items-center gap-1.5 rounded-xl bg-accent px-3.5 py-1.5 text-xs font-semibold text-accent-contrast hover:bg-accent/90"
+      class="inline-flex items-center gap-1.5 rounded-xl bg-accent px-3 md:px-3.5 py-1.5 text-xs font-semibold text-accent-contrast hover:bg-accent/90 shrink-0"
+      title="New Persona"
     >
       <Icon name="plus" size={14} />
-      <span>New Persona</span>
+      <span class="hidden md:inline">New Persona</span>
     </a>
   </header>
 
-  <main class="mx-auto max-w-5xl px-6 py-8">
+  <main class="w-full mx-auto max-w-5xl px-4 md:px-6 py-8 max-md:pb-24">
     <div class="mb-8">
       <h2 class="text-2xl font-bold tracking-tight text-(--chrome-text) sm:text-3xl">
         Your User Personas

@@ -53,7 +53,7 @@
   bind:this={dialogEl}
   oncancel={handleCancel}
   onclick={handleBackdropClick}
-  class="fixed inset-0 m-auto hidden open:block w-full max-w-md rounded-2xl border border-(--chrome-line) bg-(--chrome-surface) p-6 text-(--chrome-text) shadow-2xl max-sm:bottom-0 max-sm:top-auto max-sm:max-w-none max-sm:rounded-b-none max-sm:border-x-0 max-sm:border-b-0 {HOOKS.chrome.dialog}"
+  class="fixed inset-0 m-auto hidden open:block w-full max-w-md rounded-2xl border border-(--chrome-line) bg-(--chrome-surface) p-6 max-md:p-4 text-(--chrome-text) shadow-2xl max-md:bottom-0 max-md:top-auto max-md:max-w-none max-md:rounded-b-none max-md:border-x-0 max-md:border-b-0 {HOOKS.chrome.dialog}"
   aria-labelledby="confirm-dialog-title"
   aria-describedby="confirm-dialog-desc"
 >

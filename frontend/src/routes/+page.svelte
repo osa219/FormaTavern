@@ -117,45 +117,48 @@
 
 <ShellSurface>
   <!-- Top Navigation Header -->
-  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-(--chrome-line) chrome-bar px-6 {HOOKS.shell.foyerHeader}">
-    <div class="flex items-center gap-3">
-      <span class="text-accent text-lg">◈</span>
-      <h1 class="text-sm font-bold tracking-wide text-(--chrome-text) uppercase">
+  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-(--chrome-line) chrome-bar px-4 md:px-6 {HOOKS.shell.foyerHeader}">
+    <div class="flex min-w-0 items-center gap-2 md:gap-3">
+      <span class="text-accent text-lg shrink-0">◈</span>
+      <h1 class="truncate text-sm font-bold tracking-wide text-(--chrome-text) uppercase">
         {shellTheme.theme.labels?.foyerTitle || 'FormaTavern'}
       </h1>
-      <span class="rounded border border-(--chrome-line) bg-(--chrome-surface) px-2 py-0.5 text-[10px] font-mono text-(--chrome-text)/70">
+      <span class="hidden md:block rounded border border-(--chrome-line) bg-(--chrome-surface) px-2 py-0.5 text-[10px] font-mono text-(--chrome-text)/70 shrink-0">
         Foyer
       </span>
     </div>
 
-    <div class="flex items-center gap-2.5">
-      <!-- Chats Hub Quick-Access -->
+    <div class="flex min-w-0 items-center gap-1.5 md:gap-2.5">
+      <!-- Chats Hub Quick-Access (bottom nav covers this below md:) -->
       <a
         href="/chats"
-        class="flex items-center gap-1.5 rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-1.5 text-xs text-(--chrome-text)/80 hover:border-accent/40 transition-colors"
+        class="hidden md:flex items-center gap-1.5 rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-1.5 text-xs text-(--chrome-text)/80 hover:border-accent/40 transition-colors"
         title="Manage all conversations"
       >
         <Icon name="book" size={13} />
-        <span class="hidden sm:inline">Chats</span>
+        <span>Chats</span>
       </a>
 
-      <!-- Personas Quick-Access -->
+      <!-- Personas Quick-Access (bottom nav covers this below md:) -->
       <a
         href="/personas"
-        class="flex items-center gap-1.5 rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-1.5 text-xs text-(--chrome-text)/80 hover:border-accent/40 transition-colors"
+        class="hidden md:flex items-center gap-1.5 rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-1.5 text-xs text-(--chrome-text)/80 hover:border-accent/40 transition-colors"
         title="Manage your user personas"
       >
         <Icon name="user" size={13} />
-        <span class="hidden sm:inline">Personas</span>
+        <span>Personas</span>
       </a>
 
       <!-- Create New Character -->
       <a
         href="/character/new"
-        class="inline-flex items-center gap-1.5 rounded-xl bg-accent px-3.5 py-1.5 text-xs font-semibold text-accent-contrast hover:bg-accent/90 shadow-sm"
+        class="inline-flex items-center gap-1.5 rounded-xl bg-accent px-3 md:px-3.5 py-1.5 text-xs font-semibold text-accent-contrast hover:bg-accent/90 shadow-sm shrink-0"
+        title="New Character"
+        aria-label="New Character"
       >
         <Icon name="plus" size={13} />
-        <span>New Character</span>
+        <span class="hidden md:inline">New Character</span>
+        <span class="md:hidden">New</span>
       </a>
 
       {#if isDev}
@@ -182,7 +185,7 @@
     </div>
   </header>
 
-  <main class="mx-auto max-w-6xl px-6 py-8 space-y-8">
+  <main class="w-full mx-auto max-w-6xl px-4 md:px-6 py-8 max-md:pb-24 space-y-8">
     <!-- Hero / Intro -->
     <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
       <div>

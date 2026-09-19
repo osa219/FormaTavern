@@ -557,7 +557,7 @@
       </div>
     </header>
 
-    <main class="mx-auto w-full max-w-5xl p-6 space-y-6">
+    <main class="w-full mx-auto max-w-5xl p-6 space-y-6">
       <!-- 1. Settings Drawer -->
       <details class="group rounded-2xl border border-(--chrome-line) bg-(--chrome-surface)/40 p-4 transition-colors">
         <summary class="flex cursor-pointer items-center justify-between text-xs font-semibold text-(--chrome-text) select-none">

@@ -28,6 +28,7 @@
   let saving = $state(false);
   let discardConfirmOpen = $state(false);
   let mobilePreviewOpen = $state(false);
+  let mobileMenuOpen = $state(false);
 
   onMount(() => {
     draft.startAutosave();
@@ -63,43 +64,47 @@
 
 <ShellSurface class="h-[100dvh] overflow-hidden {HOOKS.shell.studio}">
   <!-- Publish Bar / Header -->
-  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-(--chrome-line) chrome-bar px-6 shrink-0">
-    <div class="flex items-center gap-4 min-w-0">
+  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-(--chrome-line) chrome-bar px-4 md:px-6 shrink-0">
+    <div class="flex items-center gap-2 md:gap-4 min-w-0">
       <a
         href="/"
         class="flex items-center gap-1.5 text-xs text-(--chrome-text)/60 hover:text-(--chrome-text) shrink-0"
+        title="Foyer"
       >
         <Icon name="arrow-left" size={14} />
-        <span>Foyer</span>
+        <span class="hidden md:inline">Foyer</span>
       </a>
-      <span class="text-(--chrome-text)/40">/</span>
+      <span class="text-(--chrome-text)/40 hidden md:inline">/</span>
       <div class="truncate text-xs font-semibold text-(--chrome-text)">
         {draft.card.name || 'Untitled Character'}
       </div>
       {#if draft.dirty}
-        <span class="inline-flex items-center rounded bg-amber-500/15 px-2 py-0.5 text-[10px] font-mono text-amber-300 border border-amber-500/30">
+        <span class="hidden md:inline-flex items-center rounded bg-amber-500/15 px-2 py-0.5 text-[10px] font-mono text-amber-300 border border-amber-500/30">
           Unsaved Changes
         </span>
+        <span class="md:hidden h-2 w-2 rounded-full bg-amber-400 shrink-0" title="Unsaved changes"></span>
       {:else}
-        <span class="inline-flex items-center rounded border border-(--chrome-line) bg-(--chrome-surface) px-2 py-0.5 text-[10px] font-mono text-(--chrome-text)/60">
+        <span class="hidden md:inline-flex items-center rounded border border-(--chrome-line) bg-(--chrome-surface) px-2 py-0.5 text-[10px] font-mono text-(--chrome-text)/60">
           Saved
         </span>
+        <span class="md:hidden h-2 w-2 rounded-full bg-emerald-400 shrink-0" title="Saved"></span>
       {/if}
     </div>
 
     <!-- Right Controls: Issues Counter + Actions -->
-    <div class="flex items-center gap-3 shrink-0">
+    <div class="flex items-center gap-1.5 md:gap-3 shrink-0">
       {#if draft.issues.length > 0}
-        <div class="flex items-center gap-1.5 rounded-lg bg-red-500/15 px-2.5 py-1 text-xs font-mono text-red-300 border border-red-500/30">
+        <div class="flex items-center gap-1.5 rounded-lg bg-red-500/15 px-2 md:px-2.5 py-1 text-xs font-mono text-red-300 border border-red-500/30" title="{draft.issues.length} issue(s)">
           <span>⚠</span>
-          <span>{draft.issues.length} issue(s)</span>
+          <span class="hidden md:inline">{draft.issues.length} issue(s)</span>
+          <span class="md:hidden">{draft.issues.length}</span>
         </div>
       {/if}
 
       <button
         type="button"
         onclick={() => (mobilePreviewOpen = !mobilePreviewOpen)}
-        class="lg:hidden rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-1.5 text-xs font-semibold text-(--chrome-text)"
+        class="lg:hidden rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-2.5 md:px-3 py-1.5 text-xs font-semibold text-(--chrome-text)"
       >
         {mobilePreviewOpen ? 'Editor' : 'Preview'}
       </button>
@@ -108,7 +113,7 @@
         <button
           type="button"
           onclick={() => (discardConfirmOpen = true)}
-          class="rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-1.5 text-xs font-semibold text-(--chrome-text) hover:bg-(--chrome-line)/40"
+          class="hidden md:inline-flex rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-1.5 text-xs font-semibold text-(--chrome-text) hover:bg-(--chrome-line)/40"
         >
           Discard
         </button>
@@ -118,7 +123,7 @@
         type="button"
         disabled={saving || draft.issues.length > 0}
         onclick={() => handleSave(false)}
-        class="inline-flex items-center gap-1.5 rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-4 py-1.5 text-xs font-semibold text-(--chrome-text) hover:bg-(--chrome-line)/40 disabled:opacity-50"
+        class="hidden md:inline-flex items-center gap-1.5 rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-4 py-1.5 text-xs font-semibold text-(--chrome-text) hover:bg-(--chrome-line)/40 disabled:opacity-50"
       >
         {#if saving}
           <Spinner size={12} />
@@ -130,15 +135,50 @@
         type="button"
         disabled={saving || draft.issues.length > 0}
         onclick={() => handleSave(true)}
-        class="inline-flex items-center gap-1.5 rounded-xl bg-accent px-4 py-1.5 text-xs font-semibold text-accent-contrast hover:bg-accent/90 disabled:opacity-50 shadow-md"
+        class="inline-flex items-center gap-1.5 rounded-xl bg-accent px-3 md:px-4 py-1.5 text-xs font-semibold text-accent-contrast hover:bg-accent/90 disabled:opacity-50 shadow-md"
       >
-        <span>Save & Open</span>
+        <span class="hidden sm:inline">Save & Open</span>
+        <span class="sm:hidden">Save</span>
       </button>
+
+      <!-- Mobile overflow menu: Save / Discard live here below md: -->
+      <div class="relative md:hidden">
+        <button
+          type="button"
+          onclick={() => (mobileMenuOpen = !mobileMenuOpen)}
+          class="flex h-9 w-9 items-center justify-center rounded-xl border border-(--chrome-line) bg-(--chrome-surface) text-(--chrome-text)/80"
+          aria-label="More studio actions"
+          aria-expanded={mobileMenuOpen}
+        >
+          <Icon name="more-horizontal" size={16} />
+        </button>
+        {#if mobileMenuOpen}
+          <div class="absolute right-0 top-11 z-50 flex min-w-40 flex-col gap-1 rounded-xl border border-(--chrome-line) bg-(--chrome-surface) p-1.5 shadow-2xl">
+            <button
+              type="button"
+              disabled={saving || draft.issues.length > 0}
+              onclick={() => { mobileMenuOpen = false; handleSave(false); }}
+              class="rounded-lg px-3 py-2 text-left text-xs font-medium text-(--chrome-text) hover:bg-(--chrome-line)/40 disabled:opacity-50"
+            >
+              Save draft
+            </button>
+            {#if draft.dirty}
+              <button
+                type="button"
+                onclick={() => { mobileMenuOpen = false; discardConfirmOpen = true; }}
+                class="rounded-lg px-3 py-2 text-left text-xs font-medium text-(--chrome-text) hover:bg-(--chrome-line)/40"
+              >
+                Discard changes
+              </button>
+            {/if}
+          </div>
+        {/if}
+      </div>
     </div>
   </header>
 
-  <!-- Studio Workspace -->
-  <div class="grid flex-1 grid-cols-1 lg:grid-cols-12 overflow-hidden">
+  <!-- Studio Workspace (bottom padding clears the mobile bottom nav) -->
+  <div class="grid flex-1 grid-cols-1 lg:grid-cols-12 overflow-hidden max-md:pb-[calc(3.75rem+env(safe-area-inset-bottom,0px))]">
     <!-- Left Rail: Tabs & Content (7 Cols) -->
     <div class="{mobilePreviewOpen ? 'hidden lg:flex' : 'flex'} lg:col-span-7 flex-col border-r border-(--chrome-line) overflow-hidden">
       <!-- Tabs Bar -->

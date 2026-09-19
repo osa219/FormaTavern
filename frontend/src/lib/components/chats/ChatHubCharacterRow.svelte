@@ -70,8 +70,8 @@
 
       <!-- Character Info & Tagline Snippet -->
       <div class="min-w-0">
-        <div class="flex items-center gap-2">
-          <span class="truncate font-semibold text-(--chrome-text)">
+        <div class="flex min-w-0 items-center gap-2">
+          <span class="min-w-0 truncate font-semibold text-(--chrome-text)">
             {character.name}
           </span>
           {#if character.style?.colors?.accent}
@@ -186,8 +186,8 @@
               class="group relative flex flex-col justify-between rounded-xl border border-(--chrome-line) bg-(--chrome-surface) p-3.5 transition-colors hover:border-accent/50 hover:bg-(--chrome-bg)/50"
             >
               <div class="space-y-1">
-                <div class="flex items-start justify-between gap-2">
-                  <h5 class="truncate text-xs font-medium text-(--chrome-text) group-hover:text-accent">
+                <div class="flex min-w-0 items-start justify-between gap-2">
+                  <h5 class="min-w-0 truncate text-xs font-medium text-(--chrome-text) group-hover:text-accent">
                     {chat.title && chat.title.trim().length > 0 ? chat.title : 'Untitled Conversation'}
                   </h5>
                   {#if chat.activeGenerationMessageId}

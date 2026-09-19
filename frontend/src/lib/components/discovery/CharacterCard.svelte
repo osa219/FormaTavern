@@ -57,8 +57,8 @@
     {/if}
 
     <div class="min-w-0 flex-1">
-      <div class="flex items-center gap-2">
-        <h3 class="truncate text-base font-semibold text-(--chrome-text) group-hover:text-accent">
+      <div class="flex min-w-0 items-center gap-2">
+        <h3 class="min-w-0 truncate text-base font-semibold text-(--chrome-text) group-hover:text-accent">
           {activeCharacter.name}
         </h3>
         <!-- Swatch dot -->

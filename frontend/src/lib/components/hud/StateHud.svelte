@@ -92,12 +92,12 @@
     aria-expanded={popoverOpen}
     aria-haspopup="dialog"
   >
-    <!-- Source Glyph -->
+    <!-- Source Glyph (label collapses to a status dot below md:) -->
     <span
       class="font-mono text-xs opacity-75"
       title={stateWarnings.length > 0 ? `Warnings: ${stateWarnings.join(', ')}` : `Source: ${currentSource.label}`}
     >
-      <span class="text-accent">{currentSource.glyph}</span> {currentSource.label}
+      <span class="text-accent">{currentSource.glyph}</span><span class="hidden md:inline"> {currentSource.label}</span>
     </span>
 
     {#if stateWarnings.length > 0}
@@ -111,8 +111,8 @@
       <span class="text-neutral-600">·</span>
     {/if}
 
-    <!-- Ambient Chips -->
-    <div class="flex items-center gap-1.5 opacity-80">
+    <!-- Ambient Chips (glyph-only dot below md:) -->
+    <div class="hidden md:flex items-center gap-1.5 opacity-80">
       {#each chips as chip, i (chip.key)}
         {#if i > 0}
           <span class="text-neutral-600">·</span>
@@ -127,7 +127,7 @@
       {/each}
     </div>
 
-    <Icon name="sparkles" size={12} class="text-neutral-500" />
+    <Icon name="sparkles" size={12} class="text-neutral-500 hidden md:block" />
   </button>
 
   <StateOverridePopover

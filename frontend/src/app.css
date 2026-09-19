@@ -71,6 +71,40 @@
   --motion-ease: cubic-bezier(.22, 1, .36, 1);
 }
 
+/* Mobile shell guard (M1): one wide child can never shift the whole page.
+   Applied to both html and body because body overflow propagates to the
+   viewport. This is containment, not a fix — overflowing children are still
+   found and fixed individually. */
+html,
+body {
+  overflow-x: clip;
+}
+
+@supports not (overflow: clip) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+}
+
+/* No-scrollbar utility for horizontally scrolling tab strips */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Flex-item floor fix (M1): the shell surface root is `flex flex-col`, so page
+   headers and mains are flex items whose automatic minimum width would floor
+   at the longest unbroken word (names, titles, URLs) and stretch the whole
+   page past the viewport. Zeroing it here covers every page at once instead
+   of scattering min-w-0 across route files. */
+[data-ft-surface='shell'] > header,
+[data-ft-surface='shell'] > main {
+  min-width: 0;
+}
+
 dialog::backdrop {
   background-color: var(--drawer-backdrop-bg, rgba(0, 0, 0, 0.45));
   backdrop-filter: var(--drawer-backdrop-filter, blur(4px));

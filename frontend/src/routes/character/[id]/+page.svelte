@@ -99,22 +99,23 @@
   <DecorLayers layers={showcaseDecor} />
 
   <!-- Top Bar -->
-  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-(--chrome-line) chrome-bar px-6">
-    <div class="flex items-center gap-3">
+  <header class="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-(--chrome-line) chrome-bar px-4 md:px-6">
+    <div class="flex min-w-0 items-center gap-2 md:gap-3">
       <a
         href="/"
-        class="flex items-center gap-1.5 text-xs text-neutral-400 hover:text-neutral-200"
+        class="flex items-center gap-1.5 text-xs text-neutral-400 hover:text-neutral-200 shrink-0"
+        title="Foyer"
       >
         <Icon name="arrow-left" size={14} />
-        <span>Foyer</span>
+        <span class="hidden md:inline">Foyer</span>
       </a>
-      <span class="text-neutral-700">/</span>
+      <span class="text-neutral-700 hidden md:inline">/</span>
       <span class="truncate text-xs font-semibold text-neutral-300">
         {character.name}
       </span>
     </div>
 
-    <div class="flex items-center gap-2">
+    <div class="hidden md:flex items-center gap-2">
       <a
         href="/chats"
         class="flex items-center gap-1.5 rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-3 py-1.5 text-xs text-(--chrome-text)/80 hover:border-accent/40 hover:text-(--chrome-text) transition-colors"
@@ -133,7 +134,7 @@
     </div>
   </header>
 
-  <main class="mx-auto max-w-4xl px-6 py-8 space-y-8">
+  <main class="w-full mx-auto max-w-4xl px-4 md:px-6 py-8 max-md:pb-24 space-y-8">
     <!-- Showcase Hero -->
     <ShowcaseHero {character} />
 

@@ -313,7 +313,7 @@ import { api } from '$lib/api';
   bind:this={dialogEl}
   oncancel={handleCancel}
   onclick={handleBackdropClick}
-  class="fixed inset-0 m-auto hidden open:flex max-h-[85vh] w-full max-w-2xl flex-col rounded-2xl border border-(--chrome-line) bg-(--chrome-surface) p-6 text-(--chrome-text) shadow-2xl max-sm:bottom-0 max-sm:top-auto max-sm:max-h-[90vh] max-sm:max-w-none max-sm:rounded-b-none max-sm:border-x-0 max-sm:border-b-0 {HOOKS.shell.settings}"
+  class="fixed inset-0 m-auto hidden open:flex max-h-[85vh] w-full max-w-2xl flex-col overscroll-none rounded-2xl border border-(--chrome-line) bg-(--chrome-surface) p-6 text-(--chrome-text) shadow-2xl max-md:bottom-0 max-md:top-auto max-md:m-0 max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:max-w-none max-md:rounded-none max-md:border-0 max-md:p-4 {HOOKS.shell.settings}"
   aria-labelledby="settings-title"
 >
   <!-- Header -->
@@ -340,12 +340,14 @@ import { api } from '$lib/api';
     </button>
   </div>
 
-  <!-- Tabs -->
-  <div class="mb-5 flex border-b border-(--chrome-line) text-xs font-medium text-(--chrome-text)/60">
+  <!-- Tabs (scrolls horizontally on small screens; shrink-0 keeps the
+       height-constrained dialog from squeezing the strip once overflow
+       makes it a scroll container with zero automatic minimum size) -->
+  <div class="mb-5 flex shrink-0 overflow-x-auto scrollbar-none border-b border-(--chrome-line) text-xs font-medium text-(--chrome-text)/60">
     <button
       type="button"
       onclick={() => (activeTab = 'provider')}
-      class="border-b-2 px-3.5 py-2 transition-colors hover:text-(--chrome-text)"
+      class="shrink-0 border-b-2 px-3.5 py-2 transition-colors hover:text-(--chrome-text)"
       class:border-accent={activeTab === 'provider'}
       class:text-(--chrome-text)={activeTab === 'provider'}
       class:border-transparent={activeTab !== 'provider'}
@@ -355,7 +357,7 @@ import { api } from '$lib/api';
     <button
       type="button"
       onclick={() => (activeTab = 'generation')}
-      class="border-b-2 px-3.5 py-2 transition-colors hover:text-(--chrome-text)"
+      class="shrink-0 border-b-2 px-3.5 py-2 transition-colors hover:text-(--chrome-text)"
       class:border-accent={activeTab === 'generation'}
       class:text-(--chrome-text)={activeTab === 'generation'}
       class:border-transparent={activeTab !== 'generation'}
@@ -365,7 +367,7 @@ import { api } from '$lib/api';
     <button
       type="button"
       onclick={() => (activeTab = 'appearance')}
-      class="border-b-2 px-3.5 py-2 transition-colors hover:text-(--chrome-text)"
+      class="shrink-0 border-b-2 px-3.5 py-2 transition-colors hover:text-(--chrome-text)"
       class:border-accent={activeTab === 'appearance'}
       class:text-(--chrome-text)={activeTab === 'appearance'}
       class:border-transparent={activeTab !== 'appearance'}
@@ -375,7 +377,7 @@ import { api } from '$lib/api';
     <button
       type="button"
       onclick={() => (activeTab = 'narrative')}
-      class="border-b-2 px-3.5 py-2 transition-colors hover:text-(--chrome-text)"
+      class="shrink-0 border-b-2 px-3.5 py-2 transition-colors hover:text-(--chrome-text)"
       class:border-accent={activeTab === 'narrative'}
       class:text-(--chrome-text)={activeTab === 'narrative'}
       class:border-transparent={activeTab !== 'narrative'}
@@ -385,7 +387,7 @@ import { api } from '$lib/api';
     <button
       type="button"
       onclick={() => (activeTab = 'a11y')}
-      class="border-b-2 px-3.5 py-2 transition-colors hover:text-(--chrome-text)"
+      class="shrink-0 border-b-2 px-3.5 py-2 transition-colors hover:text-(--chrome-text)"
       class:border-accent={activeTab === 'a11y'}
       class:text-(--chrome-text)={activeTab === 'a11y'}
       class:border-transparent={activeTab !== 'a11y'}
@@ -395,7 +397,7 @@ import { api } from '$lib/api';
     <button
       type="button"
       onclick={() => (activeTab = 'shortcuts')}
-      class="border-b-2 px-3.5 py-2 transition-colors hover:text-(--chrome-text)"
+      class="shrink-0 border-b-2 px-3.5 py-2 transition-colors hover:text-(--chrome-text)"
       class:border-accent={activeTab === 'shortcuts'}
       class:text-(--chrome-text)={activeTab === 'shortcuts'}
       class:border-transparent={activeTab !== 'shortcuts'}
@@ -404,8 +406,9 @@ import { api } from '$lib/api';
     </button>
   </div>
 
-  <!-- Body -->
-  <div class="flex-1 overflow-y-auto pr-1 text-xs text-(--chrome-text)/80">
+  <!-- Body (overscroll contained: finger scrolls end at this scroller,
+       never pans the sheet or chains to the locked page behind it) -->
+  <div class="flex-1 overflow-y-auto overscroll-contain pr-1 text-xs text-(--chrome-text)/80">
     {#if activeTab === 'a11y'}
       <div class="flex flex-col gap-4">
         <p class="text-[11px] text-(--chrome-text)/60">
