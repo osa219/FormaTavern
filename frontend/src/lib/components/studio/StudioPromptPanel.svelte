@@ -26,6 +26,7 @@
       scenario: draft.card.scenario,
       exampleDialogue: draft.card.exampleDialogue,
       firstMessage: draft.card.firstMessage,
+      alternateGreetings: draft.card.alternateGreetings,
       stateSchema: draft.card.stateSchema
     })
   );

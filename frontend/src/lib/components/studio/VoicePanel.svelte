@@ -1,8 +1,41 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { CharacterDraft } from '$lib/studio/draft.svelte';
+  import Icon from '$lib/components/ui/Icon.svelte';
 
   let { draft }: { draft: CharacterDraft } = $props();
+
+  function alternates(): string[] {
+    if (!draft.card.alternateGreetings) draft.card.alternateGreetings = [];
+    return draft.card.alternateGreetings;
+  }
+
+  function addGreeting() {
+    alternates().push('');
+  }
+
+  function deleteGreeting(index: number) {
+    alternates().splice(index, 1);
+  }
+
+  function moveGreeting(index: number, direction: -1 | 1) {
+    const list = alternates();
+    const target = index + direction;
+    if (target < 0 || target >= list.length) return;
+    const [item] = list.splice(index, 1);
+    list.splice(target, 0, item);
+  }
+
+  function duplicateGreeting(index: number) {
+    const list = alternates();
+    list.splice(index + 1, 0, list[index]);
+  }
+
+  function greetingExcerpt(text: string): string {
+    const singleLine = text.replace(/\s+/g, ' ').trim();
+    if (!singleLine) return 'Empty — pruned on save';
+    return singleLine.length > 80 ? `${singleLine.slice(0, 80)}…` : singleLine;
+  }
 
   let encodeFn = $state<((text: string) => number[]) | null>(null);
 
@@ -36,6 +69,7 @@
       draft.card.personality,
       draft.card.scenario,
       draft.card.firstMessage,
+      ...(draft.card.alternateGreetings ?? []),
       draft.card.exampleDialogue
     ].filter(Boolean).join('\n\n');
     return getTokenCount(combined);
@@ -121,11 +155,11 @@
     {/if}
   </div>
 
-  <!-- First Message -->
+  <!-- First Message (Greeting 1, primary) -->
   <div>
     <div class="flex items-center justify-between mb-1.5">
       <label for="voice-first-message" class="block text-xs font-semibold text-(--chrome-text) uppercase tracking-wider">
-        First Message (Greeting) <span class="text-accent">*</span>
+        Greeting 1 — First Message <span class="text-accent">*</span>
       </label>
       <span class="text-[11px] font-mono text-(--chrome-text)/50">
         {getTokenCount(draft.card.firstMessage)}
@@ -144,6 +178,89 @@
     <p class="mt-1 text-xs text-(--chrome-text)/50">
       Previewed in real-time in the Live Aesthetic Preview rail.
     </p>
+  </div>
+
+  <!-- Alternate Greetings -->
+  <div>
+    <div class="flex items-center justify-between mb-1.5">
+      <span class="block text-xs font-semibold text-(--chrome-text) uppercase tracking-wider">
+        Alternate Greetings ({alternates().length})
+      </span>
+      <button
+        type="button"
+        onclick={addGreeting}
+        class="inline-flex items-center gap-1 rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2 py-1 text-[11px] font-semibold text-(--chrome-text) hover:bg-(--chrome-line)/40"
+      >
+        <Icon name="plus" size={12} />
+        <span>Add greeting</span>
+      </button>
+    </div>
+    <p class="mb-2 text-xs text-(--chrome-text)/50">
+      Extra opening lines readers can pick when starting a chat. Empty ones are pruned on save; use ↑ ↓ to reorder.
+    </p>
+
+    {#each alternates() as _, i}
+      <div class="mb-2 rounded-xl border border-(--chrome-line) bg-(--chrome-surface)/60 p-3">
+        <div class="mb-1.5 flex items-center justify-between gap-2">
+          <span class="truncate text-xs font-semibold text-(--chrome-text)" title={alternates()[i]}>
+            Greeting {i + 2} · {greetingExcerpt(alternates()[i])}
+          </span>
+          <span class="flex shrink-0 items-center gap-0.5">
+            <button
+              type="button"
+              onclick={() => moveGreeting(i, -1)}
+              disabled={i === 0}
+              class="rounded p-1 text-(--chrome-text)/60 hover:bg-(--chrome-line)/40 hover:text-(--chrome-text) disabled:opacity-30"
+              title="Move up"
+              aria-label="Move greeting {i + 2} up"
+            >
+              <Icon name="chevron-up" size={13} />
+            </button>
+            <button
+              type="button"
+              onclick={() => moveGreeting(i, 1)}
+              disabled={i === alternates().length - 1}
+              class="rounded p-1 text-(--chrome-text)/60 hover:bg-(--chrome-line)/40 hover:text-(--chrome-text) disabled:opacity-30"
+              title="Move down"
+              aria-label="Move greeting {i + 2} down"
+            >
+              <Icon name="chevron-down" size={13} />
+            </button>
+            <button
+              type="button"
+              onclick={() => duplicateGreeting(i)}
+              class="rounded p-1 text-(--chrome-text)/60 hover:bg-(--chrome-line)/40 hover:text-(--chrome-text)"
+              title="Duplicate"
+              aria-label="Duplicate greeting {i + 2}"
+            >
+              <Icon name="copy" size={13} />
+            </button>
+            <button
+              type="button"
+              onclick={() => deleteGreeting(i)}
+              class="rounded p-1 text-(--chrome-text)/60 hover:bg-red-500/20 hover:text-red-300"
+              title="Delete"
+              aria-label="Delete greeting {i + 2}"
+            >
+              <Icon name="trash" size={13} />
+            </button>
+          </span>
+        </div>
+        <textarea
+          value={alternates()[i]}
+          oninput={(e) => {
+            alternates()[i] = e.currentTarget.value;
+          }}
+          rows={3}
+          placeholder="Another opening line for this character..."
+          class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) p-3 text-sm text-(--chrome-text) placeholder-(--chrome-text)/40 focus:border-accent focus:outline-none leading-relaxed font-mono"
+          aria-label="Alternate greeting {i + 2}"
+        ></textarea>
+        <div class="mt-1 text-right text-[11px] font-mono text-(--chrome-text)/50">
+          {getTokenCount(alternates()[i])}
+        </div>
+      </div>
+    {/each}
   </div>
 
   <!-- Example Dialogue -->

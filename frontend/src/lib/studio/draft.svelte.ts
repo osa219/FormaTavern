@@ -1,6 +1,7 @@
 import {
   CharacterCardSchema,
   DEFAULT_CHARACTER_THEME,
+  pruneAlternateGreetings,
   resolveTheme,
   shellToThemeOverrides,
   validate,
@@ -23,6 +24,7 @@ export function createEmptyCard(): CharacterCreate {
     personality: '',
     scenario: '',
     firstMessage: '',
+    alternateGreetings: [],
     exampleDialogue: '',
     showcase: '',
     customCss: '',
@@ -98,6 +100,7 @@ export class CharacterDraft {
         personality: initialCard.personality,
         scenario: initialCard.scenario,
         firstMessage: initialCard.firstMessage,
+        alternateGreetings: [...(initialCard.alternateGreetings ?? [])],
         exampleDialogue: initialCard.exampleDialogue ?? '',
         showcase: initialCard.showcase ?? '',
         customCss: initialCard.customCss ?? '',
@@ -184,6 +187,15 @@ export class CharacterDraft {
   }
 
   async save(): Promise<'saved' | 'stale' | 'invalid' | 'error'> {
+    // Prune blank alternate greetings so the DB never stores them.
+    // If the primary is blank but alternates remain, promote the first
+    // alternate so greeting index 0 stays meaningful.
+    const prunedAlternates = pruneAlternateGreetings(this.card.alternateGreetings);
+    if (this.card.firstMessage.trim() === '' && prunedAlternates.length > 0) {
+      this.card.firstMessage = prunedAlternates.shift()!;
+    }
+    this.card.alternateGreetings = prunedAlternates;
+
     // Clean up empty decor layers, empty sizes, and empty offsets before validating and persisting
     if (this.card.style?.decor) {
       const activeDecor = this.card.style.decor

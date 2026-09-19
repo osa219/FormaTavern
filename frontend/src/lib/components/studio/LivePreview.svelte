@@ -52,7 +52,12 @@
   `;
   const fx = $derived(draft.card.style?.fx?.bubble ?? 'none');
   const decor = $derived(draft.card.style?.decor ?? []);
-  const greetingResult = $derived(parseGreeting(draft.card.firstMessage, draft.card.name || 'Character'));
+  const allGreetingTexts = $derived([draft.card.firstMessage, ...(draft.card.alternateGreetings ?? [])]);
+  let previewGreetingIndex = $state(0);
+  const selectedGreetingIndex = $derived(
+    previewGreetingIndex < allGreetingTexts.length ? previewGreetingIndex : 0
+  );
+  const greetingResult = $derived(parseGreeting(allGreetingTexts[selectedGreetingIndex] ?? '', draft.card.name || 'Character'));
   const segments = $derived(greetingResult.segments);
 
   const previewCard = $derived<CharacterCard>({
@@ -64,7 +69,7 @@
     description: draft.card.description,
     personality: draft.card.personality,
     scenario: draft.card.scenario,
-    firstMessage: draft.card.firstMessage,
+    firstMessage: allGreetingTexts[selectedGreetingIndex] ?? '',
     showcase: draft.card.showcase,
     customCss: draft.card.customCss,
     tags: draft.card.tags ?? [],
@@ -265,6 +270,23 @@
       <!-- Scrollable MessageLog Canvas (.ft-message-log) -->
       <main class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 min-h-0 {HOOKS.chat.messageLog}" {...rootAttrs} style={rootStyle}>
         {#if activeTab === 'greeting'}
+          {#if allGreetingTexts.length > 1}
+            <div class="flex items-center gap-2 text-[11px] text-(--chrome-text)/60">
+              <label for="preview-greeting-select" class="font-semibold uppercase tracking-wider">
+                Previewing
+              </label>
+              <select
+                id="preview-greeting-select"
+                value={previewGreetingIndex}
+                onchange={(e) => (previewGreetingIndex = Number(e.currentTarget.value))}
+                class="rounded-lg border border-(--chrome-line) bg-(--chrome-surface) px-2 py-1 text-xs text-(--chrome-text)"
+              >
+                {#each allGreetingTexts as _, gi}
+                  <option value={gi}>Greeting {gi + 1} of {allGreetingTexts.length}</option>
+                {/each}
+              </select>
+            </div>
+          {/if}
           {#if segments.length === 0}
             <div class="flex h-48 flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-800 text-center p-6 text-neutral-500 text-xs">
               <p>Type a First Message in the Voice tab to preview your opening greeting.</p>
