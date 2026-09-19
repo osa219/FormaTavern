@@ -6,6 +6,7 @@ import { CharacterSummarySchema } from './character';
 export const ChatCreateSchema = Type.Object({
   characterId: Id,
   personaId: Type.Optional(Id),
+  greetingIndex: Type.Optional(Type.Integer({ minimum: 0 })),
   title: Type.Optional(Type.String({ maxLength: 200 })),
   narrativeMode: Type.Optional(Type.Union([
     Type.Literal('classic'),

@@ -17,6 +17,7 @@ export const CharacterCardSchema = Type.Object({
   personality: Type.String(),
   scenario: Type.String(),
   firstMessage: Type.String(),
+  alternateGreetings: Type.Optional(Type.Array(Type.String(), { minItems: 0 })),
   exampleDialogue: Type.Optional(Type.String()), // Amendment A2
   style: CharacterThemeSchema,
   stateSchema: Type.Optional(Type.Record(Type.String(), StateFieldSchema)),
@@ -119,3 +120,31 @@ export const CharacterMetadataSchema = Type.Object({
   version: Type.Optional(Type.String())
 });
 export type CharacterMetadata = Static<typeof CharacterMetadataSchema>;
+
+/**
+ * Drop blank entries from an alternate-greetings list. Shared so Studio
+ * (client) and the repository layer (server) agree on what gets persisted.
+ * Never mutates the input.
+ */
+export function pruneAlternateGreetings(input: unknown): string[] {
+  if (!Array.isArray(input)) return [];
+  const out: string[] = [];
+  for (const item of input) {
+    if (typeof item !== 'string') continue;
+    if (item.trim() === '') continue;
+    out.push(item);
+  }
+  return out;
+}
+
+/** Primary greeting + pruned alternates. Index 0 is always `firstMessage`. */
+export function allGreetings(card: { firstMessage: string; alternateGreetings?: string[] }): string[] {
+  return [card.firstMessage, ...pruneAlternateGreetings(card.alternateGreetings)];
+}
+
+/** Clamp a requested greeting index into a valid range. Out-of-range → 0. */
+export function clampGreetingIndex(index: unknown, count: number): number {
+  if (typeof index !== 'number' || !Number.isInteger(index) || index < 0) return 0;
+  if (count <= 0) return 0;
+  return index < count ? index : 0;
+}

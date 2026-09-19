@@ -4,6 +4,7 @@ import {
   CharacterCardSchema,
   PersonaSchema,
   normalizeTag,
+  pruneAlternateGreetings,
   slugify,
   type CharacterCard,
   type CharacterMetadata,
@@ -36,6 +37,7 @@ interface CharacterRow {
   personality: string;
   scenario: string;
   first_message: string;
+  alternate_greetings: string | null;
   style: string;
   created_at: number;
   updated_at: number;
@@ -81,6 +83,8 @@ function cardToRow(card: CharacterCard, now: number) {
 
   const metadata = Object.keys(metadataObj).length > 0 ? JSON.stringify(metadataObj) : null;
 
+  const prunedAlternates = pruneAlternateGreetings(card.alternateGreetings);
+
   return {
     id: card.id,
     name: card.name,
@@ -94,6 +98,7 @@ function cardToRow(card: CharacterCard, now: number) {
     personality: card.personality,
     scenario: card.scenario,
     first_message: card.firstMessage,
+    alternate_greetings: prunedAlternates.length > 0 ? JSON.stringify(prunedAlternates) : null,
     style: JSON.stringify(card.style),
     created_at: card.createdAt ?? now,
     updated_at: card.updatedAt ?? now,
@@ -121,6 +126,14 @@ function rowToCard(row: CharacterRow, tags: string[] = []): CharacterCard {
   if (row.showcase) card.showcase = row.showcase;
   if (row.custom_css) card.customCss = row.custom_css;
   if (row.layout) card.layout = JSON.parse(row.layout);
+  if (row.alternate_greetings) {
+    try {
+      const parsed = pruneAlternateGreetings(JSON.parse(row.alternate_greetings));
+      if (parsed.length > 0) card.alternateGreetings = parsed;
+    } catch {
+      // Guard: unparseable column falls back to no alternates
+    }
+  }
 
   if (row.metadata) {
     const meta = JSON.parse(row.metadata) as CharacterMetadata;
@@ -184,20 +197,20 @@ export class SqliteCharacterRepository implements CharacterRepository {
     this.stmtInsert = db.query(`
       INSERT INTO characters (
         id, name, avatar, tagline, creator, showcase, custom_css, layout, description, personality, scenario,
-        first_message, style, created_at, updated_at, metadata
+        first_message, alternate_greetings, style, created_at, updated_at, metadata
       ) VALUES (
         $id, $name, $avatar, $tagline, $creator, $showcase, $custom_css, $layout, $description, $personality, $scenario,
-        $first_message, $style, $created_at, $updated_at, $metadata
+        $first_message, $alternate_greetings, $style, $created_at, $updated_at, $metadata
       );
     `);
 
     this.stmtUpsert = db.query(`
       INSERT INTO characters (
         id, name, avatar, tagline, creator, showcase, custom_css, layout, description, personality, scenario,
-        first_message, style, created_at, updated_at, metadata
+        first_message, alternate_greetings, style, created_at, updated_at, metadata
       ) VALUES (
         $id, $name, $avatar, $tagline, $creator, $showcase, $custom_css, $layout, $description, $personality, $scenario,
-        $first_message, $style, $created_at, $updated_at, $metadata
+        $first_message, $alternate_greetings, $style, $created_at, $updated_at, $metadata
       )
       ON CONFLICT(id) DO UPDATE SET
         name = excluded.name,
@@ -211,6 +224,7 @@ export class SqliteCharacterRepository implements CharacterRepository {
         personality = excluded.personality,
         scenario = excluded.scenario,
         first_message = excluded.first_message,
+        alternate_greetings = excluded.alternate_greetings,
         style = excluded.style,
         updated_at = excluded.updated_at,
         metadata = excluded.metadata;
@@ -219,10 +233,10 @@ export class SqliteCharacterRepository implements CharacterRepository {
     this.stmtInsertIfAbsent = db.query(`
       INSERT INTO characters (
         id, name, avatar, tagline, creator, showcase, custom_css, layout, description, personality, scenario,
-        first_message, style, created_at, updated_at, metadata
+        first_message, alternate_greetings, style, created_at, updated_at, metadata
       ) VALUES (
         $id, $name, $avatar, $tagline, $creator, $showcase, $custom_css, $layout, $description, $personality, $scenario,
-        $first_message, $style, $created_at, $updated_at, $metadata
+        $first_message, $alternate_greetings, $style, $created_at, $updated_at, $metadata
       )
       ON CONFLICT(id) DO NOTHING;
     `);
@@ -421,10 +435,12 @@ export class SqliteCharacterRepository implements CharacterRepository {
       finalId = `${idCandidate}-${counter++}`;
     }
 
+    const prunedCreateAlternates = pruneAlternateGreetings(input.alternateGreetings);
     const card: CharacterCard = {
       ...input,
       id: finalId,
       tags: (input.tags ?? []).map((t) => normalizeTag(t)).filter(Boolean) as string[],
+      alternateGreetings: prunedCreateAlternates.length > 0 ? prunedCreateAlternates : undefined,
       createdAt: now,
       updatedAt: now
     };
@@ -446,6 +462,7 @@ export class SqliteCharacterRepository implements CharacterRepository {
         personality: row.personality,
         scenario: row.scenario,
         first_message: row.first_message,
+        alternate_greetings: row.alternate_greetings,
         style: row.style,
         created_at: row.created_at,
         updated_at: row.updated_at,
@@ -500,6 +517,13 @@ export class SqliteCharacterRepository implements CharacterRepository {
         personality: input.personality !== undefined ? input.personality : currentCard.personality,
         scenario: input.scenario !== undefined ? input.scenario : currentCard.scenario,
         firstMessage: input.firstMessage !== undefined ? input.firstMessage : currentCard.firstMessage,
+        alternateGreetings:
+          input.alternateGreetings !== undefined
+            ? (() => {
+                const pruned = pruneAlternateGreetings(input.alternateGreetings);
+                return pruned.length > 0 ? pruned : undefined;
+              })()
+            : currentCard.alternateGreetings,
         exampleDialogue: input.exampleDialogue !== undefined ? input.exampleDialogue : currentCard.exampleDialogue,
         style: input.style !== undefined ? input.style : currentCard.style,
         stateSchema: input.stateSchema !== undefined ? input.stateSchema : currentCard.stateSchema,
@@ -526,6 +550,7 @@ export class SqliteCharacterRepository implements CharacterRepository {
           personality = ?,
           scenario = ?,
           first_message = ?,
+          alternate_greetings = ?,
           style = ?,
           updated_at = ?,
           metadata = ?
@@ -542,6 +567,7 @@ export class SqliteCharacterRepository implements CharacterRepository {
           row.personality,
           row.scenario,
           row.first_message,
+          row.alternate_greetings,
           row.style,
           now,
           row.metadata,
@@ -648,6 +674,7 @@ export class SqliteCharacterRepository implements CharacterRepository {
         personality: row.personality,
         scenario: row.scenario,
         first_message: row.first_message,
+        alternate_greetings: row.alternate_greetings,
         style: row.style,
         created_at: row.created_at,
         updated_at: row.updated_at,
@@ -678,6 +705,7 @@ export class SqliteCharacterRepository implements CharacterRepository {
         personality: row.personality,
         scenario: row.scenario,
         first_message: row.first_message,
+        alternate_greetings: row.alternate_greetings,
         style: row.style,
         created_at: row.created_at,
         updated_at: row.updated_at,

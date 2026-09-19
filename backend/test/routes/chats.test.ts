@@ -67,6 +67,61 @@ describe('routes/chats', () => {
     expect(repos.messages.countInChat(chat.id)).toBe(0);
   });
 
+  it('creates chat with selected alternate greeting and stamps greetingIndex', async () => {
+    const { app, repos } = setupTestApp();
+
+    repos.characters.upsert({
+      id: 'char-greeter',
+      name: 'Greeter',
+      description: '...',
+      personality: '...',
+      scenario: '...',
+      firstMessage: 'Primary door.',
+      alternateGreetings: ['Second door.', 'Third door.'],
+      style: repos.characters.get('eldrin-the-mage')!.style
+    });
+
+    const res = await app.handle(
+      new Request('http://127.0.0.1/api/chats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          characterId: 'char-greeter',
+          greetingIndex: 2
+        })
+      })
+    );
+
+    expect(res.status).toBe(201);
+    const chat = (await res.json()) as ChatView;
+    const rootMsg = repos.messages.get(chat.activeLeafId!);
+    expect(rootMsg!.content).toBe('Third door.');
+    expect(rootMsg!.metadata.greetingIndex).toBe(2);
+
+    // Out-of-range index clamps to primary; omitted index keeps legacy behavior
+    const resClamped = await app.handle(
+      new Request('http://127.0.0.1/api/chats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ characterId: 'char-greeter', greetingIndex: 9 })
+      })
+    );
+    const chatClamped = (await resClamped.json()) as ChatView;
+    expect(repos.messages.get(chatClamped.activeLeafId!)!.content).toBe('Primary door.');
+
+    const resDefault = await app.handle(
+      new Request('http://127.0.0.1/api/chats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ characterId: 'char-greeter' })
+      })
+    );
+    const chatDefault = (await resDefault.json()) as ChatView;
+    const defaultRoot = repos.messages.get(chatDefault.activeLeafId!)!;
+    expect(defaultRoot.content).toBe('Primary door.');
+    expect(defaultRoot.metadata.greetingIndex).toBe(0);
+  });
+
   it('fails with 404 when creating chat with unknown character', async () => {
     const { app } = setupTestApp();
 

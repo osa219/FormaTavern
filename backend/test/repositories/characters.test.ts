@@ -363,4 +363,51 @@ describe('SqliteCharacterRepository (Phase 5)', () => {
     const refetched = repos.characters.get('layout-char');
     expect(refetched?.layout).toBeUndefined();
   });
+
+  it('round-trips alternate greetings with prune-on-write and replace-on-patch', () => {
+    inst = openTestDb(':memory:');
+    runMigrations(inst.db);
+    const repos = createRepositories(inst.db);
+
+    // Create prunes blanks; returned card is already clean
+    const c = repos.characters.create({
+      ...makeCard('greeter', 'Greeter'),
+      alternateGreetings: ['Second door.', '', '  ', 'Third door.']
+    });
+    expect(c.alternateGreetings).toEqual(['Second door.', 'Third door.']);
+
+    const fetched = repos.characters.get('greeter');
+    expect(fetched?.alternateGreetings).toEqual(['Second door.', 'Third door.']);
+
+    // Cards without alternates read back as undefined
+    repos.characters.upsert(makeCard('plain', 'Plain'));
+    expect(repos.characters.get('plain')?.alternateGreetings).toBeUndefined();
+
+    // Patch replaces the whole array (not append) and prunes
+    const patched = repos.characters.patch('greeter', {
+      alternateGreetings: ['Only door.', ''],
+      expectedUpdatedAt: fetched!.updatedAt!
+    });
+    expect(typeof patched).not.toBe('string');
+    if (typeof patched !== 'string') {
+      expect(patched.alternateGreetings).toEqual(['Only door.']);
+    }
+    expect(repos.characters.get('greeter')?.alternateGreetings).toEqual(['Only door.']);
+
+    // Patch with [] clears back to undefined
+    const cleared = repos.characters.patch('greeter', {
+      alternateGreetings: [],
+      expectedUpdatedAt: (patched as CharacterCard).updatedAt!
+    });
+    expect(typeof cleared).not.toBe('string');
+    if (typeof cleared !== 'string') {
+      expect(cleared.alternateGreetings).toBeUndefined();
+    }
+    expect(repos.characters.get('greeter')?.alternateGreetings).toBeUndefined();
+
+    // Duplicate carries alternates
+    repos.characters.upsert({ ...makeCard('src', 'Src'), alternateGreetings: ['A.', 'B.'] });
+    const dup = repos.characters.duplicate('src');
+    expect(dup.alternateGreetings).toEqual(['A.', 'B.']);
+  });
 });

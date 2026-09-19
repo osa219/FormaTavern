@@ -76,7 +76,8 @@ export const MessageMetadataSchema = Type.Object({
     count: Type.Integer()
   })),
   continuations: Type.Optional(Type.Integer()),
-  recovered: Type.Optional(Type.Boolean())
+  recovered: Type.Optional(Type.Boolean()),
+  greetingIndex: Type.Optional(Type.Integer({ minimum: 0 }))
 });
 export type MessageMetadata = Static<typeof MessageMetadataSchema>;
 

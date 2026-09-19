@@ -8,6 +8,8 @@ import {
   PromptPreviewBodySchema,
   SendMessageBodySchema,
   StatePatchBodySchema,
+  allGreetings,
+  clampGreetingIndex,
   defaultState,
   parseEnvelope,
   resolveState,
@@ -120,10 +122,14 @@ export function createChatsRouter(deps: {
             metadata
           });
 
+          const greetings = allGreetings(character);
+          const greetingIndex = clampGreetingIndex(input.greetingIndex, greetings.length);
+          const greetingText = greetings[greetingIndex] ?? '';
+
           let rootMsgId: string | null = null;
-          if (character.firstMessage && character.firstMessage.trim().length > 0) {
+          if (greetingText && greetingText.trim().length > 0) {
             rootMsgId = newId();
-            const parseRes = parseEnvelope(character.firstMessage, {
+            const parseRes = parseEnvelope(greetingText, {
               primaryCharacter: character.name,
               dialect: envelopeDialect,
               streaming: false
@@ -137,13 +143,14 @@ export function createChatsRouter(deps: {
               narrativeRole: 'character',
               senderId: character.id,
               senderName: character.name,
-              content: character.firstMessage,
+              content: greetingText,
               segments: parseRes.segments,
               state: defaultState(character),
               status: 'complete',
               metrics: null,
               metadata: {
                 stateSource: 'initial',
+                greetingIndex,
                 parse: {
                   dialect: parseRes.dialect,
                   parserVersion: parseRes.parserVersion,

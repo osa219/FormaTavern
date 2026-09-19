@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS characters (
   personality  TEXT,                          -- Behavioural trait guidelines
   scenario     TEXT,                          -- Initial narrative scene premise
   first_message TEXT,                         -- Opening greeting / scene starter
+  alternate_greetings TEXT,                   -- JSON array of alternate greetings; NULL/empty = none (added in v9)
   style        TEXT NOT NULL,                 -- JSON: CharacterTheme (colors, fonts, bubble, background)
   created_at   INTEGER NOT NULL,              -- Unix timestamp in milliseconds
   updated_at   INTEGER NOT NULL,              -- Unix timestamp in milliseconds

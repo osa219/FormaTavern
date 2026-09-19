@@ -201,6 +201,13 @@ export const migrations: readonly Migration[] = [
     up: (db) => {
       db.run(`CREATE INDEX IF NOT EXISTS idx_chats_primary_character ON chats(primary_character_id, updated_at DESC);`);
     }
+  },
+  {
+    version: 9,
+    name: 'alternate_greetings',
+    up: (db) => {
+      db.run(`ALTER TABLE characters ADD COLUMN alternate_greetings TEXT;`);
+    }
   }
 ];
 

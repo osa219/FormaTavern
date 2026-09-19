@@ -3,8 +3,12 @@ import {
   CharacterCardSchema,
   CharacterSummarySchema,
   CharacterPatchSchema,
+  ChatCreateSchema,
   PersonaSchema,
   PersonaPatchSchema,
+  allGreetings,
+  clampGreetingIndex,
+  pruneAlternateGreetings,
   ChatListItemSchema,
   TagSchema,
   ShellThemeSchema,
@@ -513,6 +517,50 @@ describe('Shared Schema Validation', () => {
           expect(overrideKeys.includes(k)).toBe(false);
           expect(THEME_PATHS.some((p) => p.startsWith(`layout.`))).toBe(false);
         }
+      });
+
+      it('validates alternateGreetings as unbounded optional string list', () => {
+        const withAlternates = {
+          ...eldrinFixture,
+          alternateGreetings: ['Second door.', 'Third door.']
+        };
+        expect(validate(CharacterCardSchema, withAlternates).ok).toBe(true);
+
+        const withoutField = { ...eldrinFixture };
+        expect(validate(CharacterCardSchema, withoutField).ok).toBe(true);
+
+        const wrongType = { ...eldrinFixture, alternateGreetings: [42] };
+        expect(validate(CharacterCardSchema, wrongType).ok).toBe(false);
+
+        const patchWithAlternates = {
+          expectedUpdatedAt: 1700000000000,
+          alternateGreetings: ['Only door.']
+        };
+        expect(validate(CharacterPatchSchema, patchWithAlternates).ok).toBe(true);
+      });
+
+      it('prunes blank greetings and resolves allGreetings with primary at index 0', () => {
+        expect(pruneAlternateGreetings(undefined)).toEqual([]);
+        expect(pruneAlternateGreetings('nope')).toEqual([]);
+        expect(pruneAlternateGreetings(['', '  ', 'Kept', 42 as any])).toEqual(['Kept']);
+
+        const greetings = allGreetings({ firstMessage: 'Primary', alternateGreetings: [' B ', ''] });
+        expect(greetings).toEqual(['Primary', ' B ']);
+
+        expect(clampGreetingIndex(undefined, 3)).toBe(0);
+        expect(clampGreetingIndex(-1, 3)).toBe(0);
+        expect(clampGreetingIndex(1.5, 3)).toBe(0);
+        expect(clampGreetingIndex(2, 3)).toBe(2);
+        expect(clampGreetingIndex(9, 3)).toBe(0);
+        expect(clampGreetingIndex(0, 0)).toBe(0);
+      });
+
+      it('validates greetingIndex on ChatCreateSchema', () => {
+        const base = { characterId: 'eldrin-the-mage' };
+        expect(validate(ChatCreateSchema, base).ok).toBe(true);
+        expect(validate(ChatCreateSchema, { ...base, greetingIndex: 2 }).ok).toBe(true);
+        expect(validate(ChatCreateSchema, { ...base, greetingIndex: -1 }).ok).toBe(false);
+        expect(validate(ChatCreateSchema, { ...base, greetingIndex: 1.5 }).ok).toBe(false);
       });
 
       it('permits CharacterPatchSchema to set layout to null for clearing back to neutral', () => {
