@@ -251,6 +251,7 @@
 
   onDestroy(() => {
     clearTimeout(standingDebounce);
+    clearTimeout(flipClearTimer);
     flushStandingDirection();
   });
 
@@ -301,12 +302,116 @@
   const greetingIndex = $derived(greetingRoot?.metadata?.greetingIndex ?? 0);
 
   let switchingGreeting = $state(false);
-  let greetingFlipDir = $state<1 | -1 | 0>(0);
+  let flip = $state<{ turnId: string; dir: 1 | -1 } | null>(null);
+  let flipClearTimer: any = null;
+  let regenFlipArmed = $state(false);
+
+  // Hold flip past the animated mount (170ms slide) before clearing it:
+  // clearing synchronously lets Svelte batch it with the refetch and the
+  // animation classes never reach the DOM.
+  function scheduleFlipClear() {
+    clearTimeout(flipClearTimer);
+    flipClearTimer = setTimeout(() => {
+      flip = null;
+    }, 300);
+  }
+
+  // Sibling mode: once the conversation has started, the same docked row
+  // drives the latest assistant turn's alternatives. Roots are excluded
+  // (regenerating a root is a 400) and so are turns with children (flipping
+  // there would yank the active branch from under the leaf).
+  const latestAssistant = $derived(
+    [...session.messages].reverse().find((m) => m.role === 'assistant') ?? null
+  );
+  const siblingPagerVisible = $derived(
+    !greetingPagerVisible &&
+      latestAssistant !== null &&
+      latestAssistant.parentId !== null &&
+      !latestAssistant.hasChildren
+  );
+
+  let siblingCache = $state<{ forId: string; ids: string[] } | null>(null);
+  let switchingSibling = $state(false);
+
+  // Regen lock is positional, not global: > is forbidden only while viewing
+  // the page that's actually streaming (where it would open a parallel
+  // reply). Peeking at an older sibling keeps > enabled so the reader can
+  // step forward again — including back onto the streaming page. While still
+  // connecting (no messageId yet) it stays locked.
+  const regenLocked = $derived(
+    session.live != null &&
+      (session.live.messageId == null || latestAssistant?.id === session.live.messageId)
+  );
+
+  async function ensureSiblingIds(turnId: string): Promise<string[] | null> {
+    if (siblingCache?.forId === turnId) return siblingCache.ids;
+    try {
+      const { data } = await api.api.messages({ id: turnId }).siblings.get();
+      if (Array.isArray(data)) {
+        const ids = (data as Array<{ id: string }>).map((s) => s.id);
+        siblingCache = { forId: turnId, ids };
+        return ids;
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  }
+
+  async function handleSelectSibling(index: number) {
+    const turn = latestAssistant;
+    if (!turn || switchingSibling || !siblingPagerVisible) return;
+    if (index < 0 || index >= turn.siblingCount || index === turn.siblingIndex) return;
+    switchingSibling = true;
+    try {
+      const ids = await ensureSiblingIds(turn.id);
+      const id = ids?.[index];
+      if (id && id !== turn.id) {
+        flip = { turnId: id, dir: index > turn.siblingIndex ? 1 : -1 };
+        await session.select(id);
+      }
+    } catch (err: any) {
+      toasts.error(toUiError(err).message);
+    } finally {
+      switchingSibling = false;
+      scheduleFlipClear();
+    }
+  }
+
+  async function handleRegenerateSibling() {
+    const turn = latestAssistant;
+    if (!turn || session.busy || !siblingPagerVisible) return;
+    regenFlipArmed = true;
+    try {
+      await session.regenerate(turn.id);
+    } finally {
+      regenFlipArmed = false;
+    }
+  }
+
+  // Regen-only slide: when the new streaming row lands while armed, flip to
+  // it through the same shared mechanism as every other flip. Sends,
+  // continues, and reattaches never arm this, so their pages open silently.
+  $effect(() => {
+    const msgs = session.messages;
+    const last = msgs.length > 0 ? msgs[msgs.length - 1] : null;
+    if (
+      regenFlipArmed &&
+      last &&
+      last.role === 'assistant' &&
+      last.parentId !== null &&
+      last.status === 'streaming'
+    ) {
+      flip = { turnId: last.id, dir: 1 };
+      regenFlipArmed = false;
+      scheduleFlipClear();
+    }
+  });
 
   async function handleSelectGreeting(index: number) {
     if (!greetingRoot || switchingGreeting || !greetingPagerVisible) return;
     if (index < 0 || index >= greetingOptions.length || index === greetingIndex) return;
-    greetingFlipDir = index > greetingIndex ? 1 : -1;
+    flip = { turnId: greetingRoot.id, dir: index > greetingIndex ? 1 : -1 };
     switchingGreeting = true;
     try {
       const res = await (api.api.messages({ id: greetingRoot.id }) as any).greeting.post({ index });
@@ -319,6 +424,7 @@
       toasts.error(toUiError(err).message);
     } finally {
       switchingGreeting = false;
+      scheduleFlipClear();
     }
   }
 
@@ -327,8 +433,12 @@
       await handleSelectGreeting(greetingIndex - 1);
       return;
     }
+    if (siblingPagerVisible && latestAssistant) {
+      await handleSelectSibling(latestAssistant.siblingIndex - 1);
+      return;
+    }
     const lastMsg = [...session.messages].reverse().find((m) => m.role === 'assistant');
-    if (!lastMsg || lastMsg.siblingIndex <= 0) return;
+    if (!lastMsg || lastMsg.parentId === null || lastMsg.siblingIndex <= 0) return;
     try {
       const { data } = await api.api.messages({ id: lastMsg.id }).siblings.get();
       if (Array.isArray(data) && data[lastMsg.siblingIndex - 1]) {
@@ -344,8 +454,16 @@
       await handleSelectGreeting(greetingIndex + 1);
       return;
     }
+    if (siblingPagerVisible && latestAssistant) {
+      if (latestAssistant.siblingIndex >= latestAssistant.siblingCount - 1) {
+        await handleRegenerateSibling();
+      } else {
+        await handleSelectSibling(latestAssistant.siblingIndex + 1);
+      }
+      return;
+    }
     const lastMsg = [...session.messages].reverse().find((m) => m.role === 'assistant');
-    if (!lastMsg) return;
+    if (!lastMsg || lastMsg.parentId === null) return;
     if (lastMsg.siblingIndex === lastMsg.siblingCount - 1) {
       await session.regenerate(lastMsg.id);
       return;
@@ -452,8 +570,7 @@
   <main class="relative flex min-h-0 w-full flex-col overflow-hidden">
     <MessageLog
       {session}
-      flipArmed={greetingPagerVisible || switchingGreeting}
-      flipDir={isReducedMotion ? 0 : greetingFlipDir}
+      flip={isReducedMotion ? null : flip}
       onDeleteTurn={(turn) => {
         deletingTurn = turn;
       }}
@@ -478,6 +595,19 @@
           prevLabel="Previous greeting"
           nextLabel="Next greeting"
           onSelect={handleSelectGreeting}
+        />
+      </div>
+    {:else if siblingPagerVisible && latestAssistant}
+      <div class="px-2 pt-1">
+        <EdgePager
+          index={latestAssistant.siblingIndex}
+          count={latestAssistant.siblingCount}
+          busy={switchingSibling}
+          nextDisabled={regenLocked}
+          prevLabel="Previous reply"
+          nextLabel="Next reply"
+          onSelect={handleSelectSibling}
+          onRegenerate={handleRegenerateSibling}
         />
       </div>
     {/if}

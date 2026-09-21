@@ -9,22 +9,40 @@
   import type { MessageWithTree, Segment } from '@formatavern/shared';
   import { HOOKS, resolveLayout } from '@formatavern/shared';
   import { layoutRootAttrs, layoutRootStyle } from '$lib/chat/layoutAttrs';
+  import { prefs } from '$lib/state/prefs.svelte';
+  import { media } from '$lib/state/media.svelte';
+
+  const reducedMotion = $derived(
+    prefs.reducedMotion === 'on' || (prefs.reducedMotion === 'system' && media.reducedMotion)
+  );
 
   let {
     session,
     composerEl = null,
-    flipArmed = false,
-    flipDir = 0,
+    flip = null,
     onEditTurn,
     onDeleteTurn
   }: {
     session: ChatSession;
     composerEl?: HTMLElement | null;
-    flipArmed?: boolean;
-    flipDir?: 1 | -1 | 0;
+    flip?: { turnId: string; dir: 1 | -1 } | null;
     onEditTurn?: (turn: MessageWithTree) => void;
     onDeleteTurn?: (turn: MessageWithTree) => void;
   } = $props();
+
+  // When the streaming row is already in the log (pulled in at stream
+  // start), the live tokens render into it instead of a separate turn.
+  const liveCovered = $derived(
+    session.live?.messageId != null && session.messages.some((m) => m.id === session.live?.messageId)
+  );
+  // Peeked away mid-stream: the live indicator belongs to the streaming
+  // page, not the old branch being viewed — hide the trailing live turn
+  // instead of appending dots under the wrong reply.
+  const livePeekedAway = $derived(
+    session.live?.messageId != null &&
+      session.chat?.activeLeafId != null &&
+      session.live.messageId !== session.chat.activeLeafId
+  );
 
   let logEl = $state<HTMLElement | null>(null);
   const scrollController = new ScrollController();
@@ -184,7 +202,7 @@
 
     <!-- Persisted Active Branch Turns -->
     {#each session.messages as msg, i (msg.id)}
-      {#key flipArmed && i === 0 ? msg.content : msg.id}
+      {#key flip && flip.turnId === msg.id && msg.status !== 'streaming' ? msg.content : msg.id}
       {#if turnEditing?.messageId === msg.id}
         <TurnEditor
           message={msg}
@@ -193,13 +211,18 @@
           onCancel={cancelTurnEdit}
         />
       {:else}
+        {@const liveHere = session.live && msg.id === session.live.messageId ? session.live : null}
+        {@const waitingHere = liveHere !== null && liveHere.segments.length === 0}
         <div
-          class:ft-flip-in-right={flipArmed && i === 0 && flipDir === 1}
-          class:ft-flip-in-left={flipArmed && i === 0 && flipDir === -1}
+          class:ft-flip-in-right={flip?.turnId === msg.id && flip.dir === 1}
+          class:ft-flip-in-left={flip?.turnId === msg.id && flip.dir === -1}
         >
+        {#if waitingHere}
+          {@render waitDots()}
+        {:else}
         <MessageTurn
-          segments={displaySegments(msg)}
-          status={msg.status}
+          segments={liveHere ? liveHere.segments : displaySegments(msg)}
+          status={liveHere ? 'streaming' : msg.status}
           narrativeRole={msg.narrativeRole}
           {primaryName}
           {npcs}
@@ -208,7 +231,7 @@
           {characterAvatar}
           {personaAvatar}
           isLast={i === lastIndex && !session.live}
-          reasoning={msg.metadata?.reasoning}
+          reasoning={liveHere ? (liveHere.reasoning ?? msg.metadata?.reasoning) : msg.metadata?.reasoning}
           reasoningDurationMs={msg.metadata?.reasoningDurationMs}
           onRetry={() => session.regenerate(msg.id)}
           editable={canInlineEdit(msg)}
@@ -220,21 +243,17 @@
         >
           {#snippet toolbar()}
             <TurnToolbar
-              messageId={msg.id}
               role={msg.role}
               isLeaf={msg.id === activeLeafId}
-              siblingIndex={msg.siblingIndex}
-              siblingCount={msg.siblingCount}
               content={msg.content}
               busy={session.busy}
-              onRegenerate={() => session.regenerate(msg.id)}
               onContinue={() => session.continueTurn(msg.id)}
               onEdit={() => startTurnEdit(msg)}
               onDelete={() => onDeleteTurn?.(msg)}
-              onSelectSibling={(id) => session.select(id)}
             />
           {/snippet}
         </MessageTurn>
+        {/if}
         </div>
       {/if}
       {/key}
@@ -245,8 +264,12 @@
       <div class="h-[75vh] pointer-events-none" aria-hidden="true"></div>
     {/if}
 
-    <!-- Live Streaming Turn -->
-    {#if session.live}
+    <!-- Live Streaming Turn (only when its row is not already in the log,
+         and never under a branch being peeked at mid-stream) -->
+    {#if session.live && !liveCovered && !livePeekedAway && session.live.segments.length === 0}
+      {@render waitDots()}
+    {/if}
+    {#if session.live && !liveCovered && !livePeekedAway && session.live.segments.length > 0}
       <MessageTurn
         segments={session.live.segments}
         status="streaming"
@@ -273,6 +296,18 @@
   />
 </div>
 
+{#snippet waitDots()}
+  <div
+    class="flex w-fit items-center gap-1 px-1 py-2"
+    role="status"
+    aria-label="Waiting for reply"
+  >
+    <span class="ft-wait-dot" class:ft-wait-static={reducedMotion} style="animation-delay: 0ms;"></span>
+    <span class="ft-wait-dot" class:ft-wait-static={reducedMotion} style="animation-delay: 150ms;"></span>
+    <span class="ft-wait-dot" class:ft-wait-static={reducedMotion} style="animation-delay: 300ms;"></span>
+  </div>
+{/snippet}
+
 <style>
   /* Greeting flip illusion: fresh mount slides in from the flip direction. */
   @keyframes ft-flip-from-right {
@@ -288,5 +323,28 @@
   }
   .ft-flip-in-left {
     animation: ft-flip-from-left 170ms ease-out;
+  }
+  /* Waiting indicator: gentle bounce while no reply text exists yet. */
+  @keyframes ft-wait-bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.65; }
+    30% { transform: translateY(-3px); opacity: 1; }
+  }
+  .ft-wait-dot {
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    border-radius: 9999px;
+    background: #c2c5d3;
+    animation: ft-wait-bounce 1.2s ease-in-out infinite;
+  }
+  .ft-wait-static {
+    animation: none;
+    opacity: 0.85;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ft-wait-dot {
+      animation: none;
+      opacity: 0.85;
+    }
   }
 </style>

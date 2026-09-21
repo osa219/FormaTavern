@@ -1,36 +1,25 @@
 <script lang="ts">
   import Icon from '../ui/Icon.svelte';
-  import SwipeCarousel from './SwipeCarousel.svelte';
   import { toasts } from '$lib/state/toasts.svelte';
   import { stripOutOfBand, HOOKS } from '@formatavern/shared';
   import { copyToClipboard } from '$lib/utils/clipboard';
 
   let {
-    messageId,
     role,
     isLeaf = false,
-    siblingIndex = 0,
-    siblingCount = 1,
     content = '',
     busy = false,
-    onRegenerate,
     onContinue,
     onEdit,
-    onDelete,
-    onSelectSibling
+    onDelete
   }: {
-    messageId: string;
     role: 'user' | 'assistant' | 'system';
     isLeaf?: boolean;
-    siblingIndex?: number;
-    siblingCount?: number;
     content?: string;
     busy?: boolean;
-    onRegenerate?: () => void;
     onContinue?: () => void;
     onEdit?: () => void;
     onDelete?: () => void;
-    onSelectSibling?: (id: string) => void;
   } = $props();
 
   async function handleCopy() {
@@ -46,57 +35,19 @@
   const isAssistant = $derived(role === 'assistant');
 </script>
 
-<div class="flex items-center justify-between gap-2 text-xs text-neutral-400 {HOOKS.chat.turnToolbar}">
-  <div class="flex items-center gap-1.5">
-    {#if isAssistant && siblingCount > 1}
-      <SwipeCarousel
-        {messageId}
-        {siblingIndex}
-        {siblingCount}
-        {busy}
-        {onSelectSibling}
-        {onRegenerate}
-      />
-    {/if}
-  </div>
-
-  <div class="flex items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
-    {#if isAssistant}
-      {#if !isLeaf}
-        <button
-          type="button"
-          onclick={onRegenerate}
-          disabled={busy}
-          class="flex h-7 w-7 items-center justify-center rounded text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200 disabled:opacity-40"
-          title="Regenerate reply"
-          aria-label="Regenerate reply"
-        >
-          <Icon name="regenerate" size={14} />
-        </button>
-      {/if}
-
-      {#if isLeaf}
-        <button
-          type="button"
-          onclick={onRegenerate}
-          disabled={busy}
-          class="flex h-7 w-7 items-center justify-center rounded text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200 disabled:opacity-40"
-          title="Regenerate reply"
-          aria-label="Regenerate reply"
-        >
-          <Icon name="regenerate" size={14} />
-        </button>
-        <button
-          type="button"
-          onclick={onContinue}
-          disabled={busy}
-          class="flex h-7 w-7 items-center justify-center rounded text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200 disabled:opacity-40"
-          title="Continue reply"
-          aria-label="Continue reply"
-        >
-          <Icon name="continue" size={13} />
-        </button>
-      {/if}
+<div class="flex items-center justify-end gap-2 text-xs text-neutral-400 {HOOKS.chat.turnToolbar}">
+  <div class="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
+    {#if isAssistant && isLeaf}
+      <button
+        type="button"
+        onclick={onContinue}
+        disabled={busy}
+        class="flex h-7 w-7 items-center justify-center rounded text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200 disabled:opacity-40"
+        title="Continue reply"
+        aria-label="Continue reply"
+      >
+        <Icon name="continue" size={13} />
+      </button>
     {/if}
 
     <button

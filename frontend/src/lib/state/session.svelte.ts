@@ -435,7 +435,7 @@ export class ChatSession {
     );
   }
 
-  private handleStreamEvent(ev: ChatStreamEvent) {
+  private async handleStreamEvent(ev: ChatStreamEvent): Promise<void> {
     if (ev.type === 'start') {
       if (this.live) {
         this.live.messageId = ev.messageId;
@@ -445,12 +445,36 @@ export class ChatSession {
           this.live.resumedFrom = ev.resumedFrom;
         }
       }
+      // Open the new page up front: the streaming row already exists
+      // server-side (and the leaf already points at it), so pull it into
+      // the log and stream into it instead of appending underneath.
+      void this.refetchState();
     } else if (ev.type === 'token') {
       this.streamController?.push(ev.text);
     } else if (ev.type === 'done') {
       this.streamController?.flush();
+      const finishedId = ev.message.id;
+      const abortedEmpty =
+        ev.message.status === 'aborted' &&
+        ev.message.content.trim().length === 0 &&
+        ev.message.segments.length === 0;
       this.live = null;
-      this.refetchState();
+      if (abortedEmpty) {
+        // Stopped while still in thinking: debris row, drop it and fall back.
+        // Delete repoints the leaf to the parent; failures just refetch.
+        try {
+          await api.api.messages({ id: finishedId }).delete();
+        } catch {
+          // ignore — refetch below shows whatever survived
+        }
+        await this.refetchState();
+      } else if (this.messages.length === 0 || this.messages[this.messages.length - 1].id !== finishedId) {
+        // Peeked away mid-stream (or missed the start refetch): arrival
+        // lands on the new page instead of stranding the view elsewhere.
+        await this.select(finishedId);
+      } else {
+        await this.refetchState();
+      }
     } else if (ev.type === 'error') {
       this.streamController?.flush();
       this.live = null;
