@@ -27,6 +27,8 @@ export type ApiErrorCode =
   | 'auth_required'
   | 'invalid_pin'
   | 'too_many_requests'
+  | 'greeting_locked'
+  | 'invalid_greeting'
   | 'internal';
 
 export const ApiErrorCodeSchema = Type.Union([
@@ -56,6 +58,8 @@ export const ApiErrorCodeSchema = Type.Union([
   Type.Literal('auth_required'),
   Type.Literal('invalid_pin'),
   Type.Literal('too_many_requests'),
+  Type.Literal('greeting_locked'),
+  Type.Literal('invalid_greeting'),
   Type.Literal('internal')
 ]);
 

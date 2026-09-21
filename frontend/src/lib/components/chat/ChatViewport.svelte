@@ -15,6 +15,7 @@
   import DecorLayers from '../custom/DecorLayers.svelte';
   import TopBar from '../nav/TopBar.svelte';
   import MessageLog from './MessageLog.svelte';
+  import EdgePager from './EdgePager.svelte';
   import Composer from '../composer/Composer.svelte';
   import type { PromptDraft } from '$lib/prompt/preview';
   import NavDrawer from '../nav/NavDrawer.svelte';
@@ -277,7 +278,55 @@
     return false;
   }
 
+  // Pre-reply greeting flip: while the chat is a single childless greeting
+  // root and the card has alternates, the reader may flip between doors.
+  // Eligibility is derived client-side and enforced server-side.
+  const greetingOptions = $derived(
+    session.character
+      ? [session.character.firstMessage, ...(session.character.alternateGreetings ?? [])]
+      : []
+  );
+  const greetingRoot = $derived(
+    session.messages.length === 1 ? session.messages[0] : null
+  );
+  const greetingPagerVisible = $derived(
+    greetingRoot !== null &&
+      greetingRoot.role === 'assistant' &&
+      greetingRoot.parentId === null &&
+      !greetingRoot.hasChildren &&
+      greetingOptions.length > 1 &&
+      !session.busy &&
+      !session.live
+  );
+  const greetingIndex = $derived(greetingRoot?.metadata?.greetingIndex ?? 0);
+
+  let switchingGreeting = $state(false);
+  let greetingFlipDir = $state<1 | -1 | 0>(0);
+
+  async function handleSelectGreeting(index: number) {
+    if (!greetingRoot || switchingGreeting || !greetingPagerVisible) return;
+    if (index < 0 || index >= greetingOptions.length || index === greetingIndex) return;
+    greetingFlipDir = index > greetingIndex ? 1 : -1;
+    switchingGreeting = true;
+    try {
+      const res = await (api.api.messages({ id: greetingRoot.id }) as any).greeting.post({ index });
+      if (res.error) {
+        toasts.error(toUiError(res.error).message);
+        return;
+      }
+      await session.refetchState();
+    } catch (err: any) {
+      toasts.error(toUiError(err).message);
+    } finally {
+      switchingGreeting = false;
+    }
+  }
+
   async function handlePrevSwipe() {
+    if (greetingPagerVisible) {
+      await handleSelectGreeting(greetingIndex - 1);
+      return;
+    }
     const lastMsg = [...session.messages].reverse().find((m) => m.role === 'assistant');
     if (!lastMsg || lastMsg.siblingIndex <= 0) return;
     try {
@@ -291,6 +340,10 @@
   }
 
   async function handleNextSwipe() {
+    if (greetingPagerVisible) {
+      await handleSelectGreeting(greetingIndex + 1);
+      return;
+    }
     const lastMsg = [...session.messages].reverse().find((m) => m.role === 'assistant');
     if (!lastMsg) return;
     if (lastMsg.siblingIndex === lastMsg.siblingCount - 1) {
@@ -399,6 +452,8 @@
   <main class="relative flex min-h-0 w-full flex-col overflow-hidden">
     <MessageLog
       {session}
+      flipArmed={greetingPagerVisible || switchingGreeting}
+      flipDir={isReducedMotion ? 0 : greetingFlipDir}
       onDeleteTurn={(turn) => {
         deletingTurn = turn;
       }}
@@ -411,9 +466,22 @@
        on this footer — Composer owns its own p-3 box, and any wrapper inset
        doubles it and breaks author .ft-composer theming (see boundaries test). -->
   <footer
-    class="relative z-20 w-full border-t border-neutral-800/40 bg-transparent backdrop-blur-md"
+    class="relative z-20 w-full bg-transparent backdrop-blur-md"
     style="padding-bottom: env(safe-area-inset-bottom, 0px);"
   >
+    {#if greetingPagerVisible}
+      <div class="px-2 pt-1">
+        <EdgePager
+          index={greetingIndex}
+          count={greetingOptions.length}
+          busy={switchingGreeting}
+          prevLabel="Previous greeting"
+          nextLabel="Next greeting"
+          onSelect={handleSelectGreeting}
+        />
+      </div>
+    {/if}
+    <div class="border-t border-neutral-800/40">
     <Composer
       busy={session.busy}
       personaName={session.persona?.name || 'Traveler'}
@@ -433,6 +501,7 @@
         loreOpen = true;
       }}
     />
+    </div>
   </footer>
 
   <!-- Dev Diagnostics Overlay -->

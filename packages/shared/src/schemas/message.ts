@@ -127,6 +127,12 @@ export const MessagePatchSchema = Type.Union([
 ]);
 export type MessagePatch = Static<typeof MessagePatchSchema>;
 
+/** Pre-reply greeting flip: index into the character's live greetings. */
+export const GreetingSelectBodySchema = Type.Object({
+  index: Type.Integer({ minimum: 0 })
+});
+export type GreetingSelectBody = Static<typeof GreetingSelectBodySchema>;
+
 export const PromptPreviewDraftSchema = Type.Object({
   message: Type.Optional(Type.String()),
   directorNote: Type.Optional(Type.String()),

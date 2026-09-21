@@ -54,6 +54,7 @@ export const HOOKS = {
     turnBody: 'ft-turn-body',
     segmentEdit: 'ft-segment-edit',
     segmentEditor: 'ft-segment-editor',
-    turnEditor: 'ft-turn-editor'
+    turnEditor: 'ft-turn-editor',
+    edgePager: 'ft-edge-pager'
   }
 } as const satisfies Record<string, Record<string, `ft-${string}`>>;

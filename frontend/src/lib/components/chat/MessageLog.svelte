@@ -13,11 +13,15 @@
   let {
     session,
     composerEl = null,
+    flipArmed = false,
+    flipDir = 0,
     onEditTurn,
     onDeleteTurn
   }: {
     session: ChatSession;
     composerEl?: HTMLElement | null;
+    flipArmed?: boolean;
+    flipDir?: 1 | -1 | 0;
     onEditTurn?: (turn: MessageWithTree) => void;
     onDeleteTurn?: (turn: MessageWithTree) => void;
   } = $props();
@@ -162,7 +166,7 @@
 <div class="relative flex-1 min-h-0 w-full">
   <div
     bind:this={logEl}
-    class="h-full w-full overflow-y-auto px-4 py-6 md:px-8 focus:outline-none {HOOKS.chat.messageLog}"
+    class="h-full w-full overflow-x-hidden overflow-y-auto px-4 py-6 md:px-8 focus:outline-none {HOOKS.chat.messageLog}"
     style="overflow-anchor: none; {rootStyle}"
     tabindex="-1"
     role="region"
@@ -180,6 +184,7 @@
 
     <!-- Persisted Active Branch Turns -->
     {#each session.messages as msg, i (msg.id)}
+      {#key flipArmed && i === 0 ? msg.content : msg.id}
       {#if turnEditing?.messageId === msg.id}
         <TurnEditor
           message={msg}
@@ -188,6 +193,10 @@
           onCancel={cancelTurnEdit}
         />
       {:else}
+        <div
+          class:ft-flip-in-right={flipArmed && i === 0 && flipDir === 1}
+          class:ft-flip-in-left={flipArmed && i === 0 && flipDir === -1}
+        >
         <MessageTurn
           segments={displaySegments(msg)}
           status={msg.status}
@@ -226,7 +235,9 @@
             />
           {/snippet}
         </MessageTurn>
+        </div>
       {/if}
+      {/key}
     {/each}
 
     {#if turnEditing}
@@ -261,3 +272,21 @@
     onclick={() => scrollController.scrollToBottom(true)}
   />
 </div>
+
+<style>
+  /* Greeting flip illusion: fresh mount slides in from the flip direction. */
+  @keyframes ft-flip-from-right {
+    from { transform: translateX(140px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes ft-flip-from-left {
+    from { transform: translateX(-140px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  .ft-flip-in-right {
+    animation: ft-flip-from-right 170ms ease-out;
+  }
+  .ft-flip-in-left {
+    animation: ft-flip-from-left 170ms ease-out;
+  }
+</style>

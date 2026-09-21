@@ -354,3 +354,88 @@ describe('routes/messages send & pagination', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('routes/messages greeting select', () => {
+  async function setupGreetingChat() {
+    const { app, repos } = setupTestApp();
+    repos.characters.upsert({
+      id: 'char-greeter',
+      name: 'Greeter',
+      description: '...',
+      personality: '...',
+      scenario: '...',
+      firstMessage: 'Primary door.',
+      alternateGreetings: ['Second door.', 'Third door.'],
+      style: repos.characters.get('eldrin-the-mage')!.style
+    });
+    const chatRes = await app.handle(
+      new Request('http://127.0.0.1/api/chats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ characterId: 'char-greeter' })
+      })
+    );
+    const chat = (await chatRes.json()) as any;
+    return { app, repos, chat };
+  }
+
+  it('swaps greeting content in place on a childless root', async () => {
+    const { app, repos, chat } = await setupGreetingChat();
+    const rootId = chat.activeLeafId as string;
+
+    const res = await app.handle(
+      new Request(`http://127.0.0.1/api/messages/${rootId}/greeting`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ index: 1 })
+      })
+    );
+
+    expect(res.status).toBe(200);
+    const updated = (await res.json()) as MessageWithTree;
+    expect(updated.id).toBe(rootId);
+    expect(updated.content).toBe('Second door.');
+    expect(updated.metadata.greetingIndex).toBe(1);
+
+    // Same row, no siblings created, active leaf unchanged
+    expect(repos.messages.countInChat(chat.id)).toBe(1);
+    expect(repos.messages.siblings(rootId).length).toBe(1);
+    expect(repos.chats.get(chat.id)!.activeLeafId).toBe(rootId);
+  });
+
+  it('locks the greeting after the first user reply and rejects non-roots', async () => {
+    const { app, repos, chat } = await setupGreetingChat();
+    const rootId = chat.activeLeafId as string;
+
+    // Non-root (user message) cannot be switched
+    repos.messages.insert({
+      id: 'user-1',
+      chatId: chat.id,
+      parentId: rootId,
+      role: 'user',
+      narrativeRole: 'persona',
+      content: 'Hello'
+    });
+
+    const locked = await app.handle(
+      new Request(`http://127.0.0.1/api/messages/${rootId}/greeting`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ index: 1 })
+      })
+    );
+    expect(locked.status).toBe(409);
+
+    const nonRoot = await app.handle(
+      new Request(`http://127.0.0.1/api/messages/user-1/greeting`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ index: 1 })
+      })
+    );
+    expect(nonRoot.status).toBe(400);
+
+    // Failed switches leave content untouched
+    expect(repos.messages.get(rootId)!.content).toBe('Primary door.');
+  });
+});

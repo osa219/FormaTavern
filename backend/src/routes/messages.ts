@@ -1,11 +1,15 @@
 import { Elysia } from 'elysia';
 import {
+  GreetingSelectBodySchema,
   MessagePatchSchema,
+  allGreetings,
+  clampGreetingIndex,
   defaultState,
   parseEnvelope,
   resolveState,
   serializeEnvelope,
   stripOutOfBand,
+  type GreetingSelectBody,
   type MessagePatch,
   type MessageWithTree,
   type ParseOptions
@@ -332,6 +336,79 @@ export function createMessagesRouter(deps: {
       });
 
       return { activeLeafId: leafId };
+    })
+    .post('/:id/greeting', ({ params, body }): MessageWithTree => {
+      const target = repos.messages.get(params.id);
+      if (!target) {
+        throw new ApiError('not_found', 404, `Message ${params.id} not found`);
+      }
+
+      if (target.parentId !== null) {
+        throw new ApiError('invalid_parent', 400, 'Only a greeting root can be switched');
+      }
+
+      if (target.hasChildren) {
+        throw new ApiError('greeting_locked', 409, 'Greeting can only be changed before the first reply');
+      }
+
+      if (target.status === 'streaming' || hub.get(target.id)) {
+        throw new ApiError('generation_in_progress', 409, 'Cannot switch greeting while generating');
+      }
+
+      const chat = repos.chats.get(target.chatId);
+      if (!chat) {
+        throw new ApiError('not_found', 404, `Chat ${target.chatId} not found`);
+      }
+
+      const character = repos.characters.get(chat.primaryCharacterId);
+      if (!character) {
+        throw new ApiError('not_found', 404, `Character ${chat.primaryCharacterId} not found`);
+      }
+
+      const greetings = allGreetings(character);
+      const index = clampGreetingIndex((body as GreetingSelectBody).index, greetings.length);
+      const text = greetings[index] ?? '';
+      if (text.trim().length === 0) {
+        throw new ApiError('invalid_greeting', 400, 'Selected greeting is empty');
+      }
+
+      const dialect =
+        chat.metadata.envelopeDialect ?? (chat.metadata.narrativeMode === 'narrative' ? 'directive' : 'auto');
+      const knownNames = [
+        character.name,
+        ...Object.values(chat.metadata.npcs ?? {}).map((n) => n.displayName)
+      ];
+      const parseRes = parseEnvelope(text, {
+        primaryCharacter: character.name,
+        dialect,
+        knownNames,
+        streaming: false
+      });
+
+      repos.messages.updateContent(target.id, {
+        content: text,
+        segments: parseRes.segments,
+        metadata: {
+          ...target.metadata,
+          greetingIndex: index,
+          parse: {
+            dialect: parseRes.dialect,
+            parserVersion: parseRes.parserVersion,
+            adherent: parseRes.adherent,
+            warnings: parseRes.warnings.map((w) => w.code),
+            truncatedAt: parseRes.truncatedAt
+          }
+        }
+      });
+
+      const updated = repos.messages.get(target.id);
+      if (!updated) {
+        throw new ApiError('not_found', 404, `Message ${target.id} not found after greeting switch`);
+      }
+      return updated;
+    },
+    {
+      body: GreetingSelectBodySchema
     })
     .patch(
       '/:id',
