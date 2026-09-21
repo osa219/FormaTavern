@@ -15,7 +15,6 @@
   import DecorLayers from '../custom/DecorLayers.svelte';
   import TopBar from '../nav/TopBar.svelte';
   import MessageLog from './MessageLog.svelte';
-  import EdgePager from './EdgePager.svelte';
   import Composer from '../composer/Composer.svelte';
   import type { PromptDraft } from '$lib/prompt/preview';
   import NavDrawer from '../nav/NavDrawer.svelte';
@@ -571,6 +570,20 @@
     <MessageLog
       {session}
       flip={isReducedMotion ? null : flip}
+      greetingPager={greetingPagerVisible
+        ? { index: greetingIndex, count: greetingOptions.length, busy: switchingGreeting }
+        : null}
+      siblingPager={siblingPagerVisible && latestAssistant
+        ? {
+            index: latestAssistant.siblingIndex,
+            count: latestAssistant.siblingCount,
+            busy: switchingSibling,
+            nextLocked: regenLocked
+          }
+        : null}
+      onSelectGreeting={handleSelectGreeting}
+      onSelectSibling={handleSelectSibling}
+      onRegenerateSibling={handleRegenerateSibling}
       onDeleteTurn={(turn) => {
         deletingTurn = turn;
       }}
@@ -583,35 +596,9 @@
        on this footer — Composer owns its own p-3 box, and any wrapper inset
        doubles it and breaks author .ft-composer theming (see boundaries test). -->
   <footer
-    class="relative z-20 w-full bg-transparent backdrop-blur-md"
+    class="relative z-20 w-full border-t border-neutral-800/40 bg-transparent backdrop-blur-md"
     style="padding-bottom: env(safe-area-inset-bottom, 0px);"
   >
-    {#if greetingPagerVisible}
-      <div class="px-2 pt-1">
-        <EdgePager
-          index={greetingIndex}
-          count={greetingOptions.length}
-          busy={switchingGreeting}
-          prevLabel="Previous greeting"
-          nextLabel="Next greeting"
-          onSelect={handleSelectGreeting}
-        />
-      </div>
-    {:else if siblingPagerVisible && latestAssistant}
-      <div class="px-2 pt-1">
-        <EdgePager
-          index={latestAssistant.siblingIndex}
-          count={latestAssistant.siblingCount}
-          busy={switchingSibling}
-          nextDisabled={regenLocked}
-          prevLabel="Previous reply"
-          nextLabel="Next reply"
-          onSelect={handleSelectSibling}
-          onRegenerate={handleRegenerateSibling}
-        />
-      </div>
-    {/if}
-    <div class="border-t border-neutral-800/40">
     <Composer
       busy={session.busy}
       personaName={session.persona?.name || 'Traveler'}
@@ -631,7 +618,6 @@
         loreOpen = true;
       }}
     />
-    </div>
   </footer>
 
   <!-- Dev Diagnostics Overlay -->

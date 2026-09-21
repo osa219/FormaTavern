@@ -3,6 +3,7 @@
   import type { ChatSession } from '$lib/state/session.svelte';
   import { ScrollController } from '$lib/scroll/controller.svelte';
   import MessageTurn from './MessageTurn.svelte';
+  import EdgePager from './EdgePager.svelte';
   import TurnToolbar from './TurnToolbar.svelte';
   import TurnEditor from './TurnEditor.svelte';
   import JumpToLatest from './JumpToLatest.svelte';
@@ -20,12 +21,22 @@
     session,
     composerEl = null,
     flip = null,
+    greetingPager = null,
+    siblingPager = null,
+    onSelectGreeting,
+    onSelectSibling,
+    onRegenerateSibling,
     onEditTurn,
     onDeleteTurn
   }: {
     session: ChatSession;
     composerEl?: HTMLElement | null;
     flip?: { turnId: string; dir: 1 | -1 } | null;
+    greetingPager?: { index: number; count: number; busy: boolean } | null;
+    siblingPager?: { index: number; count: number; busy: boolean; nextLocked: boolean } | null;
+    onSelectGreeting?: (index: number) => void;
+    onSelectSibling?: (index: number) => void;
+    onRegenerateSibling?: () => void;
     onEditTurn?: (turn: MessageWithTree) => void;
     onDeleteTurn?: (turn: MessageWithTree) => void;
   } = $props();
@@ -285,6 +296,35 @@
         reasoning={session.live.reasoning}
         isThinking={session.live.isThinking}
       />
+    {/if}
+
+    <!-- Pager: part of the message flow, attached under the last turn.
+         Same component and behavior as before — only the mount point moved
+         out of the fixed footer, so no chrome band needs blending. -->
+    {#if greetingPager}
+      <div class="px-2 pt-1">
+        <EdgePager
+          index={greetingPager.index}
+          count={greetingPager.count}
+          busy={greetingPager.busy}
+          prevLabel="Previous greeting"
+          nextLabel="Next greeting"
+          onSelect={(i) => onSelectGreeting?.(i)}
+        />
+      </div>
+    {:else if siblingPager}
+      <div class="px-2 pt-1">
+        <EdgePager
+          index={siblingPager.index}
+          count={siblingPager.count}
+          busy={siblingPager.busy}
+          nextDisabled={siblingPager.nextLocked}
+          prevLabel="Previous reply"
+          nextLabel="Next reply"
+          onSelect={(i) => onSelectSibling?.(i)}
+          onRegenerate={() => onRegenerateSibling?.()}
+        />
+      </div>
     {/if}
   </div>
 
