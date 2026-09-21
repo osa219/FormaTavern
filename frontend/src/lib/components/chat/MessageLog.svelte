@@ -288,9 +288,10 @@
     {/if}
   </div>
 
-  <!-- Jump to latest pill -->
+  <!-- Jump to latest pill: only when far from bottom (5 viewports) or
+       when new content arrived while away -->
   <JumpToLatest
-    visible={!scrollController.stuck}
+    visible={!scrollController.stuck && (scrollController.farFromBottom || scrollController.hasUnread)}
     hasUnread={scrollController.hasUnread}
     onclick={() => scrollController.scrollToBottom(true)}
   />

@@ -6,6 +6,10 @@ export interface ScrollSample {
 
 export const STICK_THRESHOLD_PX = 48;
 
+// Jump-to-latest pill appears only when the reader is this many viewports
+// away from the bottom (or has unread content) — not on every small scroll.
+export const JUMP_PILL_VIEWPORT_MULTIPLE = 5;
+
 export function isAtBottom(s: ScrollSample): boolean {
   return s.scrollHeight - s.scrollTop - s.clientHeight <= STICK_THRESHOLD_PX;
 }

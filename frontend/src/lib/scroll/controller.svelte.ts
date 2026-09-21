@@ -1,4 +1,4 @@
-import { isAtBottom, nextStuck, prependAdjust, type ScrollSample } from './policy';
+import { isAtBottom, JUMP_PILL_VIEWPORT_MULTIPLE, nextStuck, prependAdjust, type ScrollSample } from './policy';
 
 /**
  * Element-bound scroll controller (Invariant U5).
@@ -13,6 +13,7 @@ export class ScrollController {
 
   stuck = $state<boolean>(true);
   hasUnread = $state<boolean>(false);
+  farFromBottom = $state<boolean>(false);
 
   attach(element: HTMLElement, composerEl?: HTMLElement | null) {
     this.el = element;
@@ -76,6 +77,10 @@ export class ScrollController {
   private onVisualViewportResize = () => {
     if (this.stuck && this.el) {
       this.scrollToBottom(false);
+    } else {
+      // 'program' preserves stuck; this just refreshes farFromBottom
+      // against the new viewport height.
+      this.updateStuck('program');
     }
   };
 
@@ -102,6 +107,8 @@ export class ScrollController {
     if (next) {
       this.hasUnread = false;
     }
+    const distance = Math.max(0, sample.scrollHeight - sample.scrollTop - sample.clientHeight);
+    this.farFromBottom = distance > sample.clientHeight * JUMP_PILL_VIEWPORT_MULTIPLE;
   }
 
   scrollToBottom(smooth: boolean = false) {
