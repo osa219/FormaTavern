@@ -80,6 +80,8 @@ function cardToRow(card: CharacterCard, now: number) {
   if (card.creator !== undefined) metadataObj.creator = card.creator;
   if (card.labels !== undefined) metadataObj.labels = card.labels;
   if (card.version !== undefined) metadataObj.version = card.version;
+  if (card.greetingMode !== undefined) metadataObj.greetingMode = card.greetingMode;
+  if (card.greetingEnvelope !== undefined) metadataObj.greetingEnvelope = card.greetingEnvelope;
 
   const metadata = Object.keys(metadataObj).length > 0 ? JSON.stringify(metadataObj) : null;
 
@@ -145,6 +147,8 @@ function rowToCard(row: CharacterRow, tags: string[] = []): CharacterCard {
     if (!card.creator && meta.creator !== undefined) card.creator = meta.creator;
     if (meta.labels !== undefined) card.labels = meta.labels;
     if (meta.version !== undefined) card.version = meta.version;
+    if (meta.greetingMode !== undefined) card.greetingMode = meta.greetingMode;
+    if (meta.greetingEnvelope !== undefined) card.greetingEnvelope = meta.greetingEnvelope;
   }
 
   return card;
@@ -525,6 +529,9 @@ export class SqliteCharacterRepository implements CharacterRepository {
               })()
             : currentCard.alternateGreetings,
         exampleDialogue: input.exampleDialogue !== undefined ? input.exampleDialogue : currentCard.exampleDialogue,
+        greetingMode: input.greetingMode !== undefined ? input.greetingMode : currentCard.greetingMode,
+        greetingEnvelope:
+          input.greetingEnvelope !== undefined ? input.greetingEnvelope : currentCard.greetingEnvelope,
         style: input.style !== undefined ? input.style : currentCard.style,
         stateSchema: input.stateSchema !== undefined ? input.stateSchema : currentCard.stateSchema,
         stateBindings: input.stateBindings !== undefined ? input.stateBindings : currentCard.stateBindings,

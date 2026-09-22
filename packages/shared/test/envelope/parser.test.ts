@@ -102,6 +102,29 @@ describe('Envelope Parser (Normative Table & Edge Cases)', () => {
       expect(res.segments[0]).toEqual({ kind: 'narrator', name: undefined, text: 'Dawn breaks.' });
     });
 
+    it('treats :::greeting as a narrator prologue alias', () => {
+      const res = parseEnvelope(':::greeting\nDawn breaks over the spire.', { primaryCharacter: 'Eldrin' });
+      expect(res.dialect).toBe('directive');
+      expect(res.segments[0]).toEqual({ kind: 'narrator', name: undefined, text: 'Dawn breaks over the spire.' });
+    });
+
+    it('treats <greeting> as a narrator prologue alias', () => {
+      const res = parseEnvelope('<greeting>\nDawn breaks.\n</greeting>', {
+        primaryCharacter: 'Eldrin',
+        dialect: 'xml'
+      });
+      expect(res.segments[0]).toEqual({ kind: 'narrator', name: undefined, text: 'Dawn breaks.' });
+    });
+
+    it('treats Greeting: as narrator, not an NPC named Greeting', () => {
+      const res = parseEnvelope('Greeting: Dawn breaks.', {
+        primaryCharacter: 'Eldrin',
+        dialect: 'prefix',
+        knownNames: ['Danny']
+      });
+      expect(res.segments[0].kind).toBe('narrator');
+    });
+
     it('handles inline body after bracket (:::character[Alice] "Now!")', () => {
       const res = parseEnvelope(':::character[Alice] "Now!"\nAttack!', { primaryCharacter: 'Eldrin' });
       expect(res.segments[0]).toEqual({

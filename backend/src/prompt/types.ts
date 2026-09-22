@@ -14,6 +14,7 @@ export interface HistoryTurn {
   role: 'user' | 'assistant' | 'system';
   narrativeRole: 'character' | 'persona' | 'npc' | 'narrator';
   senderName?: string;
+  parentId: string | null;
   content: string;
   status: 'streaming' | 'complete' | 'aborted' | 'error';
   directorNote?: string; // from messages.metadata; NEVER serialized into history

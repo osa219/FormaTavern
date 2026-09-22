@@ -33,6 +33,7 @@ export function rowToHistoryTurn(row: MessageRow): HistoryTurn {
     role: row.role,
     narrativeRole: row.narrativeRole,
     senderName: row.senderName ?? undefined,
+    parentId: row.parentId,
     content: row.content,
     status: row.status,
     directorNote: row.metadata?.directorNote

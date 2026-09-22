@@ -167,6 +167,78 @@ export function createCharactersRouter({ repos, assets, providers }: CharactersR
         body: CharacterPromptPreviewBodySchema
       }
     )
+    .post(
+      '/greeting-rewrite',
+      async ({ body }): Promise<{ text: string; adherent: boolean; warnings: string[] }> => {
+        // One-shot Studio helper: restructures a classical greeting into
+        // directive envelope blocks without paraphrasing. The creator reviews
+        // the result; accepted text is stored as an override, the authentic
+        // greeting is never rewritten.
+        const { text, characterName } = body as { text: string; characterName?: string };
+        if (!text || text.trim().length === 0) {
+          throw new ApiError('validation_failed', 400, 'Greeting text must not be blank');
+        }
+        if (text.length > 8000) {
+          throw new ApiError('validation_failed', 400, 'Greeting text exceeds 8000 characters');
+        }
+
+        const settings = repos.settings.getAll();
+        const activeConfig = settings.provider.activeConfigId
+          ? repos.providerConfigs.get(settings.provider.activeConfigId)
+          : null;
+        const resolution = providers.resolve(settings, activeConfig);
+        const name = characterName?.trim() || 'Character';
+
+        let buffer = '';
+        try {
+          for await (const ev of resolution.provider.generate(
+            {
+              model: resolution.model,
+              systemPrompt:
+                `You are a precise formatter for roleplay greetings. Rewrite the greeting below into three-track narrative envelope (directive) blocks. ` +
+                `Rules: preserve every word, voice detail, and fact — only add structure. ` +
+                `Scene-setting prose, actions, and stage directions go in :::narrator blocks. ` +
+                `Dialogue spoken by ${name} goes in :::character[${name}] blocks, keeping the quotation marks. ` +
+                `Dialogue spoken by anyone else goes in :::npc[Name] blocks. ` +
+                `Output ONLY the blocks, no state block, no commentary.`,
+              history: [{ role: 'user', content: text }],
+              temperature: 0,
+              maxTokens: 2000
+            },
+            undefined
+          )) {
+            if (ev.type === 'token') buffer += ev.text;
+            else if (ev.type === 'error') {
+              throw new ApiError('internal', 502, `Greeting rewrite failed: ${ev.message}`);
+            }
+          }
+        } catch (err) {
+          if (err instanceof ApiError) throw err;
+          throw new ApiError('internal', 502, `Greeting rewrite failed: ${err instanceof Error ? err.message : String(err)}`);
+        }
+
+        const rewritten = buffer.trim();
+        if (!rewritten) {
+          throw new ApiError('internal', 502, 'Greeting rewrite returned no text');
+        }
+        const parsed = parseEnvelope(rewritten, {
+          primaryCharacter: name,
+          dialect: 'directive',
+          streaming: false
+        });
+        return {
+          text: rewritten,
+          adherent: parsed.adherent,
+          warnings: parsed.warnings.map((w) => w.code)
+        };
+      },
+      {
+        body: t.Object({
+          text: t.String({ maxLength: 8000 }),
+          characterName: t.Optional(t.String({ maxLength: 120 }))
+        })
+      }
+    )
     .patch(
       '/:id',
       ({ params, body }): CharacterCard => {

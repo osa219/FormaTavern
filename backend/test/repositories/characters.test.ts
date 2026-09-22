@@ -410,4 +410,38 @@ describe('SqliteCharacterRepository (Phase 5)', () => {
     const dup = repos.characters.duplicate('src');
     expect(dup.alternateGreetings).toEqual(['A.', 'B.']);
   });
+
+  it('round-trips greeting mode and reviewed envelope overrides via metadata', () => {
+    inst = openTestDb(':memory:');
+    runMigrations(inst.db);
+    const repos = createRepositories(inst.db);
+
+    const c = repos.characters.create({
+      ...makeCard('enveloper', 'Enveloper'),
+      greetingMode: 'ai',
+      greetingEnvelope: { first: ':::narrator\nRain.\n:::', alternates: { '0': ':::narrator\nSnow.\n:::' } }
+    });
+    expect(c.greetingMode).toBe('ai');
+    expect(c.greetingEnvelope?.first).toContain(':::narrator');
+
+    const fetched = repos.characters.get('enveloper');
+    expect(fetched?.greetingMode).toBe('ai');
+    expect(fetched?.greetingEnvelope?.alternates?.['0']).toContain('Snow.');
+
+    // Cards without the fields read back as undefined
+    repos.characters.upsert(makeCard('plain-g', 'Plain G'));
+    expect(repos.characters.get('plain-g')?.greetingMode).toBeUndefined();
+    expect(repos.characters.get('plain-g')?.greetingEnvelope).toBeUndefined();
+
+    // Patch replaces the mode wholesale
+    const patched = repos.characters.patch('enveloper', {
+      greetingMode: 'split',
+      expectedUpdatedAt: fetched!.updatedAt!
+    });
+    expect(typeof patched).not.toBe('string');
+    if (typeof patched !== 'string') {
+      expect(patched.greetingMode).toBe('split');
+      expect(patched.greetingEnvelope?.first).toContain(':::narrator');
+    }
+  });
 });

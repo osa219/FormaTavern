@@ -53,6 +53,32 @@ describe('routes/characters prompt-preview (§6 dry run)', () => {
     expect(Array.isArray(result.greeting!.warnings)).toBe(true);
   });
 
+  it('rewrites a greeting into envelope blocks via greeting-rewrite', async () => {
+    const { app } = setupTestApp();
+
+    const res = await app.handle(
+      new Request('http://127.0.0.1/api/characters/greeting-rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: 'Rain falls. "Come in," John says.', characterName: 'John' })
+      })
+    );
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as any;
+    expect(typeof json.text).toBe('string');
+    expect(json.text.length).toBeGreaterThan(0);
+    expect(Array.isArray(json.warnings)).toBe(true);
+
+    const blank = await app.handle(
+      new Request('http://127.0.0.1/api/characters/greeting-rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: '   ' })
+      })
+    );
+    expect(blank.status).toBe(400);
+  });
+
   it('tolerates a near-empty card with neutral defaults', async () => {
     const { app } = setupTestApp();
 

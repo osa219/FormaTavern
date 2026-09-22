@@ -7,6 +7,25 @@ import { CharacterLayoutSchema } from './layout';
 export const TagSchema = Type.String({ pattern: '^[a-z0-9][a-z0-9-]{0,23}$' });
 export type Tag = Static<typeof TagSchema>;
 
+export const GreetingModeSchema = Type.Union([
+  Type.Literal('prologue'),
+  Type.Literal('split'),
+  Type.Literal('ai')
+]);
+export type GreetingMode = Static<typeof GreetingModeSchema>;
+
+/**
+ * Reviewed envelope overrides for greetings (directive-canonical text).
+ * `first` overrides firstMessage; `alternates` overrides by alternate index.
+ * The stored greetings are never rewritten: classical chats always use the
+ * authentic text, envelope chats use the override when present.
+ */
+export const GreetingEnvelopeSchema = Type.Object({
+  first: Type.Optional(Type.String()),
+  alternates: Type.Optional(Type.Record(Type.String(), Type.String()))
+});
+export type GreetingEnvelope = Static<typeof GreetingEnvelopeSchema>;
+
 export const CharacterCardSchema = Type.Object({
   $schema: Type.Optional(Type.String()),
   id: Id,
@@ -18,6 +37,8 @@ export const CharacterCardSchema = Type.Object({
   scenario: Type.String(),
   firstMessage: Type.String(),
   alternateGreetings: Type.Optional(Type.Array(Type.String(), { minItems: 0 })),
+  greetingMode: Type.Optional(GreetingModeSchema),
+  greetingEnvelope: Type.Optional(GreetingEnvelopeSchema),
   exampleDialogue: Type.Optional(Type.String()), // Amendment A2
   style: CharacterThemeSchema,
   stateSchema: Type.Optional(Type.Record(Type.String(), StateFieldSchema)),
@@ -108,6 +129,8 @@ export type CharacterListQuery = Static<typeof CharacterListQuerySchema>;
 
 /** Shape of characters.metadata (JSON column). Everything not in a dedicated column lives here. */
 export const CharacterMetadataSchema = Type.Object({
+  greetingMode: Type.Optional(GreetingModeSchema),
+  greetingEnvelope: Type.Optional(GreetingEnvelopeSchema),
   exampleDialogue: Type.Optional(Type.String()),
   stateSchema: Type.Optional(Type.Record(Type.String(), StateFieldSchema)),
   stateBindings: Type.Optional(Type.Array(StateBindingSchema)),

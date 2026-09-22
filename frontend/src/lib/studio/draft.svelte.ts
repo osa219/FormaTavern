@@ -101,6 +101,10 @@ export class CharacterDraft {
         scenario: initialCard.scenario,
         firstMessage: initialCard.firstMessage,
         alternateGreetings: [...(initialCard.alternateGreetings ?? [])],
+        greetingMode: initialCard.greetingMode,
+        greetingEnvelope: initialCard.greetingEnvelope
+          ? JSON.parse(JSON.stringify(initialCard.greetingEnvelope))
+          : undefined,
         exampleDialogue: initialCard.exampleDialogue ?? '',
         showcase: initialCard.showcase ?? '',
         customCss: initialCard.customCss ?? '',

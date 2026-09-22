@@ -26,6 +26,7 @@ const ctx = {
       id: '1',
       role: 'user' as const,
       narrativeRole: 'persona' as const,
+      parentId: 'p0',
       content: 'Master Eldrin, the northern stars seem misaligned tonight. What does this portend?',
       status: 'complete' as const
     }

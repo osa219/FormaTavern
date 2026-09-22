@@ -6,15 +6,15 @@ export function escapeRegex(s: string): string {
 }
 
 export const DIRECTIVE_HEADER_RE =
-  /^\s*:{3,}\s*(narrator|character|char|npc|persona|user)\b\s*(?:\[([^\]]*)\]\s*(.*)|[:\-–]?\s*(.*?))?\s*$/i;
+  /^\s*:{3,}\s*(narrator|greeting|character|char|npc|persona|user)\b\s*(?:\[([^\]]*)\]\s*(.*)|[:\-–]?\s*(.*?))?\s*$/i;
 
 export const DIRECTIVE_CLOSER_RE = /^\s*:{3,}\s*$/;
 
 export const XML_HEADER_RE =
-  /^\s*<(narrator|character|char|npc|persona|user)(?:\s+name\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?\s*>\s*(.*)$/i;
+  /^\s*<(narrator|greeting|character|char|npc|persona|user)(?:\s+name\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?\s*>\s*(.*)$/i;
 
-export const XML_CLOSER_RE = /<\/(narrator|character|char|npc|persona|user)\s*>\s*$/i;
-export const XML_CLOSER_LINE_RE = /^\s*<\/(narrator|character|char|npc|persona|user)\s*>\s*$/i;
+export const XML_CLOSER_RE = /<\/(narrator|greeting|character|char|npc|persona|user)\s*>\s*$/i;
+export const XML_CLOSER_LINE_RE = /^\s*<\/(narrator|greeting|character|char|npc|persona|user)\s*>\s*$/i;
 
 export const PREFIX_SPEAKER_RE =
   /^\s*([A-Za-z][A-Za-z0-9 .'’\-]{0,39}?)\s*:\s+(.*)$/;
@@ -47,12 +47,14 @@ export interface ClassifyOptions {
 }
 
 /**
- * Normalizes kind string: 'char' -> 'character', 'user' -> 'persona'
+ * Normalizes kind string: 'char' -> 'character', 'user' -> 'persona',
+ * 'greeting' -> 'narrator' (prologue alias: scene-setting with no speaker claim)
  */
 export function normalizeKind(rawKind: string): SegmentKind {
   const k = rawKind.toLowerCase();
   if (k === 'char') return 'character';
   if (k === 'user') return 'persona';
+  if (k === 'greeting') return 'narrator';
   return k as SegmentKind;
 }
 
@@ -147,7 +149,7 @@ export function classifyLine(line: string, opts: ClassifyOptions): LineClassific
       let kind: SegmentKind;
       let name: string | undefined;
 
-      if (rawName.toLowerCase() === 'narrator') {
+      if (rawName.toLowerCase() === 'narrator' || rawName.toLowerCase() === 'greeting') {
         kind = 'narrator';
       } else if (rawName.toLowerCase() === opts.primaryCharacter.toLowerCase()) {
         kind = 'character';

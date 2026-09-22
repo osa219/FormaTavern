@@ -68,7 +68,7 @@ A wayfarer seeking ancient knowledge.
     },
     {
       "role": "user",
-      "content": "I climb the winding stone steps."
+      "content": ":::persona[Traveler]\nI climb the winding stone steps.\n:::"
     },
     {
       "role": "assistant",

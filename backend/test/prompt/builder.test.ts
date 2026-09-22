@@ -79,6 +79,7 @@ const sampleHistory: HistoryTurn[] = [
     role: 'assistant',
     narrativeRole: 'character',
     senderName: 'Eldrin the Mage',
+    parentId: 'msg-0',
     content: 'Welcome to the observatory, {{user}}.',
     status: 'complete'
   },
@@ -87,6 +88,7 @@ const sampleHistory: HistoryTurn[] = [
     role: 'user',
     narrativeRole: 'persona',
     senderName: 'Traveler',
+    parentId: 'msg-1',
     content: 'I climb the winding stone steps.',
     status: 'complete'
   },
@@ -94,6 +96,7 @@ const sampleHistory: HistoryTurn[] = [
     id: 'msg-3',
     role: 'user',
     narrativeRole: 'persona',
+    parentId: 'msg-1',
     content: '',
     directorNote: 'Make the storm pick up outside.',
     status: 'complete'
@@ -103,6 +106,7 @@ const sampleHistory: HistoryTurn[] = [
     role: 'assistant',
     narrativeRole: 'character',
     senderName: 'Eldrin the Mage',
+    parentId: 'msg-2',
     content: 'The storm is worsening.\n```state\n{"mood":"urgent"}\n```',
     status: 'aborted'
   },
@@ -110,6 +114,7 @@ const sampleHistory: HistoryTurn[] = [
     id: 'msg-5',
     role: 'user',
     narrativeRole: 'narrator',
+    parentId: 'msg-4',
     content: 'Lightning strikes the glass spire with deafening force.',
     status: 'complete'
   },
@@ -117,6 +122,7 @@ const sampleHistory: HistoryTurn[] = [
     id: 'msg-6',
     role: 'assistant',
     narrativeRole: 'character',
+    parentId: 'msg-5',
     content: 'An error happened here.',
     status: 'error'
   }
@@ -279,6 +285,7 @@ describe('PromptBuilder', () => {
         id: 'msg-1',
         role: 'assistant',
         narrativeRole: 'character',
+        parentId: 'msg-0',
         content: 'I greet you.',
         status: 'complete'
       }
@@ -287,6 +294,126 @@ describe('PromptBuilder', () => {
     const lastMsg = built.history[built.history.length - 1];
     expect(lastMsg.role).toBe('user');
     expect(lastMsg.content.startsWith('[Continue the scene.]')).toBe(true);
+  });
+
+  it('wraps greeting roots in a prologue block by default', () => {
+    const built = buildPrompt(
+      makeContext({
+        history: [
+          {
+            id: 'greet-1',
+            role: 'assistant',
+            narrativeRole: 'character',
+            senderName: 'Eldrin the Mage',
+            parentId: null,
+            content: 'hey there buddy what kind of story you want',
+            status: 'complete'
+          }
+        ]
+      })
+    );
+    const greetingMsg = built.history.find((m) => m.role === 'assistant');
+    expect(greetingMsg).toEqual({
+      role: 'assistant',
+      content: ':::greeting\nhey there buddy what kind of story you want\n:::'
+    });
+  });
+
+  it('converts already-tagged greetings across dialects', () => {
+    const built = buildPrompt(
+      makeContext({
+        chat: { narrativeMode: 'narrative', envelopeDialect: 'xml' },
+        history: [
+          {
+            id: 'greet-1',
+            role: 'assistant',
+            narrativeRole: 'character',
+            senderName: 'Eldrin the Mage',
+            parentId: null,
+            content: ':::character[Eldrin the Mage]\n"Step into the light."\n:::',
+            status: 'complete'
+          }
+        ]
+      })
+    );
+    const converted = built.history.find((m) => m.role === 'assistant');
+    expect(converted?.content).toContain('<character name="Eldrin the Mage">\n"Step into the light."\n</character>');
+  });
+
+  it('splits greeting voices in split mode and keeps classic greetings raw', () => {
+    const greeting = {
+      id: 'greet-1',
+      role: 'assistant' as const,
+      narrativeRole: 'character' as const,
+      senderName: 'Eldrin the Mage',
+      parentId: null,
+      content: 'Rain lashes the glass. "Step into the light where I can see your hands."',
+      status: 'complete' as const
+    };
+    const split = buildPrompt(
+      makeContext({ character: { ...eldrinCard, greetingMode: 'split' as const }, history: [greeting] })
+    );
+    const splitMsg = split.history.find((m) => m.role === 'assistant');
+    expect(splitMsg?.content).toContain(':::narrator\nRain lashes the glass.\n:::');
+    expect(splitMsg?.content).toContain(
+      ':::character[Eldrin the Mage]\n"Step into the light where I can see your hands."\n:::'
+    );
+
+    const classic = buildPrompt(
+      makeContext({ chat: { narrativeMode: 'classic' }, history: [{ ...greeting }] })
+    );
+    expect(classic.history.find((m) => m.role === 'assistant')).toEqual({
+      role: 'assistant',
+      content: greeting.content
+    });
+  });
+
+  it('prefers reviewed AI overrides for matching greetings', () => {
+    const aiCard = {
+      ...eldrinCard,
+      greetingMode: 'ai' as const,
+      firstMessage: 'hey there buddy',
+      greetingEnvelope: {
+        first: ':::narrator\nRain falls.\n:::\n\n:::character[John]\n"Hey."\n:::'
+      }
+    };
+    const withOverride = buildPrompt(
+      makeContext({
+        character: aiCard,
+        history: [
+          {
+            id: 'greet-1',
+            role: 'assistant' as const,
+            narrativeRole: 'character' as const,
+            senderName: 'John',
+            parentId: null,
+            content: 'hey there buddy',
+            status: 'complete' as const
+          }
+        ]
+      })
+    );
+    const overridden = withOverride.history.find((m) => m.role === 'assistant');
+    expect(overridden?.content).toContain(':::narrator\nRain falls.\n:::');
+
+    // AI mode without a matching override falls back to prologue.
+    const withoutOverride = buildPrompt(
+      makeContext({
+        character: aiCard,
+        history: [
+          {
+            id: 'greet-2',
+            role: 'assistant' as const,
+            narrativeRole: 'character' as const,
+            senderName: 'John',
+            parentId: null,
+            content: 'An edited greeting nobody reviewed.',
+            status: 'complete' as const
+          }
+        ]
+      })
+    );
+    expect(withoutOverride.history.find((m) => m.role === 'assistant')?.content).toContain(':::greeting');
   });
 
   it('handles continuation with prefill:true and prefill:false', () => {
@@ -318,12 +445,77 @@ describe('PromptBuilder', () => {
     const built = buildPrompt(
       makeContext({
         history: [
-          { id: '1', role: 'assistant', narrativeRole: 'character', content: 'Greetings.', status: 'complete' },
-          { id: '2', role: 'user', narrativeRole: 'persona', content: 'Hello.', status: 'complete' }
+          { id: '1', role: 'assistant', narrativeRole: 'character', parentId: 'p0', content: 'Greetings.', status: 'complete' },
+          { id: '2', role: 'user', narrativeRole: 'persona', parentId: '1', content: 'Hello.', status: 'complete' }
         ]
       })
     );
     expect(built.history[0]).toEqual({ role: 'user', content: '[Scene begins.]' });
+  });
+
+  it('wraps persona turns in the active dialect tags', () => {
+    const personaTurn = {
+      id: '1',
+      role: 'user' as const,
+      narrativeRole: 'persona' as const,
+      senderName: 'Traveler',
+      parentId: 'p0',
+      content: 'Hello.',
+      status: 'complete' as const
+    };
+
+    const directive = buildPrompt(makeContext({ history: [personaTurn] }));
+    expect(directive.history[0].role).toBe('user');
+    expect(directive.history[0].content).toContain(':::persona[Traveler]\nHello.\n:::');
+
+    const xml = buildPrompt(
+      makeContext({
+        chat: { narrativeMode: 'narrative', envelopeDialect: 'xml' },
+        history: [personaTurn]
+      })
+    );
+    expect(xml.history[0].role).toBe('user');
+    expect(xml.history[0].content).toContain('<persona name="Traveler">\nHello.\n</persona>');
+
+    const prefix = buildPrompt(
+      makeContext({
+        chat: { narrativeMode: 'narrative', envelopeDialect: 'prefix' },
+        history: [personaTurn]
+      })
+    );
+    expect(prefix.history[0].role).toBe('user');
+    expect(prefix.history[0].content).toContain('Traveler: Hello.');
+  });
+
+  it('falls back to raw persona text on delimiter collisions and missing names', () => {
+    const colliding = buildPrompt(
+      makeContext({
+        history: [
+          {
+            id: '1',
+            role: 'user' as const,
+            narrativeRole: 'persona' as const,
+            senderName: 'Traveler',
+            parentId: 'p0',
+            content: ':::\nHello.',
+            status: 'complete' as const
+          }
+        ]
+      })
+    );
+    expect(colliding.history[0].role).toBe('user');
+    expect(colliding.history[0].content).toContain(':::\nHello.');
+    expect(colliding.history[0].content).not.toContain(':::persona');
+
+    const nameless = buildPrompt(
+      makeContext({
+        history: [
+          { id: '1', role: 'user' as const, narrativeRole: 'persona' as const, parentId: 'p0', content: 'Hi.', status: 'complete' as const }
+        ]
+      })
+    );
+    expect(nameless.history[0].role).toBe('user');
+    expect(nameless.history[0].content).toContain(':::persona[Traveler]\nHi.\n:::');
   });
 
   it('budget truncation drops oldest turns under pressure while retaining trigger turn', () => {
