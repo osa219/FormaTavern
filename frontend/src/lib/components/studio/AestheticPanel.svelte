@@ -179,7 +179,7 @@
         <div class="flex items-center gap-2">
           <input
             type="color"
-            value={draft.card.style.colors.quote || '#fde047'}
+            value={draft.card.style.colors.quote || '#f8fafc'}
             oninput={(e) => (draft.card.style.colors.quote = (e.target as HTMLInputElement).value)}
             class="h-8 w-9 cursor-pointer rounded border border-(--chrome-line) bg-transparent p-0"
           />

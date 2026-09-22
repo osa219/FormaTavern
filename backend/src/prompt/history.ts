@@ -1,5 +1,6 @@
 import {
   stripOutOfBand,
+  normalizeHtmlQuirks,
   serializeSegments,
   applyMacros,
   type MessagePayload
@@ -54,8 +55,9 @@ export function serializeHistory(ctx: PromptContext): HistoryResult {
     }
 
     if (turn.role === 'assistant') {
-      // Strip out-of-band state & reasoning
-      const cleaned = stripOutOfBand(turn.content);
+      // Strip out-of-band state & reasoning, then normalize HTML quirks
+      // post-parse so narrative structure is never touched.
+      const cleaned = normalizeHtmlQuirks(stripOutOfBand(turn.content));
       filtered.push({
         role: 'assistant',
         content: applyMacros(cleaned, vars)
@@ -64,13 +66,13 @@ export function serializeHistory(ctx: PromptContext): HistoryResult {
       if (turn.narrativeRole === 'persona') {
         filtered.push({
           role: 'user',
-          content: applyMacros(turn.content, vars)
+          content: applyMacros(normalizeHtmlQuirks(turn.content), vars)
         });
       } else {
         // Multi-track authoring: wrap in narrative header
         const segDialect = dialect === 'classic' ? 'directive' : dialect;
         const serialized = serializeSegments(
-          [{ kind: turn.narrativeRole, name: turn.senderName, text: turn.content }],
+          [{ kind: turn.narrativeRole, name: turn.senderName, text: normalizeHtmlQuirks(turn.content) }],
           null,
           segDialect
         );
@@ -96,7 +98,7 @@ export function serializeHistory(ctx: PromptContext): HistoryResult {
 
   // Handle Continuation (bottom blocks are attached once by the builder after budget fitting)
   if (ctx.continuation) {
-    const partial = stripOutOfBand(ctx.continuation.partial);
+    const partial = normalizeHtmlQuirks(stripOutOfBand(ctx.continuation.partial));
     if (ctx.provider.prefill) {
       assistantPrefill = applyMacros(partial, vars);
     } else {

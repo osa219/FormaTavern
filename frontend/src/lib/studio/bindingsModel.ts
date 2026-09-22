@@ -24,7 +24,7 @@ export const THEME_PATH_CATEGORIES: ThemePathCategory[] = [
       { path: 'colors.userBubbleBg', label: 'User Bubble Background', placeholder: '#0f172a' },
       { path: 'colors.userBubbleText', label: 'User Bubble Text', placeholder: '#f8fafc' },
       { path: 'colors.userBubbleBorder', label: 'User Bubble Border', placeholder: 'transparent' },
-      { path: 'colors.quote', label: 'Speech Quote Color', placeholder: '#fde047' },
+      { path: 'colors.quote', label: 'Speech Quote Color', placeholder: '#f8fafc' },
       { path: 'colors.action', label: 'Action Asterisk Color', placeholder: '#94a3b8' },
       { path: 'colors.narratorText', label: 'Narrator Block Text', placeholder: '#cbd5e1' }
     ]

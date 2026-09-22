@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import Icon from '../ui/Icon.svelte';
-  import { HOOKS } from '@formatavern/shared';
+import { onMount } from 'svelte';
+import Icon from '../ui/Icon.svelte';
+import { HOOKS, normalizeHtmlQuirks } from '@formatavern/shared';
   import type { MessageWithTree } from '@formatavern/shared';
   import { autosize } from '$lib/actions/autosize';
   import { formatReasoningDuration } from '$lib/settings/generation';
@@ -74,6 +74,15 @@
     return ms ? `Thought for ${formatReasoningDuration(ms)}` : 'Thought';
   });
 
+  const normalizedPreview = $derived(normalizeHtmlQuirks(contentDraft));
+  const canNormalize = $derived(normalizedPreview !== contentDraft);
+
+  function normalizeQuirks() {
+    if (!canNormalize || saving) return;
+    contentDraft = normalizedPreview;
+    contentAreaEl?.focus({ preventScroll: true });
+  }
+
   function commit() {
     if (saving || !dirty) return;
     let finalContent = contentDraft.trim();
@@ -106,6 +115,19 @@
     </div>
 
     <div class="flex items-center gap-1">
+      {#if canNormalize}
+        <button
+          type="button"
+          onclick={normalizeQuirks}
+          disabled={saving}
+          class="flex h-6 items-center gap-1 rounded px-2 font-mono text-[10px] text-(--chrome-text)/60 hover:bg-(--chrome-line)/40 hover:text-(--chrome-text) transition-colors disabled:opacity-40"
+          title="Convert <b>/<i> quirks to markdown (**/*)"
+          aria-label="Normalize HTML quirks to markdown"
+        >
+          <Icon name="sparkles" size={12} />
+          <span>Normalize HTML</span>
+        </button>
+      {/if}
       <button
         type="button"
         onclick={() => onCancel?.()}

@@ -13,7 +13,7 @@ export const DEFAULT_CHARACTER_THEME: CharacterTheme = {
     userBubbleBg: 'rgba(15, 23, 42, 0.8)',
     userBubbleText: '#f8fafc',
     accent: '#38bdf8',
-    quote: '#fde047',
+    quote: '#f8fafc',
     action: '#94a3b8',
     narratorText: 'rgb(203, 213, 225)'
   },
@@ -42,7 +42,7 @@ export const NEUTRAL_A11Y_THEME: CharacterTheme = {
     userBubbleText: '#f8fafc',
     userBubbleBorder: '#475569',
     accent: '#38bdf8',
-    quote: '#fde047',
+    quote: '#f8fafc',
     action: '#94a3b8',
     narratorText: '#cbd5e1'
   },

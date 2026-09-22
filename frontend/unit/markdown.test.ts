@@ -45,11 +45,29 @@ describe('Markdown & Sanitization Pipeline (renderRoleplayMarkdown)', () => {
     expect(html).not.toContain('<q class="speech">');
   });
 
-  it('escapes raw HTML tags as text', () => {
+  it('drops unknown HTML tags but keeps inner text (no literals, no effect)', () => {
     const md = '<div>raw html block</div> and <span>inline</span>';
     const html = renderRoleplayMarkdown(md);
-    expect(html).toContain('&lt;div&gt;raw html block&lt;/div&gt;');
-    expect(html).toContain('&lt;span&gt;inline&lt;/span&gt;');
+    expect(html).toContain('raw html block');
+    expect(html).toContain('inline');
+    expect(html).not.toContain('<div');
+    expect(html).not.toContain('<span');
+    expect(html).not.toContain('&lt;div&gt;');
+  });
+
+  it('normalizes model HTML quirks to markdown formatting', () => {
+    expect(renderRoleplayMarkdown('<b>Boston Noir:</b> hardboiled')).toContain('<strong>Boston Noir:</strong>');
+    expect(renderRoleplayMarkdown('<i>italic</i>')).toContain('<em>italic</em>');
+    expect(renderRoleplayMarkdown('<s>old</s>')).toContain('<del>old</del>');
+    expect(renderRoleplayMarkdown('<u>under</u>')).toContain('<u>under</u>');
+    expect(renderRoleplayMarkdown('a<br>b')).toContain('a<br>b');
+  });
+
+  it('never renders narrative tags as HTML elements', () => {
+    const html = renderRoleplayMarkdown('<npc name="Danny">Hey.</npc>');
+    const container = document.createElement('div');
+    container.innerHTML = html;
+    expect(container.querySelector('npc')).toBeNull();
   });
 
   it('neutralizes all 8 OWASP XSS attack vectors so none survive in DOM', () => {

@@ -1,5 +1,6 @@
 import { Marked } from 'marked';
 import DOMPurify from 'dompurify';
+import { normalizeHtmlQuirks } from '@formatavern/shared';
 import { speechExtension } from './speech';
 
 // Configure marked with speech extension, GFM, breaks, and disabled HTML/images/headings/tables
@@ -22,7 +23,11 @@ markedInstance.use({
       return '';
     },
     html(token: any) {
-      return token.text
+      const raw = String(token.text ?? '');
+      const tags = raw.match(/<\/?([a-zA-Z][a-zA-Z0-9-]*)[^<>]*\/?>/g) ?? [];
+      const allSafe = tags.length > 0 && tags.every((t) => /^<\/?(u|br|hr)\s*\/?>$/i.test(t.trim()));
+      if (allSafe) return raw;
+      return raw
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
@@ -41,7 +46,7 @@ markedInstance.use({
 
 const ALLOWED_TAGS = [
   'p', 'br', 'em', 'strong', 'q', 'code', 'pre', 'blockquote',
-  'ul', 'ol', 'li', 'hr', 'a', 'span', 'del', 's'
+  'ul', 'ol', 'li', 'hr', 'a', 'span', 'del', 's', 'u'
 ];
 const ALLOWED_ATTR = ['class', 'href', 'rel', 'target'];
 const FORBID_TAGS = ['style', 'script', 'img', 'svg', 'math'];
@@ -80,7 +85,8 @@ function getPurifier(): any {
  */
 export function renderRoleplayMarkdown(text: string): string {
   if (!text) return '';
-  const rawHtml = markedInstance.parse(text, { async: false }) as string;
+  const normalized = normalizeHtmlQuirks(text);
+  const rawHtml = markedInstance.parse(normalized, { async: false }) as string;
   const purifier = getPurifier();
   if (!purifier || typeof purifier.sanitize !== 'function') {
     return rawHtml;

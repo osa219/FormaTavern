@@ -16,7 +16,7 @@
   --theme-user-text: #f8fafc;
   --theme-user-border: transparent;
   --theme-accent: #38bdf8;
-  --theme-quote-color: #fde047;
+  --theme-quote-color: #f8fafc;
   --theme-action-color: rgb(148, 163, 184);
   --theme-narrator-color: rgb(203, 213, 225);
   --theme-bubble-radius: 1rem;
@@ -351,7 +351,7 @@ input[type="range"]:disabled::-moz-range-thumb {
 @property --theme-user-bg { syntax: '<color>'; inherits: true; initial-value: #0f172a; }
 @property --theme-user-text { syntax: '<color>'; inherits: true; initial-value: #f8fafc; }
 @property --theme-user-border { syntax: '<color>'; inherits: true; initial-value: transparent; }
-@property --theme-quote-color { syntax: '<color>'; inherits: true; initial-value: #fde047; }
+@property --theme-quote-color { syntax: '<color>'; inherits: true; initial-value: #f8fafc; }
 @property --theme-action-color { syntax: '<color>'; inherits: true; initial-value: #94a3b8; }
 @property --theme-narrator-color { syntax: '<color>'; inherits: true; initial-value: #cbd5e1; }
 @property --theme-bg-overlay { syntax: '<color>'; inherits: true; initial-value: rgba(0, 0, 0, 0.5); }
