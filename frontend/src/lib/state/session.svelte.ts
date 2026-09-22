@@ -1,5 +1,6 @@
 import {
   defaultState,
+  isEmptyOutputError,
   type CharacterCard,
   type ChatStreamEvent,
   type ChatView,
@@ -12,6 +13,7 @@ import {
 } from '@formatavern/shared';
 import { api, readSse as defaultReadSse, toUiError } from '../api';
 import { toasts } from './toasts.svelte';
+import { prefs } from './prefs.svelte';
 import { StreamController } from './stream.svelte';
 
 export interface LiveTurn {
@@ -45,6 +47,9 @@ export class ChatSession {
   character = $state<CharacterCard>();
   persona = $state<Persona | null>(null);
   messages = $state.raw<MessageWithTree[]>([]);
+  // Rows currently being discarded: hidden from every render (including
+  // refetches racing with the delete sequence) until the discard settles.
+  discarding = $state.raw<readonly string[]>([]);
   hasOlder = $state<boolean>(true);
   loadingOlder = $state<boolean>(false);
   live = $state<LiveTurn | null>(null);
@@ -244,6 +249,41 @@ export class ChatSession {
     }
   }
 
+  async retryForUser(userMessageId: string): Promise<void> {
+    if (this.busy) return;
+
+    this.live = {
+      messageId: null,
+      parentId: null,
+      optimisticUserId: null,
+      segments: [],
+      heldBack: '',
+      warnings: [],
+      truncatedAt: null,
+      chars: 0,
+      startedAt: Date.now(),
+      ttftMs: null,
+      phase: 'connecting',
+      resumedFrom: 0
+    };
+
+    this.initStreamController();
+    this.abortController = new AbortController();
+
+    try {
+      await this.readSseFn(
+        `/api/messages/${userMessageId}/retry-response`,
+        { method: 'POST' },
+        (ev) => this.handleStreamEvent(ev),
+        this.abortController.signal
+      );
+    } catch (err: any) {
+      if (err.name === 'AbortError') return;
+      this.live = null;
+      toasts.error(toUiError(err).message);
+    }
+  }
+
   async continueTurn(messageId: string): Promise<void> {
     if (this.busy) return;
 
@@ -284,6 +324,53 @@ export class ChatSession {
       this.live = null;
       toasts.error(toUiError(err).message);
     }
+  }
+
+  /**
+   * Deletes a debris row (aborted-empty or empty-output) and repoints the
+   * leaf. Delete alone would land on the parent user turn and strand any
+   * valid siblings, so when remaining siblings exist the newest complete one
+   * becomes the leaf instead — a failed swipe page simply never happened.
+   * Returns true when falling back to a sibling, false when landing on the
+   * parent (user turn offers retry there).
+   */
+  private async discardDebris(finishedId: string): Promise<boolean> {
+    // Hide the debris row for the whole discard: the `start`-triggered
+    // refetch can land after the backend finalized the error but before the
+    // delete below completes, flashing its banner for a frame. Filtering in
+    // refetchState (not just a one-time splice) covers refetches landing at
+    // any point mid-sequence. Sibling lookup is server-side, unaffected.
+    if (!this.discarding.includes(finishedId)) {
+      this.discarding = [...this.discarding, finishedId];
+    }
+    this.messages = this.messages.filter((m) => m.id !== finishedId);
+    let fallbackId: string | null = null;
+    try {
+      const { data } = await api.api.messages({ id: finishedId }).siblings.get();
+      if (Array.isArray(data)) {
+        const remaining = (data as MessageWithTree[]).filter((m) => m.id !== finishedId);
+        const complete = remaining.filter((m) => m.status === 'complete');
+        const pool = complete.length > 0 ? complete : remaining;
+        pool.sort((a, b) => b.siblingIndex - a.siblingIndex);
+        fallbackId = pool[0]?.id ?? null;
+      }
+    } catch {
+      // ignore — fall through to plain delete + refetch
+    }
+    try {
+      await api.api.messages({ id: finishedId }).delete();
+    } catch {
+      // ignore — refetch/select below shows whatever survived
+    }
+    // Unmark before the final navigation so it renders the truth: the row
+    // is gone server-side on success, or reappears if the delete failed.
+    this.discarding = this.discarding.filter((id) => id !== finishedId);
+    if (fallbackId) {
+      await this.select(fallbackId);
+      return true;
+    }
+    await this.refetchState();
+    return false;
   }
 
   async select(siblingId: string): Promise<void> {
@@ -458,16 +545,29 @@ export class ChatSession {
         ev.message.status === 'aborted' &&
         ev.message.content.trim().length === 0 &&
         ev.message.segments.length === 0;
+      // Any error row with zero segments (network failure, thinking-only,
+      // state-only, blank) carries nothing renderable: the banner + Retry
+      // would duplicate the pager arrow + toast. Discard it so the failed
+      // page never happened; errors WITH partial segments are always kept
+      // (Continue needs them).
+      const emptyError =
+        ev.message.status === 'error' &&
+        ev.message.segments.length === 0 &&
+        !prefs.keepEmptyReplies;
       this.live = null;
       if (abortedEmpty) {
-        // Stopped while still in thinking: debris row, drop it and fall back.
-        // Delete repoints the leaf to the parent; failures just refetch.
-        try {
-          await api.api.messages({ id: finishedId }).delete();
-        } catch {
-          // ignore — refetch below shows whatever survived
-        }
-        await this.refetchState();
+        // Stopped while still in thinking: debris row, drop it. A failed
+        // swipe page vanishes and the previous valid sibling becomes the
+        // leaf again; with no siblings the user turn offers retry.
+        await this.discardDebris(finishedId);
+      } else if (emptyError) {
+        const fellBack = await this.discardDebris(finishedId);
+        const reason = isEmptyOutputError(ev.message.metadata)
+          ? 'Model returned no story output'
+          : `Generation failed (${ev.message.metadata?.error?.message ?? 'unknown error'})`;
+        toasts.error(
+          fellBack ? `${reason} — back to the previous response.` : `${reason} — turn discarded. Retry from your message.`
+        );
       } else if (this.messages.length === 0 || this.messages[this.messages.length - 1].id !== finishedId) {
         // Peeked away mid-stream (or missed the start refetch): arrival
         // lands on the new page instead of stranding the view elsewhere.
@@ -478,8 +578,18 @@ export class ChatSession {
     } else if (ev.type === 'error') {
       this.streamController?.flush();
       this.live = null;
-      toasts.error(ev.error.message);
-      this.refetchState();
+      if (ev.message.status === 'error' && ev.message.segments.length === 0 && !prefs.keepEmptyReplies) {
+        const fellBack = await this.discardDebris(ev.message.id);
+        const reason = isEmptyOutputError(ev.message.metadata)
+          ? 'Model returned no story output'
+          : `Generation failed (${ev.error.message})`;
+        toasts.error(
+          fellBack ? `${reason} — back to the previous response.` : `${reason} — turn discarded. Retry from your message.`
+        );
+      } else {
+        toasts.error(ev.error.message);
+        this.refetchState();
+      }
     }
   }
 
@@ -494,7 +604,11 @@ export class ChatSession {
         this.chat = chatRes.data as ChatView;
       }
       if (!msgsRes.error && Array.isArray(msgsRes.data)) {
-        this.messages = msgsRes.data as MessageWithTree[];
+        const hidden = this.discarding;
+        this.messages =
+          hidden.length === 0
+            ? (msgsRes.data as MessageWithTree[])
+            : (msgsRes.data as MessageWithTree[]).filter((m) => !hidden.includes(m.id));
       }
     } catch {
       // ignore

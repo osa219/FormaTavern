@@ -10,6 +10,7 @@
     content = '',
     busy = false,
     onContinue,
+    onRetry,
     onEdit,
     onDelete
   }: {
@@ -18,6 +19,7 @@
     content?: string;
     busy?: boolean;
     onContinue?: () => void;
+    onRetry?: () => void;
     onEdit?: () => void;
     onDelete?: () => void;
   } = $props();
@@ -33,6 +35,7 @@
   }
 
   const isAssistant = $derived(role === 'assistant');
+  const showRetry = $derived(role === 'user' && isLeaf && onRetry !== undefined);
 </script>
 
 <div class="flex items-center justify-end gap-2 text-xs text-neutral-400 {HOOKS.chat.turnToolbar}">
@@ -47,6 +50,19 @@
         aria-label="Continue reply"
       >
         <Icon name="continue" size={13} />
+      </button>
+    {/if}
+
+    {#if showRetry}
+      <button
+        type="button"
+        onclick={onRetry}
+        disabled={busy}
+        class="flex h-7 w-7 items-center justify-center rounded text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200 disabled:opacity-40"
+        title="Retry response"
+        aria-label="Retry response"
+      >
+        <Icon name="regenerate" size={13} />
       </button>
     {/if}
 

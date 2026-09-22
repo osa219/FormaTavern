@@ -1062,6 +1062,26 @@ import { api } from '$lib/api';
             </div>
           </div>
         </div>
+
+        <!-- Local debugging -->
+        <div class="border-t border-(--chrome-line) pt-3">
+          <div class="mb-3 font-medium text-(--chrome-text)">Local debugging</div>
+          <label class="flex items-center justify-between rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 p-3 cursor-pointer hover:bg-(--chrome-line)/30">
+            <div>
+              <div class="font-medium text-(--chrome-text)">Keep failed replies</div>
+              <div class="text-[11px] text-(--chrome-text)/60">Keeps failed pages with no story text (network errors, thinking-only, blank) as error rows instead of discarding them. Stored locally on this device.</div>
+            </div>
+            <input
+              type="checkbox"
+              checked={prefs.keepEmptyReplies}
+              onchange={(e) => {
+                prefs.keepEmptyReplies = e.currentTarget.checked;
+                prefs.save();
+              }}
+              class="h-4 w-4 rounded border-(--chrome-line) bg-(--chrome-surface) accent-accent focus:ring-accent"
+            />
+          </label>
+        </div>
       </div>
     {:else if activeTab === 'narrative'}
       <div class="flex flex-col gap-4">

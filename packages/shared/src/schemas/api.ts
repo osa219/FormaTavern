@@ -8,6 +8,7 @@ export type ApiErrorCode =
   | 'message_has_children'
   | 'invalid_parent'
   | 'not_assistant_message'
+  | 'not_user_message'
   | 'not_leaf'
   | 'provider_unconfigured'
   | 'prompt_budget_exceeded'
@@ -39,6 +40,7 @@ export const ApiErrorCodeSchema = Type.Union([
   Type.Literal('message_has_children'),
   Type.Literal('invalid_parent'),
   Type.Literal('not_assistant_message'),
+  Type.Literal('not_user_message'),
   Type.Literal('not_leaf'),
   Type.Literal('provider_unconfigured'),
   Type.Literal('prompt_budget_exceeded'),

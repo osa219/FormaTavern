@@ -180,6 +180,9 @@
   }
 
   function displaySegments(msg: MessageWithTree): Segment[] {
+    // Error rows render the error slate only — never fall back to raw
+    // content, which for empty-output failures would show thinking as story.
+    if (msg.status === 'error') return msg.segments ?? [];
     if (msg.segments && msg.segments.length > 0) return msg.segments;
     const text = msg.content?.trim() ?? '';
     if (!text) return [];
@@ -259,6 +262,7 @@
               content={msg.content}
               busy={session.busy}
               onContinue={() => session.continueTurn(msg.id)}
+              onRetry={msg.role === 'user' && msg.id === activeLeafId ? () => session.retryForUser(msg.id) : undefined}
               onEdit={() => startTurnEdit(msg)}
               onDelete={() => onDeleteTurn?.(msg)}
             />

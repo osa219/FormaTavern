@@ -33,6 +33,7 @@ export * from './envelope';
 export * from './state/engine';
 export * from './text/macros';
 export * from './text/htmlQuirks';
+export * from './text/emptyOutput';
 export * from './text/stop';
 export * from './text/tags';
 export * from './text/slug';

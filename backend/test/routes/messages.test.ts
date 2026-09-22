@@ -439,3 +439,92 @@ describe('routes/messages greeting select', () => {
     expect(repos.messages.get(rootId)!.content).toBe('Primary door.');
   });
 });
+
+describe('routes/messages retry-response', () => {
+  it('creates a fresh assistant child for a leaf user turn without retyping', async () => {
+    const { app, repos } = setupTestApp();
+
+    const chat = repos.chats.create({
+      id: 'c-retry',
+      title: 'Retry Chat',
+      primaryCharacterId: 'eldrin-the-mage',
+      activePersonaId: 'persona-default',
+      metadata: { envelopeDialect: 'directive', narrativeMode: 'narrative' }
+    });
+
+    const userRes = await app.handle(
+      new Request(`http://127.0.0.1/api/chats/${chat.id}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: 'What stories do you have?', generate: false })
+      })
+    );
+    expect(userRes.status).toBe(201);
+    const userRow = ((await userRes.json()) as any).message as MessageWithTree;
+
+    const retryRes = await app.handle(
+      new Request(`http://127.0.0.1/api/messages/${userRow.id}/retry-response`, {
+        method: 'POST'
+      })
+    );
+    expect(retryRes.status).toBe(200);
+    const events = await readSseEvents<ChatStreamEvent>(retryRes);
+    const lastEvent = events[events.length - 1];
+    expect(lastEvent.type).toBe('done');
+    if (lastEvent.type === 'done') {
+      expect(lastEvent.message.status).toBe('complete');
+      expect(lastEvent.message.parentId).toBe(userRow.id);
+      expect(lastEvent.message.role).toBe('assistant');
+    }
+
+    // No duplicate user row: one user + one assistant
+    expect(repos.messages.countInChat(chat.id)).toBe(2);
+  });
+
+  it('rejects retry-response on assistant messages and missing rows', async () => {
+    const { app, repos } = setupTestApp();
+
+    const chat = repos.chats.create({
+      id: 'c-retry-neg',
+      title: 'Retry Negative',
+      primaryCharacterId: 'eldrin-the-mage',
+      activePersonaId: 'persona-default',
+      metadata: { envelopeDialect: 'directive', narrativeMode: 'narrative' }
+    });
+
+    const userRes = await app.handle(
+      new Request(`http://127.0.0.1/api/chats/${chat.id}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: 'Hello', generate: false })
+      })
+    );
+    const userRow = ((await userRes.json()) as any).message as MessageWithTree;
+
+    const assistantId = 'retry-neg-asst';
+    repos.messages.insert({
+      id: assistantId,
+      chatId: chat.id,
+      parentId: userRow.id,
+      role: 'assistant',
+      narrativeRole: 'character',
+      content: 'Hi.',
+      segments: [],
+      status: 'complete'
+    });
+
+    const onAssistant = await app.handle(
+      new Request(`http://127.0.0.1/api/messages/${assistantId}/retry-response`, {
+        method: 'POST'
+      })
+    );
+    expect(onAssistant.status).toBe(400);
+
+    const missing = await app.handle(
+      new Request(`http://127.0.0.1/api/messages/does-not-exist/retry-response`, {
+        method: 'POST'
+      })
+    );
+    expect(missing.status).toBe(404);
+  });
+});

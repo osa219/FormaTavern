@@ -597,4 +597,88 @@ describe('runGeneration', () => {
     expect(finalRow!.metadata.reasoning?.length).toBe(16_000 + '\n\n[Reasoning truncated]'.length);
     expect(finalRow!.metadata.reasoning?.endsWith('[Reasoning truncated]')).toBe(true);
   });
+
+  it('thinking-only output finalizes as recoverable error with no segments', async () => {
+    const assistantId = createAssistantRow('asst-think-only');
+    const thinkOnlyProvider = {
+      id: 'custom-think-only',
+      capabilities: { chatCompletion: true, textCompletion: false, listModels: false },
+      async *generate() {
+        yield { type: 'token' as const, text: '<think>We need to respond as Albert, but we cannot write for Albert.</think>' };
+        yield { type: 'done' as const, finishReason: 'stop' as const };
+      }
+    };
+
+    const job: GenerationJob = {
+      chatId: 'chat-1',
+      assistantId,
+      parentId: null,
+      provider: thinkOnlyProvider as any,
+      model: 'think-only-model',
+      request: { history: [] },
+      promptTokensEstimated: 10,
+      droppedTurns: 0,
+      parseOptions: defaultParseOptions,
+      previousState: { mood: 'calm', affinity: 10 },
+      flushIntervalMs: 20
+    };
+
+    const events: ChatStreamEvent[] = [];
+    hub.subscribe(assistantId, (ev) => events.push(ev));
+    await runGeneration(job, { repos, hub });
+
+    const finalRow = repos.messages.get(assistantId);
+    expect(finalRow).not.toBeNull();
+    expect(finalRow!.status).toBe('error');
+    expect(finalRow!.segments).toEqual([]);
+    expect(finalRow!.metadata.error).toEqual({
+      message: 'Model returned thinking only, no story output',
+      recoverable: true
+    });
+    const errorEv = events.find((e) => e.type === 'error');
+    expect(errorEv).toBeDefined();
+  });
+
+  it('state-only and blank outputs finalize as recoverable errors', async () => {
+    const stateOnlyProvider = {
+      id: 'custom-state-only',
+      capabilities: { chatCompletion: true, textCompletion: false, listModels: false },
+      async *generate() {
+        yield { type: 'token' as const, text: '```state\n{"mood":"calm"}\n```' };
+        yield { type: 'done' as const, finishReason: 'stop' as const };
+      }
+    };
+    const blankProvider = {
+      id: 'custom-blank',
+      capabilities: { chatCompletion: true, textCompletion: false, listModels: false },
+      async *generate() {
+        yield { type: 'done' as const, finishReason: 'stop' as const };
+      }
+    };
+
+    for (const [rowId, provider, expected] of [
+      ['asst-state-only', stateOnlyProvider, 'Model returned state only, no story output'],
+      ['asst-blank', blankProvider, 'Model returned no story output']
+    ] as const) {
+      const assistantId = createAssistantRow(rowId);
+      const job: GenerationJob = {
+        chatId: 'chat-1',
+        assistantId,
+        parentId: null,
+        provider: provider as any,
+        model: 'empty-model',
+        request: { history: [] },
+        promptTokensEstimated: 10,
+        droppedTurns: 0,
+        parseOptions: defaultParseOptions,
+        previousState: { mood: 'calm', affinity: 10 },
+        flushIntervalMs: 20
+      };
+      await runGeneration(job, { repos, hub });
+      const finalRow = repos.messages.get(assistantId);
+      expect(finalRow!.status).toBe('error');
+      expect(finalRow!.segments).toEqual([]);
+      expect(finalRow!.metadata.error).toEqual({ message: expected, recoverable: true });
+    }
+  });
 });

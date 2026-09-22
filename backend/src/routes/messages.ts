@@ -190,6 +190,127 @@ export function createMessagesRouter(deps: {
 
       return response;
     })
+    .post('/:id/retry-response', ({ params }): Response => {
+      const target = repos.messages.get(params.id);
+      if (!target) {
+        throw new ApiError('not_found', 404, `Message ${params.id} not found`);
+      }
+
+      if (target.role !== 'user') {
+        throw new ApiError('not_user_message', 400, 'Can only retry the response to a user message');
+      }
+
+      if (target.status === 'streaming') {
+        throw new ApiError('generation_in_progress', 409, 'Target message is currently streaming');
+      }
+
+      const chat = repos.chats.get(target.chatId);
+      if (!chat) {
+        throw new ApiError('not_found', 404, `Chat ${target.chatId} not found`);
+      }
+
+      if (hub.activeForChat(chat.id)) {
+        throw new ApiError('generation_in_progress', 409, 'Generation already in progress for this chat');
+      }
+
+      const character = repos.characters.get(chat.primaryCharacterId);
+      if (!character) {
+        throw new ApiError('not_found', 404, `Character ${chat.primaryCharacterId} not found`);
+      }
+
+      const persona = repos.personas.get(chat.activePersonaId);
+      if (!persona) {
+        throw new ApiError('not_found', 404, `Persona ${chat.activePersonaId} not found`);
+      }
+
+      const settings = repos.settings.getAll();
+      const activeConfig = settings.provider.activeConfigId
+        ? repos.providerConfigs.get(settings.provider.activeConfigId)
+        : null;
+      const resolution = providers.resolve(settings, activeConfig);
+
+      // Assemble context with triggerId = the user node itself, so no new
+      // user row is created and no retyping is needed.
+      const ctx = assembleContext({
+        chat,
+        character,
+        persona,
+        settings,
+        triggerId: target.id,
+        capabilities: resolution.provider.capabilities,
+        configPrompt: resolution.configPrompt,
+        messages: repos.messages
+      });
+
+      const built = buildPrompt(ctx);
+
+      const assistantId = newId();
+      repos.messages.insert({
+        id: assistantId,
+        chatId: chat.id,
+        parentId: target.id,
+        role: 'assistant',
+        narrativeRole: 'character',
+        senderId: character.id,
+        senderName: character.name,
+        content: '',
+        segments: [],
+        status: 'streaming'
+      });
+      repos.chats.setActiveLeaf(chat.id, assistantId);
+
+      const knownNames = [
+        character.name,
+        ...Object.values(chat.metadata.npcs ?? {}).map((n) => n.displayName)
+      ];
+      const dialect =
+        chat.metadata.envelopeDialect ?? (chat.metadata.narrativeMode === 'narrative' ? 'directive' : 'auto');
+
+      const personaVoicing =
+        chat.metadata.personaVoicing ?? settings.narrative?.personaVoicing ?? 'prohibited';
+      const parseOptions: ParseOptions = {
+        primaryCharacter: character.name,
+        dialect,
+        knownNames,
+        personaName: persona.name,
+        allowPersona: personaVoicing === 'allowed'
+      };
+
+      const job: GenerationJob = {
+        chatId: chat.id,
+        assistantId,
+        parentId: target.id,
+        userMessageId: target.id,
+        provider: resolution.provider,
+        model: resolution.model,
+        request: {
+          model: resolution.model,
+          systemPrompt: built.systemPrompt,
+          history: built.history,
+          assistantPrefill: built.assistantPrefill,
+          stop: built.stop,
+          temperature: settings.generation.temperature,
+          topP: settings.generation.topP,
+          topK: settings.generation.topK,
+          minP: settings.generation.minP,
+          repetitionPenalty: settings.generation.repetitionPenalty,
+          frequencyPenalty: settings.generation.frequencyPenalty,
+          reasoning: settings.generation.reasoning,
+          reasoningEffort: settings.generation.reasoningEffort,
+          maxTokens: settings.generation.maxTokens
+        },
+        promptTokensEstimated: built.tokens.total,
+        droppedTurns: built.tokens.droppedTurns,
+        parseOptions,
+        previousState: ctx.previousState,
+        stateSchema: character.stateSchema
+      };
+
+      const response = sseResponse(hub, assistantId);
+      void runGeneration(job, { repos, hub });
+
+      return response;
+    })
     .post('/:id/continue', ({ params }): Response => {
       const target = repos.messages.get(params.id);
       if (!target) {

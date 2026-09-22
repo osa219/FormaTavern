@@ -1,4 +1,7 @@
 import {
+  EMPTY_OUTPUT_BLANK,
+  EMPTY_OUTPUT_STATE_ONLY,
+  EMPTY_OUTPUT_THINKING_ONLY,
   parseEnvelope,
   resolveState,
   type MessageMetadata,
@@ -171,6 +174,24 @@ export async function runGeneration(
 
       // 1. Final parse
       const result = parseEnvelope(buffer, { ...job.parseOptions, streaming: false });
+
+      // 1b. Empty-output detection: thinking-only / state-only / blank replies
+      // carry no story segments. They finalize as recoverable errors so the
+      // client can discard the debris (or keep it in debug mode) instead of
+      // rendering thinking text as story via the empty-segments fallback.
+      if (
+        !agencyAborted &&
+        streamError === null &&
+        finishReason !== 'aborted' &&
+        result.segments.length === 0
+      ) {
+        const message = result.reasoning?.trim()
+          ? EMPTY_OUTPUT_THINKING_ONLY
+          : result.statePatch !== null
+            ? EMPTY_OUTPUT_STATE_ONLY
+            : EMPTY_OUTPUT_BLANK;
+        streamError = { message, recoverable: true };
+      }
 
       // 2. Status
       let status: 'complete' | 'aborted' | 'error';
