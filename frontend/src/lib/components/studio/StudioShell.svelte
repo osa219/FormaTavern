@@ -24,7 +24,7 @@
 
   let { draft }: { draft: CharacterDraft } = $props();
 
-  type StudioTab = 'identity' | 'voice' | 'showcase' | 'aesthetic' | 'layout' | 'css' | 'state' | 'bindings' | 'gallery' | 'prompt';
+  type StudioTab = 'identity' | 'voice' | 'showcase' | 'aesthetic' | 'layout' | 'css' | 'state' | 'bindings' | 'gallery' | 'prompt' | 'danger';
   let activeTab = $state<StudioTab>('identity');
   let cssSubtab = $state<'character' | 'chat'>('character');
   let saving = $state(false);
@@ -95,7 +95,7 @@
       }
       draft.stopAutosave();
       draft.clearAutosave();
-      toasts.success('Character deleted');
+      toasts.success('Card deleted');
       goto('/');
     } catch (err: any) {
       toasts.error(toUiError(err).message);
@@ -223,7 +223,7 @@
                 onclick={() => promptDelete()}
                 class="rounded-lg px-3 py-2 text-left text-xs font-medium text-red-400 hover:bg-(--chrome-line)/40 disabled:opacity-50"
               >
-                Delete character
+                Delete card
               </button>
             {/if}
           </div>
@@ -248,14 +248,19 @@
           { id: 'state', label: 'State' },
           { id: 'bindings', label: 'Bindings' },
           { id: 'gallery', label: 'Gallery' },
-          { id: 'prompt', label: 'Prompt' }
+          { id: 'prompt', label: 'Prompt' },
+          { id: 'danger', label: 'Danger' }
         ] as tab}
           <button
             type="button"
             onclick={() => (activeTab = tab.id as StudioTab)}
             class="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {activeTab === tab.id
-              ? 'bg-(--chrome-surface) text-(--chrome-text) font-semibold shadow-xs border border-(--chrome-line)'
-              : 'text-(--chrome-text)/60 hover:text-(--chrome-text) hover:bg-(--chrome-surface)/50'}"
+              ? tab.id === 'danger'
+                ? 'bg-red-500/15 text-red-300 font-semibold shadow-xs border border-red-500/40'
+                : 'bg-(--chrome-surface) text-(--chrome-text) font-semibold shadow-xs border border-(--chrome-line)'
+              : tab.id === 'danger'
+                ? 'text-red-400/70 hover:text-red-300 hover:bg-red-500/10'
+                : 'text-(--chrome-text)/60 hover:text-(--chrome-text) hover:bg-(--chrome-surface)/50'}"
           >
             {tab.label}
           </button>
@@ -288,29 +293,33 @@
           <GalleryManager {draft} />
         {:else if activeTab === 'prompt'}
           <StudioPromptPanel {draft} />
-        {/if}
-
-        {#if canDelete}
-          <section
-            aria-label="Danger zone"
-            class="rounded-2xl border border-red-500/30 bg-red-500/5 p-4 md:p-5"
-          >
-            <h2 class="text-xs font-semibold uppercase tracking-wider text-red-300">
-              Danger Zone
-            </h2>
-            <p class="mt-1 text-xs leading-relaxed text-(--chrome-text)/60">
-              Permanently delete this character and all of its chats. This cannot be undone.
-            </p>
-            <button
-              type="button"
-              disabled={deleting}
-              onclick={() => promptDelete()}
-              class="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-300 transition-colors hover:bg-red-500/20 disabled:opacity-50"
+        {:else if activeTab === 'danger'}
+          {#if canDelete}
+            <section
+              aria-label="Danger zone"
+              class="rounded-2xl border border-red-500/30 bg-red-500/5 p-4 md:p-5 max-w-2xl"
             >
-              <Icon name="trash" size={13} />
-              <span>{deleting ? 'Deleting…' : 'Delete Character'}</span>
-            </button>
-          </section>
+              <h2 class="text-xs font-semibold uppercase tracking-wider text-red-300">
+                Danger Zone
+              </h2>
+              <p class="mt-1 text-xs leading-relaxed text-(--chrome-text)/60">
+                Permanently delete this card and all of its chats. This cannot be undone.
+              </p>
+              <button
+                type="button"
+                disabled={deleting}
+                onclick={() => promptDelete()}
+                class="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-300 transition-colors hover:bg-red-500/20 disabled:opacity-50"
+              >
+                <Icon name="trash" size={13} />
+                <span>{deleting ? 'Deleting…' : 'Delete Card'}</span>
+              </button>
+            </section>
+          {:else}
+            <p class="text-xs text-(--chrome-text)/60">
+              Nothing to delete yet — save this card first.
+            </p>
+          {/if}
         {/if}
       </div>
     </div>
@@ -337,13 +346,13 @@
     }}
   />
 
-  <!-- Delete Character Confirm Dialog -->
+  <!-- Delete Card Confirm Dialog -->
   <ConfirmDialog
     open={deleteConfirmOpen}
-    title="Delete Character"
+    title="Delete Card"
     message={storiesCount > 0
-      ? `Are you sure you want to delete "${draft.card.name || 'this character'}" and its ${storiesCount} ${storiesCount === 1 ? 'chat' : 'chats'}? All associated messages and data will be permanently deleted.`
-      : `Are you sure you want to delete "${draft.card.name || 'this character'}"? This action cannot be undone.`}
+      ? `Are you sure you want to delete "${draft.card.name || 'this card'}" and its ${storiesCount} ${storiesCount === 1 ? 'chat' : 'chats'}? All associated messages and data will be permanently deleted.`
+      : `Are you sure you want to delete "${draft.card.name || 'this card'}"? This action cannot be undone.`}
     confirmLabel="Delete Everything"
     danger={true}
     onConfirm={handleConfirmDelete}
