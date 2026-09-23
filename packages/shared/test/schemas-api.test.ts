@@ -174,7 +174,7 @@ describe('Shared API & DTO Schemas', () => {
     expect(DEFAULT_SETTINGS.generation.maxTokens).toBe(1024);
     expect(DEFAULT_SETTINGS.generation.contextLength).toBe(16_384);
     expect(DEFAULT_SETTINGS.narrative.defaultMode).toBe('narrative');
-    expect(DEFAULT_SETTINGS.narrative.defaultDialect).toBe('directive');
+    expect(DEFAULT_SETTINGS.narrative.defaultDialect).toBe('prefix');
     expect(DEFAULT_SETTINGS.preamble).toBeUndefined();
 
     // Default complies with AppSettingsSchema

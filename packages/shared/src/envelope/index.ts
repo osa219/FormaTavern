@@ -3,6 +3,7 @@ import type { StateVector } from '../schemas/state';
 import {
   classifyLine,
   escapeRegex,
+  isAsteriskNarratorLine,
   DIRECTIVE_HEADER_RE,
   XML_HEADER_RE,
   DIRECTIVE_CLOSER_RE,
@@ -31,6 +32,7 @@ interface RawBlock {
   kind: SegmentKind;
   name?: string;
   lines: string[];
+  asterisk?: boolean;
 }
 
 function trimBlockText(lines: string[]): string {
@@ -181,6 +183,12 @@ export function parseEnvelope(input: string, options: ParseOptions): ParseResult
     });
 
     if (classification.type === 'header') {
+      // Consecutive prefix asterisk lines join one narrator block instead of
+      // opening a block per line.
+      if (classification.mergeAsterisk && currentBlock.asterisk) {
+        if (classification.inlineBody) currentBlock.lines.push(classification.inlineBody);
+        continue;
+      }
       if (detectedDialect === 'none') {
         detectedDialect = classification.dialect;
       } else if (detectedDialect !== classification.dialect) {
@@ -218,7 +226,8 @@ export function parseEnvelope(input: string, options: ParseOptions): ParseResult
         dialect: classification.dialect,
         kind: classification.kind,
         name: blockName,
-        lines: classification.inlineBody ? [classification.inlineBody] : []
+        lines: classification.inlineBody ? [classification.inlineBody] : [],
+        asterisk: classification.mergeAsterisk
       };
       blocks.push(currentBlock);
     } else if (classification.type === 'closer') {
@@ -315,7 +324,7 @@ export function serializeSegments(
           (rawName.toLowerCase() === 'narrator' ||
             (/^[A-Z]/.test(rawName) && rawName.split(/\s+/).length <= 3));
 
-        if (isPrefixHeader || STATE_FENCE_OPEN_RE.test(line)) {
+        if (isPrefixHeader || isAsteriskNarratorLine(line) || STATE_FENCE_OPEN_RE.test(line)) {
           throw new RangeError(`Segment text contains an unescaped prefix delimiter: "${line}"`);
         }
       }
@@ -357,14 +366,19 @@ export function serializeSegments(
       }
       parts.push(`${openTag}\n${seg.text}\n${closeTag}`);
     } else {
-      // Prefix dialect
-      let speaker: string;
+      // Prefix dialect: narrator wears asterisk blocks (one *line* per
+      // non-blank line so the parser re-joins them); voices keep Name: headers.
       if (seg.kind === 'narrator') {
-        speaker = 'Narrator';
+        const asteriskLines = seg.text
+          .split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0)
+          .map((line) => (isAsteriskNarratorLine(line) ? line : `*${line}*`));
+        parts.push(asteriskLines.join('\n'));
       } else {
-        speaker = seg.name ?? 'Character';
+        const speaker = seg.name ?? 'Character';
+        parts.push(`${speaker}: ${seg.text}`);
       }
-      parts.push(`${speaker}: ${seg.text}`);
     }
   }
 

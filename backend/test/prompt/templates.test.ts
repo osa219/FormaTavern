@@ -50,7 +50,7 @@ describe('renderExampleForDialect (single source, per-dialect render)', () => {
     const warnings: string[] = [];
     expect(renderExampleForDialect('directive', undefined, warnings)).toContain(':::narrator');
     expect(renderExampleForDialect('xml', undefined, warnings)).toContain('<narrator>');
-    expect(renderExampleForDialect('prefix', undefined, warnings)).toContain('Narrator:');
+    expect(renderExampleForDialect('prefix', undefined, warnings)).toContain('*{{char}} glances up');
     expect(warnings).toEqual([]);
   });
 
@@ -61,7 +61,7 @@ describe('renderExampleForDialect (single source, per-dialect render)', () => {
     expect(xml).toContain('Snow falls.');
     expect(xml).toContain('<state>');
     const prefix = renderExampleForDialect('prefix', custom, warnings);
-    expect(prefix).toContain('Snow falls.');
+    expect(prefix).toContain('*Snow falls.*');
     expect(prefix).toContain('```state');
     expect(warnings).toEqual([]);
   });
@@ -83,7 +83,7 @@ describe('renderExampleForDialect (single source, per-dialect render)', () => {
 
     const warnings: string[] = [];
     const prefix = renderExampleForDialect('prefix', colonHeavy, warnings);
-    expect(prefix).toContain('Narrator:');
+    expect(prefix).toContain('*{{char}} glances up');
     expect(prefix).not.toContain('Be silent');
     expect(warnings.length).toBe(1);
 

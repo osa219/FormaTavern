@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test';
-import { serializeSegments, stripOutOfBand } from '../../src/envelope';
+import { parseEnvelope, serializeSegments, stripOutOfBand } from '../../src/envelope';
 import type { Segment } from '../../src/schemas/narrative';
 
 describe('Envelope Serialization & Out-of-band Stripping', () => {
@@ -50,7 +50,7 @@ describe('Envelope Serialization & Out-of-band Stripping', () => {
 
   it('produces exact canonical string for prefix dialect', () => {
     const expected =
-      'Narrator: Midnight strikes in the city.\n\n' +
+      '*Midnight strikes in the city.*\n\n' +
       'Alice: Hurry, we must leave.\n\n' +
       'Guard: Halt, who goes there?\n\n' +
       '```state\n' +
@@ -59,6 +59,38 @@ describe('Envelope Serialization & Out-of-band Stripping', () => {
 
     const actual = serializeSegments(sampleSegments, samplePatch, 'prefix');
     expect(actual).toBe(expected);
+  });
+
+  it('emits multiline narrator text as one asterisk block per line', () => {
+    const actual = serializeSegments([{ kind: 'narrator', text: 'Rain falls.\nWind rises.' }], null, 'prefix');
+    expect(actual).toBe('*Rain falls.*\n*Wind rises.*');
+  });
+
+  it('throws RangeError on whole-line asterisk spans inside voice text for prefix', () => {
+    const bad: Segment[] = [
+      { kind: 'character', name: 'Alice', text: 'Look out!\n*The sky darkens.*' }
+    ];
+    expect(() => serializeSegments(bad, null, 'prefix')).toThrow(RangeError);
+  });
+
+  it('round-trips prefix asterisk narration back to identical segments', () => {
+    const segments: Segment[] = [
+      { kind: 'narrator', text: 'Rain falls.\nWind rises.' },
+      { kind: 'character', name: 'Alice', text: '"Come here." *she waves* "Quickly."' }
+    ];
+    const emitted = serializeSegments(segments, null, 'prefix');
+    const reparsed = parseEnvelope(emitted, { primaryCharacter: 'Alice', dialect: 'prefix' });
+    expect(reparsed.segments).toEqual(segments);
+  });
+
+  it('converts prefix asterisk narration to directive narrator blocks', () => {
+    const parsed = parseEnvelope('*Rain falls.*\n\nAlice: "Come here."', {
+      primaryCharacter: 'Alice',
+      dialect: 'prefix'
+    });
+    const converted = serializeSegments(parsed.segments, null, 'directive');
+    expect(converted).toContain(':::narrator\nRain falls.\n:::');
+    expect(converted).toContain(':::character[Alice]\n"Come here."\n:::');
   });
 
   it('omits state block when patch is null', () => {

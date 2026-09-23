@@ -5,6 +5,22 @@ export function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+/**
+ * Prefix asterisk-narrator rule, shared by the parser and the serializer
+ * guard: the whole line is exactly one single-asterisk pair (*paragraph*).
+ * Inline spans, **bold**, and multiline spans return false.
+ */
+export function isAsteriskNarratorLine(line: string): boolean {
+  const t = line.trim();
+  return (
+    t.length >= 3 &&
+    t[0] === '*' &&
+    t[1] !== '*' &&
+    t[t.length - 1] === '*' &&
+    t[t.length - 2] !== '*'
+  );
+}
+
 export const DIRECTIVE_HEADER_RE =
   /^\s*:{3,}\s*(narrator|greeting|character|char|npc|persona|user)\b\s*(?:\[([^\]]*)\]\s*(.*)|[:\-–]?\s*(.*?))?\s*$/i;
 
@@ -35,7 +51,7 @@ export const STATE_FENCE_OPEN_RE =
   /^\s*(`{3,}|~{3,})\s*(?:state|json\s*state|state\s*json)\s*$/i;
 
 export type LineClassification =
-  | { type: 'header'; dialect: Dialect; kind: SegmentKind; name?: string; inlineBody?: string }
+  | { type: 'header'; dialect: Dialect; kind: SegmentKind; name?: string; inlineBody?: string; mergeAsterisk?: boolean }
   | { type: 'closer'; dialect: Dialect }
   | { type: 'body'; text: string };
 
@@ -137,6 +153,21 @@ export function classifyLine(line: string, opts: ClassifyOptions): LineClassific
   // 4. XML Closer (standalone line)
   if (XML_CLOSER_LINE_RE.test(line)) {
     return { type: 'closer', dialect: 'xml' };
+  }
+
+  // 4b. Prefix asterisk-narrator: a line that is exactly one single-asterisk
+  // pair (*paragraph*) is a narrator block. Inline spans ("Hi" *she waves*
+  // "bye"), **bold**, and multiline spans stay body text. Gated on explicit
+  // prefix mode so directive/xml/auto/classic parsing is byte-identical.
+  if (opts.dialect === 'prefix' && isAsteriskNarratorLine(line)) {
+    const inner = line.trim().slice(1, -1);
+    return {
+      type: 'header',
+      dialect: 'prefix',
+      kind: 'narrator',
+      inlineBody: inner.trim().length > 0 ? inner.trim() : undefined,
+      mergeAsterisk: true
+    };
   }
 
   // 5. Prefix Speaker Line

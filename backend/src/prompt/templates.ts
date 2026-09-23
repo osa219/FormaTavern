@@ -32,7 +32,7 @@ export const XML_SYNTAX_EXAMPLE = `<narrator>
 {"mood":"curious","scene":"quiet room"}
 </state>`;
 
-export const PREFIX_SYNTAX_EXAMPLE = `Narrator: {{char}} glances up from their work, noticing your arrival.
+export const PREFIX_SYNTAX_EXAMPLE = `*{{char}} glances up from their work, noticing your arrival.*
 
 {{char}}: "I wasn't expecting you yet, but I'm glad you're here."
 

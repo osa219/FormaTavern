@@ -59,8 +59,8 @@ export function generateBlock(id: BlockId, ctx: PromptContext, warnings: string[
         ].join('\n');
       } else if (dialect === 'prefix') {
         syntaxDesc = [
-          'Structure your response using speaker prefix lines:',
-          '- Narrator: ... for scene description, environment, and physical actions.',
+          'Structure your response using voices:',
+          '- *...* on its own lines for scene description, environment, and physical actions.',
           '- {{char}}: ... for {{char}}\'s spoken dialogue and thoughts.',
           ...(isAllowed ? ['- {{user}}: ... for {{user}}\'s spoken dialogue and actions.'] : []),
           '- Name: ... when a side character speaks or acts (use their actual name).',

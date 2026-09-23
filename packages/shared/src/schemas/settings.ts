@@ -39,13 +39,13 @@ export const AppSettingsSchema = Type.Object({
       Type.Literal('directive'),
       Type.Literal('xml'),
       Type.Literal('prefix')
-    ], { default: 'directive' }),
+    ], { default: 'prefix' }),
     example: Type.Optional(Type.String({ maxLength: 20_000 })),
     personaVoicing: Type.Union([
       Type.Literal('prohibited'),
       Type.Literal('allowed')
     ], { default: 'prohibited' })
-  }, { default: { defaultMode: 'narrative', defaultDialect: 'directive', personaVoicing: 'prohibited' } }),
+  }, { default: { defaultMode: 'narrative', defaultDialect: 'prefix', personaVoicing: 'prohibited' } }),
   preamble: Type.Optional(Type.String({ maxLength: 20_000 }))
 });
 export type AppSettings = Static<typeof AppSettingsSchema>;

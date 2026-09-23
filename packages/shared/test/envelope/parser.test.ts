@@ -366,6 +366,49 @@ describe('Envelope Parser (Normative Table & Edge Cases)', () => {
       expect(res.segments[0]).toEqual({ kind: 'narrator', name: undefined, text: 'Night falls.' });
       expect(res.segments[1]).toEqual({ kind: 'character', name: 'Eldrin', text: 'Indeed it does.' });
     });
+
+    it('treats whole-line asterisk paragraphs as narrator and joins consecutive ones', () => {
+      const input = '*Rain lashes the glass.*\n*Wind rises through the spire.*\n\nEldrin: "Step inside."';
+      const res = parseEnvelope(input, { primaryCharacter: 'Eldrin', dialect: 'prefix' });
+      expect(res.dialect).toBe('prefix');
+      expect(res.segments.length).toBe(2);
+      expect(res.segments[0]).toEqual({
+        kind: 'narrator',
+        name: undefined,
+        text: 'Rain lashes the glass.\nWind rises through the spire.'
+      });
+      expect(res.segments[1]).toEqual({ kind: 'character', name: 'Eldrin', text: '"Step inside."' });
+    });
+
+    it('keeps inline asterisk beats inside the speaker block', () => {
+      const input = 'Eldrin: "Come here." *she waves a hand* "Quickly."';
+      const res = parseEnvelope(input, { primaryCharacter: 'Eldrin', dialect: 'prefix' });
+      expect(res.segments.length).toBe(1);
+      expect(res.segments[0].kind).toBe('character');
+      expect(res.segments[0].text).toContain('*she waves a hand*');
+    });
+
+    it('leaves **bold** and multiline asterisk spans as body text', () => {
+      const bold = parseEnvelope('Eldrin: It was **very** important.', {
+        primaryCharacter: 'Eldrin',
+        dialect: 'prefix'
+      });
+      expect(bold.segments.length).toBe(1);
+      expect(bold.segments[0].text).toContain('**very**');
+
+      const multiline = parseEnvelope('*First half\nsecond half*', {
+        primaryCharacter: 'Eldrin',
+        dialect: 'prefix'
+      });
+      expect(multiline.segments[0].kind).toBe('character');
+    });
+
+    it('ignores asterisk lines outside explicit prefix mode', () => {
+      const input = '*Rain falls.*';
+      const res = parseEnvelope(input, { primaryCharacter: 'Eldrin', dialect: 'auto' });
+      expect(res.dialect).toBe('none');
+      expect(res.segments[0].kind).toBe('character');
+    });
   });
 
   // 9. CRLF invariance

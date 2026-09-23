@@ -495,7 +495,7 @@ describe('routes/settings', () => {
     const view0 = (await getRes.json()) as SettingsView;
     expect(view0.exampleRenderings.directive).toContain(':::narrator');
     expect(view0.exampleRenderings.xml).toContain('<narrator>');
-    expect(view0.exampleRenderings.prefix).toContain('Narrator:');
+    expect(view0.exampleRenderings.prefix).toContain('*{{char}} glances up');
     expect(view0.narrative.example).toBeUndefined();
 
     // Missing state demo -> 422, nothing stored.
@@ -531,7 +531,8 @@ describe('routes/settings', () => {
     expect(view1.exampleRenderings.directive).toContain('Snow falls.');
     expect(view1.exampleRenderings.xml).toContain('<narrator>');
     expect(view1.exampleRenderings.xml).toContain('Snow falls.');
-    expect(view1.narrative.defaultDialect).toBe('directive');
+    expect(view1.exampleRenderings.prefix).toContain('*Snow falls.*');
+    expect(view1.narrative.defaultDialect).toBe('prefix');
 
     // Null clears back to built-in.
     const cleared = await patch({ narrative: { example: null } });

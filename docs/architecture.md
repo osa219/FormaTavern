@@ -192,9 +192,9 @@ settings   (key PK, value JSON, updated_at)
 
 | Dialect | Header | Notes |
 |---|---|---|
-| `directive` (default) | `:::narrator`, `:::character[Alice]`, `::: npc Guard` | lenient: `char`≡`character`, 3+ colons, bare names ≤ 40 chars, inline body after `]`; closers `:::` optional |
+| `directive` | `:::narrator`, `:::character[Alice]`, `::: npc Guard` | lenient: `char`≡`character`, 3+ colons, bare names ≤ 40 chars, inline body after `]`; closers `:::` optional |
 | `xml` | `<narrator>`, `<character name="Alice">`, single-line `<npc name="G">…</npc>` | closers optional |
-| `prefix` | `Alice: …`, `Narrator: …` | gated by `knownNames` (auto) or Capitalized ≤ 3 words + stoplist (explicit) |
+| `prefix` (default) | `Alice: …`, `*narration…*` (`Narrator: …` still parsed) | narrator wears whole-line asterisk blocks; inline `*…*` stays in the speaker block; gated by `knownNames` (auto) or Capitalized ≤ 3 words + stoplist (explicit) |
 
 **Track 2 — director steering:** one-shot `directorNote` on the user node (prompt Block 9b; inherited by regenerate; never serialized into later history) and `standingDirection` on the chat (Block 9a).
 
