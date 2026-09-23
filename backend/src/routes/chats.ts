@@ -12,6 +12,7 @@ import {
   clampGreetingIndex,
   defaultState,
   parseEnvelope,
+  resolveCharacterName,
   resolveState,
   type ChatConvertBody,
   type ChatCreate,
@@ -130,7 +131,7 @@ export function createChatsRouter(deps: {
           if (greetingText && greetingText.trim().length > 0) {
             rootMsgId = newId();
             const parseRes = parseEnvelope(greetingText, {
-              primaryCharacter: character.name,
+              primaryCharacter: resolveCharacterName(character),
               dialect: envelopeDialect,
               streaming: false
             });
@@ -142,7 +143,7 @@ export function createChatsRouter(deps: {
               role: 'assistant',
               narrativeRole: 'character',
               senderId: character.id,
-              senderName: character.name,
+              senderName: resolveCharacterName(character),
               content: greetingText,
               segments: parseRes.segments,
               state: defaultState(character),
@@ -476,9 +477,9 @@ export function createChatsRouter(deps: {
           plan = planDialectConversion(rows, {
             sourceDialect,
             targetDialect: convertBody.targetDialect,
-            primaryCharacter: character.name,
+            primaryCharacter: resolveCharacterName(character),
             knownNames: [
-              character.name,
+              resolveCharacterName(character),
               ...Object.values(chat.metadata.npcs ?? {}).map((n) => n.displayName)
             ],
             personaName: persona.name,
@@ -639,7 +640,7 @@ export function createChatsRouter(deps: {
           role: 'assistant',
           narrativeRole: 'character',
           senderId: character.id,
-          senderName: character.name,
+          senderName: resolveCharacterName(character),
           content: '',
           segments: [],
           status: 'streaming'
@@ -647,7 +648,7 @@ export function createChatsRouter(deps: {
         repos.chats.setActiveLeaf(chat.id, assistantId);
 
         const knownNames = [
-          character.name,
+          resolveCharacterName(character),
           ...Object.values(chat.metadata.npcs ?? {}).map((n) => n.displayName)
         ];
         const dialect =
@@ -656,7 +657,7 @@ export function createChatsRouter(deps: {
         const personaVoicing =
           chat.metadata.personaVoicing ?? settings.narrative?.personaVoicing ?? 'prohibited';
         const parseOptions: ParseOptions = {
-          primaryCharacter: character.name,
+          primaryCharacter: resolveCharacterName(character),
           dialect,
           knownNames,
           personaName: persona.name,

@@ -18,8 +18,13 @@ import { shellTheme } from '$lib/state/shellTheme.svelte';
 export function createEmptyCard(): CharacterCreate {
   return {
     name: '',
+    characterName: '',
     tagline: '',
     creator: '',
+    creatorUrl: '',
+    characterUrl: '',
+    origin: '',
+    version: '',
     description: '',
     personality: '',
     scenario: '',
@@ -35,6 +40,19 @@ export function createEmptyCard(): CharacterCreate {
     stateBindings: [],
     initialState: {}
   };
+}
+
+export function normalizeCardBlanks<T extends Record<string, any>>(card: T): T {
+  const out: Record<string, any> = { ...card };
+  for (const key of ['characterName', 'creatorUrl', 'characterUrl', 'origin', 'version', 'tagline', 'creator'] as const) {
+    const v = out[key];
+    if (typeof v === 'string' && v.trim() === '') {
+      out[key] = undefined;
+    } else if (typeof v === 'string') {
+      out[key] = v.trim();
+    }
+  }
+  return out as T;
 }
 
 export class CharacterDraft {
@@ -94,8 +112,13 @@ export class CharacterDraft {
       this.ownerId = initialCard.id;
       this.card = {
         name: initialCard.name,
+        characterName: initialCard.characterName ?? '',
         tagline: initialCard.tagline ?? '',
         creator: initialCard.creator ?? '',
+        creatorUrl: initialCard.creatorUrl ?? '',
+        characterUrl: initialCard.characterUrl ?? '',
+        origin: initialCard.origin ?? '',
+        version: (initialCard as any).version ?? '',
         description: initialCard.description,
         personality: initialCard.personality,
         scenario: initialCard.scenario,
@@ -132,7 +155,7 @@ export class CharacterDraft {
   withProvisionalId(): Record<string, unknown> {
     return {
       id: this.characterId || 'provisional-slug',
-      ...this.card
+      ...normalizeCardBlanks(this.card)
     };
   }
 
@@ -246,8 +269,9 @@ export class CharacterDraft {
     try {
       if (this.characterId) {
         // PATCH existing character with OCC expectedUpdatedAt
+        const cleaned = normalizeCardBlanks(this.card);
         const payload: any = {
-          ...this.card,
+          ...cleaned,
           customCss: this.card.customCss?.trim() ? this.card.customCss : null,
           layout: this.card.layout ? this.card.layout : null,
           expectedUpdatedAt: this.expectedUpdatedAt ?? Date.now()
@@ -271,8 +295,9 @@ export class CharacterDraft {
         return 'saved';
       } else {
         // POST new character (promotes draft owner if uploaded)
+        const cleaned = normalizeCardBlanks(this.card);
         const payload: any = {
-          ...this.card,
+          ...cleaned,
           customCss: this.card.customCss?.trim() ? this.card.customCss : undefined,
           layout: this.card.layout ? this.card.layout : undefined
         };
@@ -285,7 +310,7 @@ export class CharacterDraft {
         const created = res.data as CharacterCard;
         this.snapshot = JSON.stringify(this.card);
         this.clearAutosave();
-        toasts.success(`Created character "${created.name}"`);
+        toasts.success(`Created card "${created.name}"`);
         return 'saved';
       }
     } catch (err: any) {

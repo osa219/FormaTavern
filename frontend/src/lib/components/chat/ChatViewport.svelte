@@ -22,7 +22,7 @@
   import SettingsSheet from '../settings/SettingsSheet.svelte';
   import ConfirmDialog from '../dialogs/ConfirmDialog.svelte';
   import CustomStyleOutlet from '../custom/CustomStyleOutlet.svelte';
-  import { selectPartitionSurface } from '@formatavern/shared';
+  import { selectPartitionSurface, resolveCharacterName } from '@formatavern/shared';
 
   let {
     session,
@@ -602,7 +602,7 @@
     <Composer
       busy={session.busy}
       personaName={session.persona?.name || 'Traveler'}
-      primaryCharName={session.character?.name || 'Character'}
+      primaryCharName={session.character ? resolveCharacterName(session.character) : 'Character'}
       npcs={session.chat?.metadata?.npcs || {}}
       standingDirection={session.chat?.metadata?.standingDirection || ''}
       bind:directorOpen

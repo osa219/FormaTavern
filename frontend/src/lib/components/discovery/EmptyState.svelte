@@ -16,14 +16,14 @@
   </div>
 
   <h3 class="text-base font-semibold text-neutral-200">
-    No Characters Found
+    No Cards Found
   </h3>
 
   <p class="mt-1.5 max-w-sm text-xs leading-relaxed text-neutral-400">
     {#if hasFilters}
-      No characters matched your active search query and tag filters.
+      No cards matched your active search query and tag filters.
     {:else}
-      Your character library is currently empty.
+      Your card library is currently empty.
     {/if}
   </p>
 
@@ -43,7 +43,7 @@
       class="inline-flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-xs font-semibold text-accent-contrast hover:bg-accent/90 shadow-md"
     >
       <Icon name="plus" size={14} />
-      <span>Create a Character</span>
+      <span>Create a Card</span>
     </a>
   </div>
 </div>

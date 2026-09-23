@@ -208,6 +208,53 @@ export const migrations: readonly Migration[] = [
     up: (db) => {
       db.run(`ALTER TABLE characters ADD COLUMN alternate_greetings TEXT;`);
     }
+  },
+  {
+    version: 10,
+    name: 'card_character_split',
+    up: (db) => {
+      db.run(`ALTER TABLE characters ADD COLUMN character_name TEXT;`);
+      db.run(`ALTER TABLE characters ADD COLUMN creator_url TEXT;`);
+      db.run(`ALTER TABLE characters ADD COLUMN character_url TEXT;`);
+      db.run(`ALTER TABLE characters ADD COLUMN origin TEXT;`);
+
+      // Backfill dedicated columns from metadata JSON when present.
+      // character_name stays NULL when unset so code can fall back to the card name.
+      try {
+        db.run(`UPDATE characters SET character_name = NULLIF(trim(json_extract(metadata, '$.characterName')), '')
+          WHERE metadata IS NOT NULL AND json_valid(metadata) AND json_extract(metadata, '$.characterName') IS NOT NULL;`);
+      } catch {}
+      try {
+        db.run(`UPDATE characters SET creator_url = json_extract(metadata, '$.creatorUrl')
+          WHERE metadata IS NOT NULL AND json_valid(metadata) AND json_extract(metadata, '$.creatorUrl') IS NOT NULL;`);
+      } catch {}
+      try {
+        db.run(`UPDATE characters SET character_url = json_extract(metadata, '$.characterUrl')
+          WHERE metadata IS NOT NULL AND json_valid(metadata) AND json_extract(metadata, '$.characterUrl') IS NOT NULL;`);
+      } catch {}
+      try {
+        db.run(`UPDATE characters SET origin = json_extract(metadata, '$.origin')
+          WHERE metadata IS NOT NULL AND json_valid(metadata) AND json_extract(metadata, '$.origin') IS NOT NULL;`);
+      } catch {}
+
+      // Rebuild FTS index to include character_name so `q` searches the
+      // in-world name alongside card name, tagline, description, and creator.
+      try {
+        const ftsRow = db.query(`SELECT 1 FROM pragma_compile_options WHERE compile_options = 'ENABLE_FTS5';`).get();
+        const ftsExists = db.query(`SELECT 1 FROM sqlite_master WHERE type='table' AND name='characters_fts';`).get();
+        if (ftsRow && ftsExists) {
+          db.run(`DROP TABLE characters_fts;`);
+          db.run(`CREATE VIRTUAL TABLE IF NOT EXISTS characters_fts USING fts5(
+            id UNINDEXED, name, character_name, tagline, description, creator, tags,
+            tokenize = 'unicode61 remove_diacritics 2'
+          );`);
+          db.run(`INSERT INTO characters_fts(id, name, character_name, tagline, description, creator, tags)
+            SELECT c.id, c.name, coalesce(c.character_name, ''), coalesce(c.tagline, ''), c.description, coalesce(c.creator, ''),
+                   coalesce((SELECT group_concat(tag, ' ') FROM character_tags WHERE character_id = c.id), '')
+            FROM characters c;`);
+        }
+      } catch {}
+    }
   }
 ];
 

@@ -156,15 +156,15 @@
         <span>Personas</span>
       </a>
 
-      <!-- Create New Character -->
+      <!-- Create New Card -->
       <a
         href="/character/new"
         class="inline-flex items-center gap-1.5 rounded-xl bg-accent px-3 md:px-3.5 py-1.5 text-xs font-semibold text-accent-contrast hover:bg-accent/90 shadow-sm shrink-0"
-        title="New Character"
-        aria-label="New Character"
+        title="New Card"
+        aria-label="New Card"
       >
         <Icon name="plus" size={13} />
-        <span class="hidden md:inline">New Character</span>
+        <span class="hidden md:inline">New Card</span>
         <span class="md:hidden">New</span>
       </a>
 
@@ -189,13 +189,13 @@
           Conversation Hub
         </h2>
         <p class="mt-1 text-sm text-(--chrome-text)/70">
-          Manage and resume conversations across your character roster.
+          Manage and resume conversations across your card roster.
         </p>
       </div>
 
       <!-- Live Totals Pill -->
       <div class="flex items-center gap-2 rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-1.5 text-xs font-mono text-(--chrome-text)/80">
-        <span>{chatsHubStore.totalCharacters} {chatsHubStore.totalCharacters === 1 ? 'character' : 'characters'}</span>
+        <span>{chatsHubStore.totalCharacters} {chatsHubStore.totalCharacters === 1 ? 'card' : 'cards'}</span>
         <span class="text-(--chrome-text)/40">·</span>
         <span>{chatsHubStore.totalChats} {chatsHubStore.totalChats === 1 ? 'chat' : 'chats'}</span>
       </div>
@@ -209,7 +209,7 @@
           type="text"
           value={searchInput}
           oninput={handleSearchInput}
-          placeholder="Search characters or conversation titles…"
+          placeholder="Search cards or conversation titles…"
           class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) py-2.5 pl-9 pr-4 text-xs text-(--chrome-text) placeholder:text-(--chrome-text)/40 focus:border-accent focus:outline-none"
         />
         <div class="pointer-events-none absolute left-3 top-3 text-(--chrome-text)/40">

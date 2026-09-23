@@ -27,9 +27,13 @@ import { newId } from './ids';
 interface CharacterRow {
   id: string;
   name: string;
+  character_name: string | null;
   avatar: string | null;
   tagline: string | null;
   creator: string | null;
+  creator_url: string | null;
+  character_url: string | null;
+  origin: string | null;
   showcase: string | null;
   custom_css: string | null;
   layout: string | null;
@@ -78,6 +82,10 @@ function cardToRow(card: CharacterCard, now: number) {
   if (card.initialState !== undefined) metadataObj.initialState = card.initialState;
   if (card.tags !== undefined) metadataObj.tags = card.tags;
   if (card.creator !== undefined) metadataObj.creator = card.creator;
+  if (card.characterName !== undefined) metadataObj.characterName = card.characterName;
+  if (card.creatorUrl !== undefined) metadataObj.creatorUrl = card.creatorUrl;
+  if (card.characterUrl !== undefined) metadataObj.characterUrl = card.characterUrl;
+  if (card.origin !== undefined) metadataObj.origin = card.origin;
   if (card.labels !== undefined) metadataObj.labels = card.labels;
   if (card.version !== undefined) metadataObj.version = card.version;
   if (card.greetingMode !== undefined) metadataObj.greetingMode = card.greetingMode;
@@ -87,12 +95,18 @@ function cardToRow(card: CharacterCard, now: number) {
 
   const prunedAlternates = pruneAlternateGreetings(card.alternateGreetings);
 
+  const trimmedCharacterName = typeof card.characterName === 'string' ? card.characterName.trim() : '';
+
   return {
     id: card.id,
     name: card.name,
+    character_name: trimmedCharacterName.length > 0 ? trimmedCharacterName : null,
     avatar: card.avatar ?? null,
     tagline: card.tagline ?? null,
     creator: card.creator ?? null,
+    creator_url: card.creatorUrl ?? null,
+    character_url: card.characterUrl ?? null,
+    origin: card.origin ?? null,
     showcase: card.showcase ?? null,
     custom_css: card.customCss ?? null,
     layout: card.layout !== undefined ? JSON.stringify(card.layout) : null,
@@ -125,6 +139,10 @@ function rowToCard(row: CharacterRow, tags: string[] = []): CharacterCard {
   if (row.avatar) card.avatar = row.avatar;
   if (row.tagline) card.tagline = row.tagline;
   if (row.creator) card.creator = row.creator;
+  if (row.character_name) card.characterName = row.character_name;
+  if (row.creator_url) card.creatorUrl = row.creator_url;
+  if (row.character_url) card.characterUrl = row.character_url;
+  if (row.origin) card.origin = row.origin;
   if (row.showcase) card.showcase = row.showcase;
   if (row.custom_css) card.customCss = row.custom_css;
   if (row.layout) card.layout = JSON.parse(row.layout);
@@ -145,6 +163,10 @@ function rowToCard(row: CharacterRow, tags: string[] = []): CharacterCard {
     if (meta.initialState !== undefined) card.initialState = meta.initialState;
     if ((card.tags?.length ?? 0) === 0 && meta.tags !== undefined) card.tags = meta.tags;
     if (!card.creator && meta.creator !== undefined) card.creator = meta.creator;
+    if (!card.characterName && meta.characterName !== undefined && String(meta.characterName).trim() !== '') card.characterName = meta.characterName;
+    if (!card.creatorUrl && meta.creatorUrl !== undefined) card.creatorUrl = meta.creatorUrl;
+    if (!card.characterUrl && meta.characterUrl !== undefined) card.characterUrl = meta.characterUrl;
+    if (!card.origin && meta.origin !== undefined) card.origin = meta.origin;
     if (meta.labels !== undefined) card.labels = meta.labels;
     if (meta.version !== undefined) card.version = meta.version;
     if (meta.greetingMode !== undefined) card.greetingMode = meta.greetingMode;
@@ -200,27 +222,31 @@ export class SqliteCharacterRepository implements CharacterRepository {
 
     this.stmtInsert = db.query(`
       INSERT INTO characters (
-        id, name, avatar, tagline, creator, showcase, custom_css, layout, description, personality, scenario,
+        id, name, character_name, avatar, tagline, creator, creator_url, character_url, origin, showcase, custom_css, layout, description, personality, scenario,
         first_message, alternate_greetings, style, created_at, updated_at, metadata
       ) VALUES (
-        $id, $name, $avatar, $tagline, $creator, $showcase, $custom_css, $layout, $description, $personality, $scenario,
+        $id, $name, $character_name, $avatar, $tagline, $creator, $creator_url, $character_url, $origin, $showcase, $custom_css, $layout, $description, $personality, $scenario,
         $first_message, $alternate_greetings, $style, $created_at, $updated_at, $metadata
       );
     `);
 
     this.stmtUpsert = db.query(`
       INSERT INTO characters (
-        id, name, avatar, tagline, creator, showcase, custom_css, layout, description, personality, scenario,
+        id, name, character_name, avatar, tagline, creator, creator_url, character_url, origin, showcase, custom_css, layout, description, personality, scenario,
         first_message, alternate_greetings, style, created_at, updated_at, metadata
       ) VALUES (
-        $id, $name, $avatar, $tagline, $creator, $showcase, $custom_css, $layout, $description, $personality, $scenario,
+        $id, $name, $character_name, $avatar, $tagline, $creator, $creator_url, $character_url, $origin, $showcase, $custom_css, $layout, $description, $personality, $scenario,
         $first_message, $alternate_greetings, $style, $created_at, $updated_at, $metadata
       )
       ON CONFLICT(id) DO UPDATE SET
         name = excluded.name,
+        character_name = excluded.character_name,
         avatar = excluded.avatar,
         tagline = excluded.tagline,
         creator = excluded.creator,
+        creator_url = excluded.creator_url,
+        character_url = excluded.character_url,
+        origin = excluded.origin,
         showcase = excluded.showcase,
         custom_css = excluded.custom_css,
         layout = excluded.layout,
@@ -236,10 +262,10 @@ export class SqliteCharacterRepository implements CharacterRepository {
 
     this.stmtInsertIfAbsent = db.query(`
       INSERT INTO characters (
-        id, name, avatar, tagline, creator, showcase, custom_css, layout, description, personality, scenario,
+        id, name, character_name, avatar, tagline, creator, creator_url, character_url, origin, showcase, custom_css, layout, description, personality, scenario,
         first_message, alternate_greetings, style, created_at, updated_at, metadata
       ) VALUES (
-        $id, $name, $avatar, $tagline, $creator, $showcase, $custom_css, $layout, $description, $personality, $scenario,
+        $id, $name, $character_name, $avatar, $tagline, $creator, $creator_url, $character_url, $origin, $showcase, $custom_css, $layout, $description, $personality, $scenario,
         $first_message, $alternate_greetings, $style, $created_at, $updated_at, $metadata
       )
       ON CONFLICT(id) DO NOTHING;
@@ -254,6 +280,7 @@ export class SqliteCharacterRepository implements CharacterRepository {
   private syncFts(
     id: string,
     name: string,
+    characterName: string | null,
     tagline: string | null,
     description: string,
     creator: string | null,
@@ -261,10 +288,18 @@ export class SqliteCharacterRepository implements CharacterRepository {
   ) {
     if (!this.hasFts5()) return;
     this.db.run(`DELETE FROM characters_fts WHERE id = ?;`, [id]);
-    this.db.run(
-      `INSERT INTO characters_fts(id, name, tagline, description, creator, tags) VALUES (?, ?, ?, ?, ?, ?);`,
-      [id, name, tagline ?? '', description, creator ?? '', tags.join(' ')]
-    );
+    try {
+      this.db.run(
+        `INSERT INTO characters_fts(id, name, character_name, tagline, description, creator, tags) VALUES (?, ?, ?, ?, ?, ?, ?);`,
+        [id, name, characterName ?? '', tagline ?? '', description, creator ?? '', tags.join(' ')]
+      );
+    } catch {
+      // Fallback for pre-v10 FTS tables without the character_name column.
+      this.db.run(
+        `INSERT INTO characters_fts(id, name, tagline, description, creator, tags) VALUES (?, ?, ?, ?, ?, ?);`,
+        [id, name, tagline ?? '', description, creator ?? '', tags.join(' ')]
+      );
+    }
   }
 
   private syncTags(characterId: string, tags: string[]) {
@@ -284,7 +319,7 @@ export class SqliteCharacterRepository implements CharacterRepository {
 
     let selectSql = `
       SELECT
-        c.id, c.name, c.tagline, c.avatar, c.creator, c.style, c.created_at, c.updated_at,
+        c.id, c.name, c.character_name, c.tagline, c.avatar, c.creator, c.style, c.created_at, c.updated_at,
         COUNT(DISTINCT ch.id) AS story_count,
         MAX(ch.updated_at) AS last_story_at
       FROM characters c
@@ -306,9 +341,16 @@ export class SqliteCharacterRepository implements CharacterRepository {
         params.push(ftsTerm);
       } else {
         const escaped = queryStr.replace(/([%_\\])/g, '\\$1');
-        wheres.push(`(c.name LIKE ? ESCAPE '\\' OR c.tagline LIKE ? ESCAPE '\\' OR c.description LIKE ? ESCAPE '\\')`);
-        params.push(`%${escaped}%`, `%${escaped}%`, `%${escaped}%`);
+        wheres.push(`(c.name LIKE ? ESCAPE '\\' OR c.character_name LIKE ? ESCAPE '\\' OR c.tagline LIKE ? ESCAPE '\\' OR c.description LIKE ? ESCAPE '\\' OR c.creator LIKE ? ESCAPE '\\')`);
+        params.push(`%${escaped}%`, `%${escaped}%`, `%${escaped}%`, `%${escaped}%`, `%${escaped}%`);
       }
+    }
+
+    // 1b. Exact creator filter (clickable creator credit -> cards by X)
+    const creatorFilter = typeof q?.creator === 'string' ? q.creator.trim() : '';
+    if (creatorFilter.length > 0) {
+      wheres.push(`c.creator = ? COLLATE NOCASE`);
+      params.push(creatorFilter);
     }
 
     // 2. Tag filter (AND logic)
@@ -386,6 +428,7 @@ export class SqliteCharacterRepository implements CharacterRepository {
     const items: CharacterSummary[] = resultRows.map((r) => ({
       id: r.id,
       name: r.name,
+      characterName: r.character_name ?? undefined,
       tagline: r.tagline ?? undefined,
       avatar: r.avatar ?? undefined,
       creator: r.creator ?? undefined,
@@ -456,9 +499,13 @@ export class SqliteCharacterRepository implements CharacterRepository {
       this.stmtInsert.run({
         id: row.id,
         name: row.name,
+        character_name: row.character_name,
         avatar: row.avatar,
         tagline: row.tagline,
         creator: row.creator,
+        creator_url: row.creator_url,
+        character_url: row.character_url,
+        origin: row.origin,
         showcase: row.showcase,
         custom_css: row.custom_css,
         layout: row.layout,
@@ -475,7 +522,7 @@ export class SqliteCharacterRepository implements CharacterRepository {
 
       const safeTags = card.tags ?? [];
       this.syncTags(finalId, safeTags);
-      this.syncFts(finalId, card.name, card.tagline ?? null, card.description, card.creator ?? null, safeTags);
+      this.syncFts(finalId, card.name, card.characterName ?? null, card.tagline ?? null, card.description, card.creator ?? null, safeTags);
     })();
 
     return card;
@@ -505,9 +552,13 @@ export class SqliteCharacterRepository implements CharacterRepository {
       const mergedCard: CharacterCard = {
         ...currentCard,
         name: input.name !== undefined ? input.name : currentCard.name,
+        characterName: input.characterName !== undefined ? input.characterName : currentCard.characterName,
         avatar: input.avatar !== undefined ? input.avatar : currentCard.avatar,
         tagline: input.tagline !== undefined ? input.tagline : currentCard.tagline,
         creator: input.creator !== undefined ? input.creator : currentCard.creator,
+        creatorUrl: input.creatorUrl !== undefined ? input.creatorUrl : currentCard.creatorUrl,
+        characterUrl: input.characterUrl !== undefined ? input.characterUrl : currentCard.characterUrl,
+        origin: input.origin !== undefined ? input.origin : currentCard.origin,
         showcase: input.showcase !== undefined ? input.showcase : currentCard.showcase,
         customCss:
           input.customCss !== undefined
@@ -547,9 +598,13 @@ export class SqliteCharacterRepository implements CharacterRepository {
       const res = this.db.run(
         `UPDATE characters SET
           name = ?,
+          character_name = ?,
           avatar = ?,
           tagline = ?,
           creator = ?,
+          creator_url = ?,
+          character_url = ?,
+          origin = ?,
           showcase = ?,
           custom_css = ?,
           layout = ?,
@@ -564,9 +619,13 @@ export class SqliteCharacterRepository implements CharacterRepository {
         WHERE id = ? AND updated_at = ?;`,
         [
           row.name,
+          row.character_name,
           row.avatar,
           row.tagline,
           row.creator,
+          row.creator_url,
+          row.character_url,
+          row.origin,
           row.showcase,
           row.custom_css,
           row.layout,
@@ -594,6 +653,7 @@ export class SqliteCharacterRepository implements CharacterRepository {
       this.syncFts(
         id,
         mergedCard.name,
+        mergedCard.characterName ?? null,
         mergedCard.tagline ?? null,
         mergedCard.description,
         mergedCard.creator ?? null,
@@ -671,9 +731,13 @@ export class SqliteCharacterRepository implements CharacterRepository {
       this.stmtUpsert.run({
         id: row.id,
         name: row.name,
+        character_name: row.character_name,
         avatar: row.avatar,
         tagline: row.tagline,
         creator: row.creator,
+        creator_url: row.creator_url,
+        character_url: row.character_url,
+        origin: row.origin,
         showcase: row.showcase,
         custom_css: row.custom_css,
         layout: row.layout,
@@ -689,7 +753,7 @@ export class SqliteCharacterRepository implements CharacterRepository {
       });
       const tags = (card.tags ?? []).map((t) => normalizeTag(t)).filter(Boolean) as string[];
       this.syncTags(card.id, tags);
-      this.syncFts(card.id, card.name, card.tagline ?? null, card.description, card.creator ?? null, tags);
+      this.syncFts(card.id, card.name, card.characterName ?? null, card.tagline ?? null, card.description, card.creator ?? null, tags);
     })();
   }
 
@@ -702,9 +766,13 @@ export class SqliteCharacterRepository implements CharacterRepository {
       const res = this.stmtInsertIfAbsent.run({
         id: row.id,
         name: row.name,
+        character_name: row.character_name,
         avatar: row.avatar,
         tagline: row.tagline,
         creator: row.creator,
+        creator_url: row.creator_url,
+        character_url: row.character_url,
+        origin: row.origin,
         showcase: row.showcase,
         custom_css: row.custom_css,
         layout: row.layout,
@@ -722,7 +790,7 @@ export class SqliteCharacterRepository implements CharacterRepository {
       if (inserted) {
         const tags = (card.tags ?? []).map((t) => normalizeTag(t)).filter(Boolean) as string[];
         this.syncTags(card.id, tags);
-        this.syncFts(card.id, card.name, card.tagline ?? null, card.description, card.creator ?? null, tags);
+        this.syncFts(card.id, card.name, card.characterName ?? null, card.tagline ?? null, card.description, card.creator ?? null, tags);
       }
     })();
     return inserted;

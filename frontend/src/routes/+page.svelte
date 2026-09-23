@@ -112,7 +112,7 @@
 </script>
 
 <svelte:head>
-  <title>{shellTheme.theme.labels?.foyerTitle || 'FormaTavern'} — Character Catalog</title>
+  <title>{shellTheme.theme.labels?.foyerTitle || 'FormaTavern'} — Card Catalog</title>
 </svelte:head>
 
 <ShellSurface>
@@ -149,15 +149,15 @@
         <span>Personas</span>
       </a>
 
-      <!-- Create New Character -->
+      <!-- Create New Card -->
       <a
         href="/character/new"
         class="inline-flex items-center gap-1.5 rounded-xl bg-accent px-3 md:px-3.5 py-1.5 text-xs font-semibold text-accent-contrast hover:bg-accent/90 shadow-sm shrink-0"
-        title="New Character"
-        aria-label="New Character"
+        title="New Card"
+        aria-label="New Card"
       >
         <Icon name="plus" size={13} />
-        <span class="hidden md:inline">New Character</span>
+        <span class="hidden md:inline">New Card</span>
         <span class="md:hidden">New</span>
       </a>
 
@@ -190,11 +190,22 @@
     <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
       <div>
         <h2 class="text-2xl font-bold tracking-tight text-(--chrome-text) sm:text-3xl">
-          Discover Characters
+          Discover Cards
         </h2>
         <p class="mt-1 text-sm text-(--chrome-text)/70">
-          Chameleon roleplay characters with author-designed aesthetics, responsive typography, and atmospheric worlds.
+          Chameleon roleplay cards with author-designed aesthetics, responsive typography, and atmospheric worlds.
         </p>
+        {#if catalogStore.creator.trim()}
+          <button
+            type="button"
+            onclick={() => catalogStore.clearCreator()}
+            class="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1 text-xs text-(--chrome-text) hover:bg-accent/20"
+            title="Clear creator filter"
+          >
+            <span>Cards by {catalogStore.creator.trim()}</span>
+            <span aria-hidden="true">✕</span>
+          </button>
+        {/if}
       </div>
 
       <SortSelect
@@ -219,18 +230,19 @@
     </section>
 
     <!-- Character Grid (Foyer v2) -->
-    <section aria-label="Available Characters" class={HOOKS.shell.foyerGrid}>
+    <section aria-label="Available Cards" class={HOOKS.shell.foyerGrid}>
       <CharacterGrid
         characters={catalogStore.items}
         loading={catalogStore.loading}
         loadingMore={catalogStore.loadingMore}
         hasMore={catalogStore.hasMore}
-        hasFilters={Boolean(catalogStore.q || catalogStore.tags.length > 0)}
+        hasFilters={Boolean(catalogStore.q || catalogStore.tags.length > 0 || catalogStore.creator.trim())}
         onLoadMore={() => catalogStore.loadMore()}
         onStartStory={handleStartChat}
         onResetFilters={() => {
           catalogStore.q = '';
           catalogStore.clearTags();
+          catalogStore.clearCreator();
         }}
       />
     </section>
@@ -248,7 +260,7 @@
 
       {#if filteredChats.length === 0}
         <div class="flex h-28 items-center justify-center rounded-2xl border border-dashed border-(--chrome-line) text-xs text-(--chrome-text)/50">
-          {catalogStore.q ? 'No recorded chats match your current search.' : 'No chats recorded yet. Select a character above to begin.'}
+          {catalogStore.q ? 'No recorded chats match your current search.' : 'No chats recorded yet. Select a card above to begin.'}
         </div>
       {:else}
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">

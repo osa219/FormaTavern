@@ -6,6 +6,7 @@ export class CatalogStore {
   q = $state<string>('');
   tags = $state<string[]>([]);
   sort = $state<'recent' | 'name' | 'stories'>('recent');
+  creator = $state<string>('');
 
   items = $state<CharacterSummary[]>([]);
   cursor = $state<string | null>(null);
@@ -28,6 +29,7 @@ export class CatalogStore {
     const qParam = url.searchParams.get('q');
     const tagsParam = url.searchParams.get('tags');
     const sortParam = url.searchParams.get('sort');
+    const creatorParam = url.searchParams.get('creator');
 
     if (qParam !== null) this.q = qParam;
     if (tagsParam !== null) {
@@ -36,6 +38,7 @@ export class CatalogStore {
     if (sortParam === 'recent' || sortParam === 'name' || sortParam === 'stories') {
       this.sort = sortParam;
     }
+    if (creatorParam !== null) this.creator = creatorParam;
 
     this.fetchTags();
     this.fetchItems(true);
@@ -55,6 +58,12 @@ export class CatalogStore {
       url.searchParams.set('tags', this.tags.join(','));
     } else {
       url.searchParams.delete('tags');
+    }
+
+    if (this.creator.trim()) {
+      url.searchParams.set('creator', this.creator.trim());
+    } else {
+      url.searchParams.delete('creator');
     }
 
     if (this.sort !== 'recent') {
@@ -100,6 +109,7 @@ export class CatalogStore {
       };
       if (this.q.trim()) query.q = this.q.trim();
       if (this.tags.length > 0) query.tags = this.tags.join(',');
+      if (this.creator.trim()) query.creator = this.creator.trim();
       if (!reset && this.cursor) query.cursor = this.cursor;
 
       const res = await (this.client.api.characters.get as any)({
@@ -165,6 +175,18 @@ export class CatalogStore {
   setSort(sort: 'recent' | 'name' | 'stories'): void {
     if (this.sort === sort) return;
     this.sort = sort;
+    this.fetchItems(true);
+    this.syncToUrl();
+  }
+
+  setCreator(val: string): void {
+    this.creator = val;
+    this.fetchItems(true);
+    this.syncToUrl();
+  }
+
+  clearCreator(): void {
+    this.creator = '';
     this.fetchItems(true);
     this.syncToUrl();
   }

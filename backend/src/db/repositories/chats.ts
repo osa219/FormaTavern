@@ -219,7 +219,7 @@ export class SQLiteChatRepository implements ChatRepository {
         GROUP BY primary_character_id
       )
       SELECT 
-        c.id, c.name, c.tagline, c.avatar, c.creator, c.style, c.description, c.created_at, c.updated_at,
+        c.id, c.name, c.character_name, c.tagline, c.avatar, c.creator, c.style, c.description, c.created_at, c.updated_at,
         s.chat_count,
         s.last_chat_at
       FROM char_stats s
@@ -346,6 +346,7 @@ export class SQLiteChatRepository implements ChatRepository {
       character: {
         id: r.id,
         name: r.name,
+        characterName: r.character_name ?? undefined,
         tagline: r.tagline ?? undefined,
         avatar: r.avatar ?? undefined,
         creator: r.creator ?? undefined,

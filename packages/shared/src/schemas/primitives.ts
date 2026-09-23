@@ -13,3 +13,6 @@ export const CssToken = Type.String({ pattern: '^[^;{}<>]*$', minLength: 1, maxL
 
 /** Local asset only. No http(s):, data:, or traversal. */
 export const AssetPath = Type.String({ pattern: '^/assets/[A-Za-z0-9_-]+(/[A-Za-z0-9._-]+)+$', maxLength: 512 });
+
+/** External http(s) link for creator / source attribution. Rendered with rel="noopener". */
+export const HttpUrl = Type.String({ pattern: '^https?://[^\\s]+$', maxLength: 2048 });

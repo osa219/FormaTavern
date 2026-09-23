@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { CharacterCard, ChatView, StateVector } from '@formatavern/shared';
-  import { HOOKS } from '@formatavern/shared';
+  import { HOOKS, resolveCharacterName } from '@formatavern/shared';
   import Icon from '../ui/Icon.svelte';
   import StateHud from '../hud/StateHud.svelte';
 
@@ -57,11 +57,12 @@
 
   <!-- Center: Character & Chat Info -->
   {#if character}
+    {@const displayName = resolveCharacterName(character)}
     <div class="flex items-center gap-2.5 overflow-hidden px-2 text-center">
       {#if character.avatar}
         <img
           src={character.avatar}
-          alt={character.name}
+          alt={displayName}
           class="h-7 w-7 rounded-lg object-cover ring-1 ring-neutral-700"
         />
       {/if}
@@ -70,9 +71,9 @@
           class="min-w-0 max-w-full truncate text-sm font-semibold text-neutral-100"
           style="font-family: var(--theme-font-display);"
         >
-          {character.name}
+          {displayName}
         </span>
-        {#if chat?.title && chat.title !== character.name}
+        {#if chat?.title && chat.title !== displayName}
           <span class="min-w-0 max-w-full truncate text-[11px] text-neutral-400">
             {chat.title}
           </span>

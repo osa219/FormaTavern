@@ -144,19 +144,36 @@
     <div class="space-y-4 flex-1 w-full">
       <div>
         <label for="identity-name" class="block text-xs font-semibold text-(--chrome-text) uppercase tracking-wider mb-1.5">
-          Character Name <span class="text-accent">*</span>
+          Card Name <span class="text-accent">*</span>
         </label>
         <input
           id="identity-name"
           type="text"
           bind:value={draft.card.name}
-          placeholder="e.g. Eldrin Vance, Chronomancer"
+          placeholder="e.g. Eldrin Vance — Dark Mage Variant"
           maxlength={120}
           required
           class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3.5 py-2.5 text-sm text-(--chrome-text) placeholder-(--chrome-text)/40 focus:border-accent focus:outline-none"
         />
         {#if draft.issuesByPath.has('/name')}
           <p class="mt-1 text-xs text-red-400">{draft.issuesByPath.get('/name')![0].message}</p>
+        {/if}
+      </div>
+
+      <div>
+        <label for="identity-character-name" class="block text-xs font-semibold text-(--chrome-text) uppercase tracking-wider mb-1.5">
+          Character Name · {'{{char}}'}
+        </label>
+        <input
+          id="identity-character-name"
+          type="text"
+          bind:value={draft.card.characterName}
+          placeholder="In-world name, e.g. Eldrin Vance (defaults to card name)"
+          maxlength={120}
+          class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3.5 py-2.5 text-sm text-(--chrome-text) placeholder-(--chrome-text)/40 focus:border-accent focus:outline-none"
+        />
+        {#if draft.issuesByPath.has('/characterName')}
+          <p class="mt-1 text-xs text-red-400">{draft.issuesByPath.get('/characterName')![0].message}</p>
         {/if}
       </div>
 
@@ -177,16 +194,81 @@
   </div>
 
   <!-- Creator Credit -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div>
+      <label for="identity-creator" class="block text-xs font-semibold text-(--chrome-text) uppercase tracking-wider mb-1.5">
+        Author / Creator Credit
+      </label>
+      <input
+        id="identity-creator"
+        type="text"
+        bind:value={draft.card.creator}
+        placeholder="Your handle or attribution (optional)"
+        maxlength={80}
+        class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3.5 py-2.5 text-sm text-(--chrome-text) placeholder-(--chrome-text)/40 focus:border-accent focus:outline-none"
+      />
+    </div>
+    <div>
+      <label for="identity-creator-url" class="block text-xs font-semibold text-(--chrome-text) uppercase tracking-wider mb-1.5">
+        Creator URL
+      </label>
+      <input
+        id="identity-creator-url"
+        type="url"
+        bind:value={draft.card.creatorUrl}
+        placeholder="https://… (optional)"
+        maxlength={2048}
+        class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3.5 py-2.5 text-sm text-(--chrome-text) placeholder-(--chrome-text)/40 focus:border-accent focus:outline-none"
+      />
+      {#if draft.issuesByPath.has('/creatorUrl')}
+        <p class="mt-1 text-xs text-red-400">{draft.issuesByPath.get('/creatorUrl')![0].message}</p>
+      {/if}
+    </div>
+  </div>
+
+  <!-- Provenance -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div>
+      <label for="identity-character-url" class="block text-xs font-semibold text-(--chrome-text) uppercase tracking-wider mb-1.5">
+        Character Source URL
+      </label>
+      <input
+        id="identity-character-url"
+        type="url"
+        bind:value={draft.card.characterUrl}
+        placeholder="Where this character came from (optional)"
+        maxlength={2048}
+        class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3.5 py-2.5 text-sm text-(--chrome-text) placeholder-(--chrome-text)/40 focus:border-accent focus:outline-none"
+      />
+      {#if draft.issuesByPath.has('/characterUrl')}
+        <p class="mt-1 text-xs text-red-400">{draft.issuesByPath.get('/characterUrl')![0].message}</p>
+      {/if}
+    </div>
+    <div>
+      <label for="identity-origin" class="block text-xs font-semibold text-(--chrome-text) uppercase tracking-wider mb-1.5">
+        Card Origin
+      </label>
+      <input
+        id="identity-origin"
+        type="text"
+        bind:value={draft.card.origin}
+        placeholder="e.g. FormaTavern, SillyTavern, Chub (optional)"
+        maxlength={120}
+        class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3.5 py-2.5 text-sm text-(--chrome-text) placeholder-(--chrome-text)/40 focus:border-accent focus:outline-none"
+      />
+    </div>
+  </div>
+
   <div>
-    <label for="identity-creator" class="block text-xs font-semibold text-(--chrome-text) uppercase tracking-wider mb-1.5">
-      Author / Creator Credit
+    <label for="identity-version" class="block text-xs font-semibold text-(--chrome-text) uppercase tracking-wider mb-1.5">
+      Card Version
     </label>
     <input
-      id="identity-creator"
+      id="identity-version"
       type="text"
-      bind:value={draft.card.creator}
-      placeholder="Your handle or attribution (optional)"
-      maxlength={80}
+      bind:value={draft.card.version}
+      placeholder="e.g. v1.0 (optional)"
+      maxlength={40}
       class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3.5 py-2.5 text-sm text-(--chrome-text) placeholder-(--chrome-text)/40 focus:border-accent focus:outline-none"
     />
   </div>

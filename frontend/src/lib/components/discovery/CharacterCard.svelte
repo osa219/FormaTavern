@@ -65,9 +65,15 @@
         <span
           class="h-2 w-2 rounded-full shrink-0"
           style="background-color: {accent};"
-          title="Character theme accent"
+          title="Card theme accent"
         ></span>
       </div>
+
+      {#if activeCharacter.characterName && activeCharacter.characterName.trim() && activeCharacter.characterName.trim() !== activeCharacter.name}
+        <p class="mt-0.5 truncate text-[11px] text-(--chrome-text)/50 font-mono">
+          as {activeCharacter.characterName.trim()}
+        </p>
+      {/if}
 
       {#if activeCharacter.tagline}
         <p class="mt-1 line-clamp-2 text-xs text-(--chrome-text)/70 font-light leading-relaxed">
@@ -120,7 +126,7 @@
             goto(`/character/${activeCharacter.id}/edit`);
           }}
           class="rounded-lg border border-(--chrome-line) bg-(--chrome-surface) p-1 text-(--chrome-text)/70 hover:text-(--chrome-text)"
-          title="Edit character in studio"
+          title="Edit card in studio"
         >
           Edit
         </button>

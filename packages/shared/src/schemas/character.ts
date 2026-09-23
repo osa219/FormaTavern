@@ -1,5 +1,5 @@
 import { Type, type Static } from '@sinclair/typebox';
-import { Id, AssetPath, UnixMs } from './primitives';
+import { Id, AssetPath, HttpUrl, UnixMs } from './primitives';
 import { CharacterThemeSchema } from './theme';
 import { StateFieldSchema, StateBindingSchema, StateVectorSchema } from './state';
 import { CharacterLayoutSchema } from './layout';
@@ -30,6 +30,7 @@ export const CharacterCardSchema = Type.Object({
   $schema: Type.Optional(Type.String()),
   id: Id,
   name: Type.String({ minLength: 1, maxLength: 120 }),
+  characterName: Type.Optional(Type.String({ minLength: 1, maxLength: 120 })),
   avatar: Type.Optional(AssetPath),
   tagline: Type.Optional(Type.String({ maxLength: 140 })),
   description: Type.String(),
@@ -46,6 +47,9 @@ export const CharacterCardSchema = Type.Object({
   initialState: Type.Optional(StateVectorSchema),
   tags: Type.Optional(Type.Array(TagSchema, { default: [], maxItems: 12, uniqueItems: true })),
   creator: Type.Optional(Type.String({ maxLength: 80 })),
+  creatorUrl: Type.Optional(HttpUrl),
+  characterUrl: Type.Optional(HttpUrl),
+  origin: Type.Optional(Type.String({ minLength: 1, maxLength: 120 })),
   labels: Type.Optional(Type.Object({
     startStory: Type.Optional(Type.String({ maxLength: 40 }))
   })),
@@ -61,6 +65,7 @@ export type CharacterCard = Static<typeof CharacterCardSchema>;
 export const CharacterSummarySchema = Type.Object({
   id: Id,
   name: Type.String(),
+  characterName: Type.Optional(Type.String()),
   tagline: Type.Optional(Type.String()),
   avatar: Type.Optional(AssetPath),
   creator: Type.Optional(Type.String()),
@@ -116,6 +121,7 @@ export type CharacterSort = Static<typeof CharacterSortSchema>;
 export const CharacterListQuerySchema = Type.Object({
   q: Type.Optional(Type.String()),
   tags: Type.Optional(Type.String()),
+  creator: Type.Optional(Type.String({ maxLength: 80 })),
   sort: Type.Optional(CharacterSortSchema),
   limit: Type.Optional(
     Type.Union([
@@ -137,6 +143,10 @@ export const CharacterMetadataSchema = Type.Object({
   initialState: Type.Optional(StateVectorSchema),
   tags: Type.Optional(Type.Array(Type.String())),
   creator: Type.Optional(Type.String()),
+  characterName: Type.Optional(Type.String()),
+  creatorUrl: Type.Optional(HttpUrl),
+  characterUrl: Type.Optional(HttpUrl),
+  origin: Type.Optional(Type.String()),
   labels: Type.Optional(Type.Object({
     startStory: Type.Optional(Type.String({ maxLength: 40 }))
   })),
@@ -170,4 +180,15 @@ export function clampGreetingIndex(index: unknown, count: number): number {
   if (typeof index !== 'number' || !Number.isInteger(index) || index < 0) return 0;
   if (count <= 0) return 0;
   return index < count ? index : 0;
+}
+
+/**
+ * Card vs character distinction: `name` is the card/catalog title,
+ * `characterName` is the in-world identity used for {{char}}, dialogue
+ * tags, and sender snapshots. Falls back to the card name so legacy
+ * cards without a split keep working.
+ */
+export function resolveCharacterName(card: { name: string; characterName?: string | null }): string {
+  const trimmed = typeof card.characterName === 'string' ? card.characterName.trim() : '';
+  return trimmed.length > 0 ? trimmed : card.name;
 }

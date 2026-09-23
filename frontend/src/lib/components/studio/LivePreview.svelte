@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { resolveLayout, type CharacterCard, type Segment, selectPartitionSurface } from '@formatavern/shared';
+  import { resolveLayout, resolveCharacterName, type CharacterCard, type Segment, selectPartitionSurface } from '@formatavern/shared';
   import { HOOKS } from '@formatavern/shared';
   import type { CharacterDraft } from '$lib/studio/draft.svelte';
   import { themeToCssVars, serializeVars } from '$lib/theme/cssVars';
@@ -57,15 +57,20 @@
   const selectedGreetingIndex = $derived(
     previewGreetingIndex < allGreetingTexts.length ? previewGreetingIndex : 0
   );
-  const greetingResult = $derived(parseGreeting(allGreetingTexts[selectedGreetingIndex] ?? '', draft.card.name || 'Character'));
+  const greetingResult = $derived(parseGreeting(allGreetingTexts[selectedGreetingIndex] ?? '', resolveCharacterName({ name: draft.card.name || 'Character', characterName: draft.card.characterName })));
   const segments = $derived(greetingResult.segments);
 
   const previewCard = $derived<CharacterCard>({
     id: draft.characterId || 'preview-character',
     name: draft.card.name || 'Character',
+    characterName: draft.card.characterName?.trim() ? draft.card.characterName.trim() : undefined,
     avatar: draft.card.avatar,
     tagline: draft.card.tagline,
     creator: draft.card.creator,
+    creatorUrl: draft.card.creatorUrl?.trim() ? draft.card.creatorUrl : undefined,
+    characterUrl: draft.card.characterUrl?.trim() ? draft.card.characterUrl : undefined,
+    origin: draft.card.origin?.trim() ? draft.card.origin : undefined,
+    version: draft.card.version?.trim() ? draft.card.version : undefined,
     description: draft.card.description,
     personality: draft.card.personality,
     scenario: draft.card.scenario,

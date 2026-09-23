@@ -6,6 +6,7 @@ import {
   clampGreetingIndex,
   defaultState,
   parseEnvelope,
+  resolveCharacterName,
   resolveState,
   serializeEnvelope,
   stripOutOfBand,
@@ -131,7 +132,7 @@ export function createMessagesRouter(deps: {
         role: 'assistant',
         narrativeRole: 'character',
         senderId: character.id,
-        senderName: character.name,
+        senderName: resolveCharacterName(character),
         content: '',
         segments: [],
         status: 'streaming'
@@ -139,7 +140,7 @@ export function createMessagesRouter(deps: {
       repos.chats.setActiveLeaf(chat.id, assistantId);
 
       const knownNames = [
-        character.name,
+        resolveCharacterName(character),
         ...Object.values(chat.metadata.npcs ?? {}).map((n) => n.displayName)
       ];
       const dialect =
@@ -148,7 +149,7 @@ export function createMessagesRouter(deps: {
       const personaVoicing =
         chat.metadata.personaVoicing ?? settings.narrative?.personaVoicing ?? 'prohibited';
       const parseOptions: ParseOptions = {
-        primaryCharacter: character.name,
+        primaryCharacter: resolveCharacterName(character),
         dialect,
         knownNames,
         personaName: persona.name,
@@ -252,7 +253,7 @@ export function createMessagesRouter(deps: {
         role: 'assistant',
         narrativeRole: 'character',
         senderId: character.id,
-        senderName: character.name,
+        senderName: resolveCharacterName(character),
         content: '',
         segments: [],
         status: 'streaming'
@@ -260,7 +261,7 @@ export function createMessagesRouter(deps: {
       repos.chats.setActiveLeaf(chat.id, assistantId);
 
       const knownNames = [
-        character.name,
+        resolveCharacterName(character),
         ...Object.values(chat.metadata.npcs ?? {}).map((n) => n.displayName)
       ];
       const dialect =
@@ -269,7 +270,7 @@ export function createMessagesRouter(deps: {
       const personaVoicing =
         chat.metadata.personaVoicing ?? settings.narrative?.personaVoicing ?? 'prohibited';
       const parseOptions: ParseOptions = {
-        primaryCharacter: character.name,
+        primaryCharacter: resolveCharacterName(character),
         dialect,
         knownNames,
         personaName: persona.name,
@@ -381,7 +382,7 @@ export function createMessagesRouter(deps: {
       const built = buildPrompt(ctx);
 
       const knownNames = [
-        character.name,
+        resolveCharacterName(character),
         ...Object.values(chat.metadata.npcs ?? {}).map((n) => n.displayName)
       ];
       const dialect =
@@ -390,7 +391,7 @@ export function createMessagesRouter(deps: {
       const personaVoicing =
         chat.metadata.personaVoicing ?? settings.narrative?.personaVoicing ?? 'prohibited';
       const parseOptions: ParseOptions = {
-        primaryCharacter: character.name,
+        primaryCharacter: resolveCharacterName(character),
         dialect,
         knownNames,
         personaName: persona.name,
@@ -496,11 +497,11 @@ export function createMessagesRouter(deps: {
       const dialect =
         chat.metadata.envelopeDialect ?? (chat.metadata.narrativeMode === 'narrative' ? 'directive' : 'auto');
       const knownNames = [
-        character.name,
+        resolveCharacterName(character),
         ...Object.values(chat.metadata.npcs ?? {}).map((n) => n.displayName)
       ];
       const parseRes = parseEnvelope(text, {
-        primaryCharacter: character.name,
+        primaryCharacter: resolveCharacterName(character),
         dialect,
         knownNames,
         streaming: false
@@ -561,11 +562,11 @@ export function createMessagesRouter(deps: {
 
         if ('content' in patch && patch.content !== undefined) {
           const knownNames = [
-            character?.name ?? 'Character',
+            character ? resolveCharacterName(character) : 'Character',
             ...Object.values(chat.metadata.npcs ?? {}).map((n) => n.displayName)
           ];
           const parseRes = parseEnvelope(patch.content, {
-            primaryCharacter: character?.name ?? 'Character',
+            primaryCharacter: character ? resolveCharacterName(character) : 'Character',
             dialect,
             knownNames,
             streaming: false

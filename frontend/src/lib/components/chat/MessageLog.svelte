@@ -8,7 +8,7 @@
   import TurnEditor from './TurnEditor.svelte';
   import JumpToLatest from './JumpToLatest.svelte';
   import type { MessageWithTree, Segment } from '@formatavern/shared';
-  import { HOOKS, resolveLayout } from '@formatavern/shared';
+  import { HOOKS, resolveCharacterName, resolveLayout } from '@formatavern/shared';
   import { layoutRootAttrs, layoutRootStyle } from '$lib/chat/layoutAttrs';
   import { prefs } from '$lib/state/prefs.svelte';
   import { media } from '$lib/state/media.svelte';
@@ -100,7 +100,7 @@
     };
   });
 
-  const primaryName = $derived(session.character?.name ?? 'Character');
+  const primaryName = $derived(session.character ? resolveCharacterName(session.character) : 'Character');
   const npcs = $derived(session.chat?.metadata.npcs ?? {});
   const activeLeafId = $derived(session.activeLeafId);
   const lastIndex = $derived(session.messages.length - 1);
@@ -347,9 +347,9 @@
     role="status"
     aria-label="Waiting for reply"
   >
-    <span class="ft-wait-dot" class:ft-wait-static={reducedMotion} style="animation-delay: 0ms;"></span>
-    <span class="ft-wait-dot" class:ft-wait-static={reducedMotion} style="animation-delay: 150ms;"></span>
-    <span class="ft-wait-dot" class:ft-wait-static={reducedMotion} style="animation-delay: 300ms;"></span>
+    <span class="wait-dot" class:wait-static={reducedMotion} style="animation-delay: 0ms;"></span>
+    <span class="wait-dot" class:wait-static={reducedMotion} style="animation-delay: 150ms;"></span>
+    <span class="wait-dot" class:wait-static={reducedMotion} style="animation-delay: 300ms;"></span>
   </div>
 {/snippet}
 
@@ -370,24 +370,24 @@
     animation: ft-flip-from-left 170ms ease-out;
   }
   /* Waiting indicator: gentle bounce while no reply text exists yet. */
-  @keyframes ft-wait-bounce {
+  @keyframes wait-bounce {
     0%, 60%, 100% { transform: translateY(0); opacity: 0.65; }
     30% { transform: translateY(-3px); opacity: 1; }
   }
-  .ft-wait-dot {
+  .wait-dot {
     display: inline-block;
     width: 5px;
     height: 5px;
     border-radius: 9999px;
     background: #c2c5d3;
-    animation: ft-wait-bounce 1.2s ease-in-out infinite;
+    animation: wait-bounce 1.2s ease-in-out infinite;
   }
-  .ft-wait-static {
+  .wait-static {
     animation: none;
     opacity: 0.85;
   }
   @media (prefers-reduced-motion: reduce) {
-    .ft-wait-dot {
+    .wait-dot {
       animation: none;
       opacity: 0.85;
     }

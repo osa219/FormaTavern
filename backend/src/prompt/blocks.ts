@@ -1,4 +1,4 @@
-import { applyMacros } from '@formatavern/shared';
+import { applyMacros, resolveCharacterName } from '@formatavern/shared';
 import type { PromptContext, BlockId } from './types';
 import {
   PREAMBLE_DEFAULT,
@@ -17,7 +17,7 @@ export function getDialect(ctx: PromptContext): 'directive' | 'xml' | 'prefix' |
 
 function macro(text: string, ctx: PromptContext): string {
   return applyMacros(text, {
-    char: ctx.character.name,
+    char: resolveCharacterName(ctx.character),
     user: ctx.persona.name
   });
 }

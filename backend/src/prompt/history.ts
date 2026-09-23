@@ -9,6 +9,7 @@ import {
   normalizeHtmlQuirks,
   serializeSegments,
   applyMacros,
+  resolveCharacterName,
   type Dialect,
   type GreetingMode,
   type MessagePayload,
@@ -103,14 +104,15 @@ export function formatGreetingTurn(turn: HistoryTurn, ctx: PromptContext, segDia
   const raw = normalizeHtmlQuirks(stripOutOfBand(turn.content));
   if (raw.trim().length === 0) return raw;
 
+  const characterName = resolveCharacterName(ctx.character);
   const knownNames = [
-    ctx.character.name,
+    characterName,
     ctx.persona.name,
     ...(ctx.activeNpcs ?? []).map((n) => n.displayName)
   ];
   const source = matchGreetingOverride(turn, ctx) ?? raw;
   const parsed = parseEnvelope(source, {
-    primaryCharacter: ctx.character.name,
+    primaryCharacter: characterName,
     dialect: 'auto',
     knownNames,
     personaName: ctx.persona.name
@@ -126,7 +128,7 @@ export function formatGreetingTurn(turn: HistoryTurn, ctx: PromptContext, segDia
   const mode: GreetingMode = ctx.character.greetingMode ?? 'prologue';
   if (mode === 'split') {
     try {
-      return serializeSegments(splitGreetingVoices(source, ctx.character.name), null, segDialect);
+      return serializeSegments(splitGreetingVoices(source, characterName), null, segDialect);
     } catch {
       return raw;
     }
@@ -141,7 +143,7 @@ export function formatGreetingTurn(turn: HistoryTurn, ctx: PromptContext, segDia
  */
 export function serializeHistory(ctx: PromptContext): HistoryResult {
   const warnings: string[] = [];
-  const vars = { char: ctx.character.name, user: ctx.persona.name };
+  const vars = { char: resolveCharacterName(ctx.character), user: ctx.persona.name };
   const dialect = getDialect(ctx);
 
   const rawTurns = ctx.history;

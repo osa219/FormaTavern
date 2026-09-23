@@ -1,4 +1,4 @@
-export const SHARED_VERSION = '0.7.2-chats-hub';
+export const SHARED_VERSION = '0.8.0-card-character-split';
 
 export interface HealthResponse {
   ok: true;

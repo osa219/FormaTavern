@@ -7,6 +7,7 @@ import {
   CharacterPromptPreviewBodySchema,
   DEFAULT_CHARACTER_THEME,
   parseEnvelope,
+  resolveCharacterName,
   type CharacterCard,
   type CharacterPromptPreviewBody,
   type CharacterSummary,
@@ -86,6 +87,7 @@ export function createCharactersRouter({ repos, assets, providers }: CharactersR
         const character: CharacterCard = {
           id: 'preview-draft',
           name: draft.name?.trim() || 'Character',
+          characterName: draft.characterName?.trim() ? draft.characterName.trim() : undefined,
           description: draft.description ?? '',
           personality: draft.personality ?? '',
           scenario: draft.scenario ?? '',
@@ -97,6 +99,10 @@ export function createCharactersRouter({ repos, assets, providers }: CharactersR
           initialState: draft.initialState,
           tags: draft.tags,
           creator: draft.creator,
+          creatorUrl: draft.creatorUrl,
+          characterUrl: draft.characterUrl,
+          origin: draft.origin,
+          version: draft.version,
           showcase: draft.showcase,
           customCss: draft.customCss,
           tagline: draft.tagline
@@ -146,9 +152,9 @@ export function createCharactersRouter({ repos, assets, providers }: CharactersR
         const greeting = greetingText
           ? (() => {
               const parsed = parseEnvelope(greetingText, {
-                primaryCharacter: character.name,
+                primaryCharacter: resolveCharacterName(character),
                 dialect: chatMeta.envelopeDialect ?? 'directive',
-                knownNames: [character.name],
+                knownNames: [resolveCharacterName(character)],
                 personaName: persona.name,
                 streaming: false
               });

@@ -41,7 +41,7 @@
   {:else if activeCharacters.length === 0}
     <EmptyState {hasFilters} onReset={onResetFilters} />
   {:else}
-    <!-- Characters Grid -->
+    <!-- Cards Grid -->
     <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
       {#each activeCharacters as character (character.id)}
         <CharacterCard {character} {onStartStory} />
@@ -61,7 +61,7 @@
             <Spinner size={14} />
             <span>Loading more…</span>
           {:else}
-            <span>Load More Characters</span>
+            <span>Load More Cards</span>
           {/if}
         </button>
       </div>

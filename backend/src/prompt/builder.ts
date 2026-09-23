@@ -1,4 +1,4 @@
-import { buildStopSequences, applyMacros } from '@formatavern/shared';
+import { buildStopSequences, applyMacros, resolveCharacterName } from '@formatavern/shared';
 import type { PromptContext, BuiltPrompt, BlockReport, BlockId } from './types';
 import { CANONICAL_BLOCK_IDS } from './types';
 import { generateBlock, getDialect } from './blocks';
@@ -7,7 +7,7 @@ import { countTokens, fitHistory } from './budget';
 
 export function buildPrompt(ctx: PromptContext): BuiltPrompt {
   const warnings: string[] = [];
-  const vars = { char: ctx.character.name, user: ctx.persona.name };
+  const vars = { char: resolveCharacterName(ctx.character), user: ctx.persona.name };
   const dialect = getDialect(ctx);
 
   // 1. Generate Static System Blocks (1, 1b, 1c, 2, 3, 4, 5, 6, 6b, 7, 7b)
