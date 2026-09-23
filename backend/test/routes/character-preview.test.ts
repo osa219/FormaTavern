@@ -34,9 +34,12 @@ describe('routes/characters prompt-preview (§6 dry run)', () => {
     const result = json as CharacterPromptPreview;
 
     // Static character blocks resolve from the draft, not the DB.
-    for (const id of ['1', '1b', '2', '3', '4', '5', '7'] as const) {
+    // 1b is retired (format spec rides closing block 9c instead).
+    for (const id of ['1', '2', '3', '4', '5', '7'] as const) {
       expect(result.prompt.blocks.find((b) => b.id === id)!.included).toBe(true);
     }
+    expect(result.prompt.blocks.find((b) => b.id === '1b')!.included).toBe(false);
+    expect(result.prompt.blocks.find((b) => b.id === '9c')!.included).toBe(true);
     expect(result.prompt.blocks.find((b) => b.id === '2')!.text).toContain('archmage');
 
     // No persisted history: one synthetic continue-scene turn carries the bottom blocks.

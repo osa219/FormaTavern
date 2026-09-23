@@ -92,8 +92,8 @@ describe('routes/chats prompt-preview (§5 dry run)', () => {
 
     const last = built.history[built.history.length - 1];
     expect(last.content).toContain('Unsent hello.');
-    // Bottom blocks attached exactly once (no duplicated closing instruction).
-    expect(last.content.match(/Reply using the directive block format/g)?.length).toBe(1);
+    // Bottom blocks attached exactly once (format spec closest to generation).
+    expect(last.content.match(/\[Response Format\]/g)?.length).toBe(1);
     const block9b = built.blocks.find((b) => b.id === '9b')!;
     expect(block9b.included).toBe(true);
     expect(block9b.text).toContain('Reply tersely.');
@@ -124,7 +124,7 @@ describe('routes/chats prompt-preview (§5 dry run)', () => {
     expect(built.history.length).toBe(1);
     expect(built.history[0].role).toBe('user');
     expect(built.history[0].content.startsWith('[Continue the scene.]')).toBe(true);
-    expect(built.history[0].content.match(/Reply using the directive block format/g)?.length).toBe(1);
+    expect(built.history[0].content.match(/\[Response Format\]/g)?.length).toBe(1);
     // Block 8 reports history exactly as sent, so the synthetic turn counts.
     const block8 = built.blocks.find((b) => b.id === '8')!;
     expect(block8.included).toBe(true);

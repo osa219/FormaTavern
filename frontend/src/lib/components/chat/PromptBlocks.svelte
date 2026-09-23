@@ -2,7 +2,7 @@
   import { toasts } from '$lib/state/toasts.svelte';
   import { prefs } from '$lib/state/prefs.svelte';
   import Icon from '../ui/Icon.svelte';
-  import { blockLabel, type PreviewData } from '$lib/prompt/preview';
+  import { blockLabel, visibleBlocks, type PreviewData } from '$lib/prompt/preview';
   import { copyToClipboard } from '$lib/utils/clipboard';
 
   let { data }: { data: PreviewData } = $props();
@@ -17,6 +17,7 @@
   }
 
   const bottomIds = $derived(data.blocks.filter((b) => ['9a', '9b', '9c'].includes(b.id) && b.included));
+  const reviewBlocks = $derived(visibleBlocks(data.blocks));
   const lastHistory = $derived(data.history.length > 0 ? data.history[data.history.length - 1] : null);
   const bottomOnLastTurn = $derived(lastHistory?.role === 'user' && bottomIds.length > 0);
 
@@ -59,9 +60,9 @@
     </div>
   {/if}
 
-  <!-- Blocks in canonical backend order -->
+  <!-- Blocks in canonical backend order (retired slots hidden) -->
   <div class="space-y-1.5">
-    {#each data.blocks as block (block.id)}
+    {#each reviewBlocks as block (block.id)}
       <details class="rounded-xl border border-(--chrome-line) bg-(--chrome-bg) text-xs">
         <summary class="flex cursor-pointer items-center gap-2 px-3 py-2 select-none">
           <span

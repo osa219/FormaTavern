@@ -10,7 +10,9 @@ export function buildPrompt(ctx: PromptContext): BuiltPrompt {
   const vars = { char: resolveCharacterName(ctx.character), user: ctx.persona.name };
   const dialect = getDialect(ctx);
 
-  // 1. Generate Static System Blocks (1, 1b, 1c, 2, 3, 4, 5, 6, 6b, 7, 7b)
+  // 1. Generate Static System Blocks (1, 1b, 1c, 2, 3, 4, 5, 6, 6b, 7, 7b).
+  // 1b always reports excluded (retired): the response-format spec rides the
+  // closing block 9c at the end of the prompt (post-history, closest to generation).
   const blockReportsMap = new Map<BlockId, BlockReport>();
   const staticBlockIds: BlockId[] = ['1', '1b', '1c', '2', '3', '4', '5', '6', '6b', '7', '7b'];
   const includedSystemBlocks: string[] = [];
@@ -151,7 +153,7 @@ function skipReason(id: BlockId, ctx: PromptContext): string {
     case '1':
       return 'empty preamble';
     case '1b':
-      return mode !== 'narrative' ? CLASSIC_MODE_REASON : 'empty narrative template';
+      return 'retired: response-format spec moved to closing block 9c';
     case '1c':
       return 'no provider prompt configured';
     case '2':

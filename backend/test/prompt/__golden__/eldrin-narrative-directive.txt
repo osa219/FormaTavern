@@ -1,36 +1,5 @@
 You are an expert roleplay assistant. Stay in character, maintain fidelity to the world and established personalities, and craft vivid, engaging prose. Never write dialogue, thoughts, feelings, or actions for Traveler. Stop and yield when Traveler must react or decide.
 
-[Response Format]
-
-Structure your response using directive blocks:
-- :::narrator ... ::: for scene description, environment, and physical actions.
-- :::character[Eldrin the Mage] ... ::: for Eldrin the Mage's spoken dialogue and thoughts.
-- :::npc[Name] ... ::: when a side character speaks or acts (use their actual name).
-- ```state ... ``` at the very end with current mood and scene as JSON.
-
-Example structure:
-
-:::narrator
-Eldrin the Mage glances up from their work, noticing your arrival.
-:::
-
-:::character[Eldrin the Mage]
-"I wasn't expecting you yet, but I'm glad you're here."
-:::
-
-```state
-{"mood":"curious","scene":"quiet room"}
-```
-
-The example above teaches format only. Draw all characters, settings, and dialogue from the ongoing story.
-
-End every reply with a state block exactly as shown above.
-State schema fields:
-- mood: one of calm, curious, urgent, furious (default calm)
-- affinity: integer 0–10 (default 5)
-- danger: one of low, medium, high, critical (default low)
-- scene: short string (default spire_observatory)
-
 [Eldrin the Mage's description]
 Ancient wizard in starry robes.
 
@@ -76,7 +45,7 @@ A wayfarer seeking ancient knowledge.
     },
     {
       "role": "user",
-      "content": ":::narrator\nLightning strikes the glass spire with deafening force.\n:::\n\n[Standing direction: Speak with archaic gravity.]\n[Director's note for this turn: Focus on the vibrating lens.]\nReply using the directive block format and end with a state block."
+      "content": ":::narrator\nLightning strikes the glass spire with deafening force.\n:::\n\n[Standing direction: Speak with archaic gravity.]\n[Director's note for this turn: Focus on the vibrating lens.]\n[Response Format]\n\nStructure your response using directive blocks:\n- :::narrator ... ::: for scene description, environment, and physical actions.\n- :::character[Eldrin the Mage] ... ::: for Eldrin the Mage's spoken dialogue and thoughts.\n- :::npc[Name] ... ::: when a side character speaks or acts (use their actual name).\n- ```state ... ``` at the very end with current mood and scene as JSON.\n\nExample structure:\n\n:::narrator\nEldrin the Mage glances up from their work, noticing your arrival.\n:::\n\n:::character[Eldrin the Mage]\n\"I wasn't expecting you yet, but I'm glad you're here.\"\n:::\n\n```state\n{\"mood\":\"curious\",\"scene\":\"quiet room\"}\n```\n\nThe example above teaches format only. Draw all characters, settings, and dialogue from the ongoing story.\n\nEnd every reply with a state block exactly as shown above.\nState schema fields:\n- mood: one of calm, curious, urgent, furious (default calm)\n- affinity: integer 0–10 (default 5)\n- danger: one of low, medium, high, critical (default low)\n- scene: short string (default spire_observatory)"
     }
   ],
   "stop": [

@@ -22,9 +22,81 @@ function macro(text: string, ctx: PromptContext): string {
   });
 }
 
+/**
+ * Full narrative response-format specification (dialect grammar, canonical
+ * example, state field list). Lives at the END of the prompt as block 9c
+ * (Chub-style post-history instructions): output format belongs last so it
+ * is closest to generation. Retired from the system slot (1b).
+ */
+function buildFormatSpec(ctx: PromptContext, warnings: string[] = []): string {
+  const dialect = getDialect(ctx);
+  const isAllowed = ctx.personaVoicing === 'allowed';
+  let syntaxDesc = [
+    'Structure your response using directive blocks:',
+    '- :::narrator ... ::: for scene description, environment, and physical actions.',
+    '- :::character[{{char}}] ... ::: for {{char}}\'s spoken dialogue and thoughts.',
+    ...(isAllowed ? ['- :::persona[{{user}}] ... ::: for {{user}}\'s spoken dialogue and actions.'] : []),
+    '- :::npc[Name] ... ::: when a side character speaks or acts (use their actual name).',
+    '- ```state ... ``` at the very end with current mood and scene as JSON.'
+  ].join('\n');
+
+  if (dialect === 'xml') {
+    syntaxDesc = [
+      'Structure your response using XML tags:',
+      '- <narrator> ... </narrator> for scene description, environment, and physical actions.',
+      '- <character name="{{char}}"> ... </character> for {{char}}\'s spoken dialogue and thoughts.',
+      ...(isAllowed ? ['- <persona name="{{user}}"> ... </persona> for {{user}}\'s spoken dialogue and actions.'] : []),
+      '- <npc name="..."> ... </npc> when a side character speaks or acts (use their actual name).',
+      '- <state> ... </state> at the very end with current mood and scene as JSON.'
+    ].join('\n');
+  } else if (dialect === 'prefix') {
+    syntaxDesc = [
+      'Structure your response using voices:',
+      '- *...* on its own lines for scene description, environment, and physical actions.',
+      '- {{char}}: ... for {{char}}\'s spoken dialogue and thoughts.',
+      ...(isAllowed ? ['- {{user}}: ... for {{user}}\'s spoken dialogue and actions.'] : []),
+      '- Name: ... when a side character speaks or acts (use their actual name).',
+      '- ```state ... ``` at the very end with current mood and scene as JSON.'
+    ].join('\n');
+  }
+  // Single canonical example (directive-authored), rendered into the active
+  // dialect; falls back to built-in with a warning on render failure.
+  const example = renderExampleForDialect(
+    dialect === 'classic' ? 'directive' : dialect,
+    ctx.narrativeExample,
+    warnings
+  );
+
+  let stateDesc = 'End every reply with a state block exactly as shown above.';
+  const schemaFields = ctx.character.stateSchema ? Object.entries(ctx.character.stateSchema) : [];
+  if (schemaFields.length > 0) {
+    const fieldLines: string[] = [];
+    for (const [key, field] of schemaFields) {
+      if (field.type === 'enum') {
+        fieldLines.push(`- ${key}: one of ${field.values.join(', ')} (default ${field.default})`);
+      } else if (field.type === 'int') {
+        fieldLines.push(`- ${key}: integer ${field.min}–${field.max} (default ${field.default})`);
+      } else {
+        fieldLines.push(`- ${key}: short string (default ${field.default})`);
+      }
+    }
+    stateDesc += '\nState schema fields:\n' + fieldLines.join('\n');
+  } else {
+    stateDesc += ' Include mood and scene in the state block.';
+  }
+
+  return [
+    '[Response Format]',
+    syntaxDesc,
+    'Example structure:',
+    example,
+    'The example above teaches format only. Draw all characters, settings, and dialogue from the ongoing story.',
+    stateDesc
+  ].join('\n\n');
+}
+
 export function generateBlock(id: BlockId, ctx: PromptContext, warnings: string[] = []): string | null {
   const mode = ctx.chat.narrativeMode ?? 'classic';
-  const dialect = getDialect(ctx);
 
   switch (id) {
     case '1': {
@@ -36,73 +108,9 @@ export function generateBlock(id: BlockId, ctx: PromptContext, warnings: string[
     }
 
     case '1b': {
-      if (mode !== 'narrative') return null;
-
-      const isAllowed = ctx.personaVoicing === 'allowed';
-      let syntaxDesc = [
-        'Structure your response using directive blocks:',
-        '- :::narrator ... ::: for scene description, environment, and physical actions.',
-        '- :::character[{{char}}] ... ::: for {{char}}\'s spoken dialogue and thoughts.',
-        ...(isAllowed ? ['- :::persona[{{user}}] ... ::: for {{user}}\'s spoken dialogue and actions.'] : []),
-        '- :::npc[Name] ... ::: when a side character speaks or acts (use their actual name).',
-        '- ```state ... ``` at the very end with current mood and scene as JSON.'
-      ].join('\n');
-
-      if (dialect === 'xml') {
-        syntaxDesc = [
-          'Structure your response using XML tags:',
-          '- <narrator> ... </narrator> for scene description, environment, and physical actions.',
-          '- <character name="{{char}}"> ... </character> for {{char}}\'s spoken dialogue and thoughts.',
-          ...(isAllowed ? ['- <persona name="{{user}}"> ... </persona> for {{user}}\'s spoken dialogue and actions.'] : []),
-          '- <npc name="..."> ... </npc> when a side character speaks or acts (use their actual name).',
-          '- <state> ... </state> at the very end with current mood and scene as JSON.'
-        ].join('\n');
-      } else if (dialect === 'prefix') {
-        syntaxDesc = [
-          'Structure your response using voices:',
-          '- *...* on its own lines for scene description, environment, and physical actions.',
-          '- {{char}}: ... for {{char}}\'s spoken dialogue and thoughts.',
-          ...(isAllowed ? ['- {{user}}: ... for {{user}}\'s spoken dialogue and actions.'] : []),
-          '- Name: ... when a side character speaks or acts (use their actual name).',
-          '- ```state ... ``` at the very end with current mood and scene as JSON.'
-        ].join('\n');
-      }
-      // Single canonical example (directive-authored), rendered into the active
-      // dialect; falls back to built-in with a warning on render failure.
-      const example = renderExampleForDialect(
-        dialect === 'classic' ? 'directive' : dialect,
-        ctx.narrativeExample,
-        warnings
-      );
-
-      let stateDesc = 'End every reply with a state block exactly as shown above.';
-      const schemaFields = ctx.character.stateSchema ? Object.entries(ctx.character.stateSchema) : [];
-      if (schemaFields.length > 0) {
-        const fieldLines: string[] = [];
-        for (const [key, field] of schemaFields) {
-          if (field.type === 'enum') {
-            fieldLines.push(`- ${key}: one of ${field.values.join(', ')} (default ${field.default})`);
-          } else if (field.type === 'int') {
-            fieldLines.push(`- ${key}: integer ${field.min}–${field.max} (default ${field.default})`);
-          } else {
-            fieldLines.push(`- ${key}: short string (default ${field.default})`);
-          }
-        }
-        stateDesc += '\nState schema fields:\n' + fieldLines.join('\n');
-      } else {
-        stateDesc += ' Include mood and scene in the state block.';
-      }
-
-      const content = [
-        '[Response Format]',
-        syntaxDesc,
-        'Example structure:',
-        example,
-        'The example above teaches format only. Draw all characters, settings, and dialogue from the ongoing story.',
-        stateDesc
-      ].join('\n\n');
-
-      return macro(content, ctx);
+      // Retired: the response-format spec moved to the closing block 9c
+      // (post-history position, closest to generation). Slot intentionally empty.
+      return null;
     }
 
     case '1c': {
@@ -199,11 +207,15 @@ export function generateBlock(id: BlockId, ctx: PromptContext, warnings: string[
     case '9c': {
       if (mode !== 'narrative') return null;
 
+      // Post-history position: the full response-format spec lives here,
+      // closest to generation. Continuation turns keep the reminder line
+      // on top so the model resumes the partial before re-reading the spec.
+      const spec = buildFormatSpec(ctx, warnings);
       if (ctx.continuation && ctx.provider.prefill) {
-        return macro(CONTINUATION_PREFILL_REMINDER, ctx);
+        return macro(`${CONTINUATION_PREFILL_REMINDER}\n\n${spec}`, ctx);
       }
 
-      return macro(`Reply using the ${dialect} block format and end with a state block.`, ctx);
+      return macro(spec, ctx);
     }
   }
 }

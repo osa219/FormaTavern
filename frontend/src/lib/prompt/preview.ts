@@ -64,7 +64,7 @@ export function isStudioPreviewData(value: unknown): value is StudioPreviewData 
 /** Display names for canonical block ids (fixed order comes from the backend). */
 export const BLOCK_LABELS: Record<string, string> = {
   '1': 'Preamble (global)',
-  '1b': 'Narrative format + agency',
+  '1b': 'Format slot (retired → 9c)',
   '1c': 'Provider prompt',
   '2': 'Description',
   '3': 'Personality',
@@ -77,9 +77,17 @@ export const BLOCK_LABELS: Record<string, string> = {
   '8': 'Conversation history',
   '9a': 'Standing direction',
   '9b': "Director's note",
-  '9c': 'Closing instruction'
+  '9c': 'Response format (closing)'
 };
 
 export function blockLabel(id: string): string {
   return BLOCK_LABELS[id] ?? `Block ${id}`;
+}
+
+/** Retired block ids are still reported by the backend for contract stability but carry no content. */
+export const RETIRED_BLOCK_IDS: readonly string[] = ['1b'];
+
+/** Blocks worth rendering in prompt review: retired slots filtered out. */
+export function visibleBlocks<T extends { id: string }>(blocks: readonly T[]): T[] {
+  return blocks.filter((b) => !RETIRED_BLOCK_IDS.includes(b.id));
 }

@@ -222,12 +222,12 @@ Provider selection: `settings.provider.id` (`mock` | `openrouter`), key from set
 
 ## 8. PromptBuilder (`backend/src/prompt/`)
 
-Pure `buildPrompt(PromptContext) → BuiltPrompt` (E6). Fourteen ordered block ids compiled into `systemPrompt` (1–7b) and `history` (8 + bottom blocks 9a/9b/9c appended to the **last user message**):
+Pure `buildPrompt(PromptContext) → BuiltPrompt` (E6). Fourteen ordered block ids compiled into `systemPrompt` (1–7b) and `history` (8 + bottom blocks 9a/9b/9c appended to the **last user message**). The response-format spec rides the closing block 9c (post-history, closest to generation); the old system slot 1b is retired:
 
 | Id | Block | When |
 |---|---|---|
 | 1 | System preamble | always |
-| 1b | Narrative response format (dialect grammar, clean structural template, state field list) | narrative mode |
+| 1b | Retired (was: narrative response format; now lives in 9c) | never included |
 | 2 / 3 / 4 | Description / Personality / Scenario | non-blank |
 | 5 | Example dialogue (verbatim; dialect conversion deferred) | non-blank |
 | 6 | Lorebook entries (pre-matched; engine deferred) | provided |
@@ -235,7 +235,7 @@ Pure `buildPrompt(PromptContext) → BuiltPrompt` (E6). Fourteen ordered block i
 | 7 | User persona | always |
 | 7b | `[Scene state: k=v…]` in schema key order | narrative + state |
 | 8 | History: assistant rows via `stripOutOfBand` (fences kept, state/reasoning removed); every user row serialized with a header (`persona` included, raw fallback on delimiter collision); greeting roots (assistant, `parentId` null) go through the greeting pipeline (tagged→convert, else prologue/split/reviewed per `greetingMode`, raw in classic); skips `error`/`streaming`/director-only rows; past director notes never serialized | always |
-| 9a / 9b / 9c | Standing direction / one-shot director note / format reminder | as set / narrative |
+| 9a / 9b / 9c | Standing direction / one-shot director note / response format (dialect grammar, clean structural template, state field list) | as set / narrative |
 
 Also: macros applied to every outbound string; `[Scene begins.]` prepended when history starts with assistant; `[Continue the scene.]` synthetic user turn when history ends on assistant; continuation via `assistantPrefill` (providers with `prefill`) or a nudge; budgeting with `gpt-tokenizer` (`cl100k_base`, 0.9 safety factor) dropping oldest turns whole, never the trigger (`PromptBudgetError` → 413). Golden file: `backend/test/prompt/__golden__/eldrin-narrative-directive.txt`.
 

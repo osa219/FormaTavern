@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'bun:test';
 import { render } from 'svelte/server';
-import { blockLabel, isPreviewData } from '../src/lib/prompt/preview';
+import { blockLabel, isPreviewData, visibleBlocks } from '../src/lib/prompt/preview';
 import PromptTab from '../src/lib/components/chat/PromptTab.svelte';
 import LoreDrawer from '../src/lib/components/chat/LoreDrawer.svelte';
 import Composer from '../src/lib/components/composer/Composer.svelte';
@@ -12,7 +12,15 @@ describe('§5 prompt preview UI', () => {
       expect(blockLabel(id)).not.toBe(`Block ${id}`);
     }
     expect(blockLabel('9b')).toContain('Director');
+    expect(blockLabel('1b')).toContain('retired');
+    expect(blockLabel('9c')).toContain('Response format');
     expect(blockLabel('bogus')).toBe('Block bogus');
+  });
+
+  it('hides retired block slots from prompt review', () => {
+    const blocks = [{ id: '1' }, { id: '1b' }, { id: '9c' }];
+    expect(visibleBlocks(blocks).map((b) => b.id)).toEqual(['1', '9c']);
+    expect(visibleBlocks([])).toEqual([]);
   });
 
   it('guards the Eden response boundary', () => {

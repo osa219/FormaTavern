@@ -158,12 +158,12 @@ function makeContext(overrides: Partial<PromptContext> = {}): PromptContext {
 }
 
 describe('PromptBuilder', () => {
-  it('includes narrative blocks 1b, 6b, 7b, 9c only in narrative mode', () => {
+  it('includes narrative blocks 6b, 7b, 9c only in narrative mode (1b retired)', () => {
     const narrativeCtx = makeContext({ chat: { narrativeMode: 'narrative', envelopeDialect: 'directive' } });
     const builtNarrative = buildPrompt(narrativeCtx);
     expect(builtNarrative.dialect).toBe('directive');
     const narrativeIds = builtNarrative.blocks.filter((b) => b.included).map((b) => b.id);
-    expect(narrativeIds).toContain('1b');
+    expect(narrativeIds).not.toContain('1b');
     expect(narrativeIds).toContain('6b');
     expect(narrativeIds).toContain('7b');
     expect(narrativeIds).toContain('9c');
@@ -178,11 +178,14 @@ describe('PromptBuilder', () => {
     expect(classicIds).not.toContain('9c');
   });
 
-  it('contains agency clause and full stateSchema description in Block 1b', () => {
+  it('keeps the agency clause in Block 1 and puts the stateSchema description in closing Block 9c', () => {
     const built = buildPrompt(makeContext());
     expect(built.systemPrompt).toContain('Never write dialogue, thoughts, feelings, or actions for Traveler.');
-    expect(built.systemPrompt).toContain('mood: one of calm, curious, urgent, furious (default calm)');
-    expect(built.systemPrompt).toContain('affinity: integer 0–10 (default 5)');
+    expect(built.systemPrompt).not.toContain('[Response Format]');
+    const lastUserMsg = built.history[built.history.length - 1];
+    expect(lastUserMsg.content).toContain('[Response Format]');
+    expect(lastUserMsg.content).toContain('mood: one of calm, curious, urgent, furious (default calm)');
+    expect(lastUserMsg.content).toContain('affinity: integer 0–10 (default 5)');
   });
 
   it('omits optional blocks 2, 3, 4, 5, 6 when blank or empty', () => {
@@ -234,17 +237,20 @@ describe('PromptBuilder', () => {
     expect(lastUserMsg.role).toBe('user');
     expect(lastUserMsg.content).toContain('[Standing direction: Speak with archaic gravity.]');
     expect(lastUserMsg.content).toContain("[Director's note for this turn: Focus on the vibrating lens.]");
-    expect(lastUserMsg.content).toContain('Reply using the directive block format and end with a state block.');
+    expect(lastUserMsg.content).toContain('[Response Format]');
+    expect(lastUserMsg.content).toContain('End every reply with a state block exactly as shown above.');
   });
 
-  it('renders the canonical example override per dialect in block 1b (§4)', () => {
+  it('renders the canonical example override per dialect in closing block 9c (§4)', () => {
     const custom = ':::narrator\nSnow falls.\n:::\n\n```state\n{"mood":"calm"}\n```';
     const built = buildPrompt(makeContext({ narrativeExample: custom }));
-    const report = built.blocks.find((b) => b.id === '1b')!;
+    const report = built.blocks.find((b) => b.id === '9c')!;
     expect(report.included).toBe(true);
     expect(report.text).toContain('Snow falls.');
     expect(report.text).not.toContain('morning mist');
-    expect(built.systemPrompt).toContain('Snow falls.');
+    const lastUserMsg = built.history[built.history.length - 1];
+    expect(lastUserMsg.content).toContain('Snow falls.');
+    expect(built.systemPrompt).not.toContain('Snow falls.');
 
     // Same override under the xml dialect renders as xml.
     const builtXml = buildPrompt(
@@ -253,27 +259,27 @@ describe('PromptBuilder', () => {
         chat: { narrativeMode: 'narrative', envelopeDialect: 'xml' }
       })
     );
-    const reportXml = builtXml.blocks.find((b) => b.id === '1b')!;
+    const reportXml = builtXml.blocks.find((b) => b.id === '9c')!;
     expect(reportXml.text).toContain('<narrator>');
     expect(reportXml.text).toContain('Snow falls.');
     expect(reportXml.text).not.toContain(':::narrator');
 
     // Without an override the built-in example applies.
     const builtDefault = buildPrompt(makeContext());
-    expect(builtDefault.blocks.find((b) => b.id === '1b')!.text).toContain('glances up');
+    expect(builtDefault.blocks.find((b) => b.id === '9c')!.text).toContain('glances up');
   });
 
-  it('attaches the closing instruction exactly once (no double bottom attach)', () => {
+  it('attaches the closing format spec exactly once (no double bottom attach)', () => {
     const built = buildPrompt(makeContext());
     for (const msg of built.history) {
-      expect(msg.content.match(/Reply using the directive block format/g)?.length ?? 0).toBeLessThanOrEqual(1);
+      expect(msg.content.match(/\[Response Format\]/g)?.length ?? 0).toBeLessThanOrEqual(1);
     }
     const lastUserMsg = built.history[built.history.length - 1];
-    expect(lastUserMsg.content.match(/Reply using the directive block format/g)?.length).toBe(1);
+    expect(lastUserMsg.content.match(/\[Response Format\]/g)?.length).toBe(1);
     // Canonical 9a, 9b, 9c order in the final message
     const idx9a = lastUserMsg.content.indexOf('[Standing direction:');
     const idx9b = lastUserMsg.content.indexOf("[Director's note for this turn:");
-    const idx9c = lastUserMsg.content.indexOf('Reply using the directive block format');
+    const idx9c = lastUserMsg.content.indexOf('[Response Format]');
     expect(idx9a).toBeGreaterThanOrEqual(0);
     expect(idx9b).toBeGreaterThan(idx9a);
     expect(idx9c).toBeGreaterThan(idx9b);
@@ -638,7 +644,7 @@ describe('PromptBuilder', () => {
       expect(report).toMatchObject({ included: false, tokens: 0 });
     });
 
-    it('sits between preamble/grammar and character blocks with macros applied', () => {
+    it('sits between preamble and character blocks with macros applied', () => {
       const built = buildPrompt(
         makeContext({ configPrompt: 'Extra rule for {{char}}: keep replies terse, {{user}}.' })
       );
@@ -648,12 +654,13 @@ describe('PromptBuilder', () => {
 
       const text = built.systemPrompt;
       expect(text).toContain('Extra rule for Eldrin the Mage: keep replies terse, Traveler.');
+      expect(text).not.toContain('[Response Format]');
       const idxPrompt = text.indexOf('Extra rule for Eldrin');
-      const idxGrammar = text.indexOf('[Response Format]');
+      const idxPreamble = text.indexOf('Stop and yield');
       const idxChar = text.indexOf('Ancient wizard in starry robes.');
-      expect(idxGrammar).toBeGreaterThanOrEqual(0);
+      expect(idxPreamble).toBeGreaterThanOrEqual(0);
       expect(idxChar).toBeGreaterThan(0);
-      expect(idxPrompt).toBeGreaterThan(idxGrammar);
+      expect(idxPrompt).toBeGreaterThan(idxPreamble);
       expect(idxPrompt).toBeLessThan(idxChar);
     });
 
@@ -664,10 +671,11 @@ describe('PromptBuilder', () => {
   });
 
   describe('Co-Author Persona Voicing Policy', () => {
-    it('uses co-author preamble and includes persona tag instructions in narrative directive mode', () => {
+    it('uses co-author preamble in system and persona tag instructions in closing 9c', () => {
       const built = buildPrompt(makeContext({ personaVoicing: 'allowed' }));
       expect(built.systemPrompt).toContain('You collaborate as a co-author');
-      expect(built.systemPrompt).toContain(':::persona[Traveler] ... ::: for Traveler\'s spoken dialogue and actions.');
+      const lastUserMsg = built.history[built.history.length - 1];
+      expect(lastUserMsg.content).toContain(':::persona[Traveler] ... ::: for Traveler\'s spoken dialogue and actions.');
       expect(built.stop).toEqual([]);
     });
 
@@ -677,7 +685,8 @@ describe('PromptBuilder', () => {
         chat: { narrativeMode: 'narrative', envelopeDialect: 'xml' }
       });
       const built = buildPrompt(ctx);
-      expect(built.systemPrompt).toContain('<persona name="Traveler"> ... </persona> for Traveler\'s spoken dialogue and actions.');
+      const lastUserMsg = built.history[built.history.length - 1];
+      expect(lastUserMsg.content).toContain('<persona name="Traveler"> ... </persona> for Traveler\'s spoken dialogue and actions.');
       expect(built.stop).toEqual([]);
     });
 
@@ -687,7 +696,8 @@ describe('PromptBuilder', () => {
         chat: { narrativeMode: 'narrative', envelopeDialect: 'prefix' }
       });
       const built = buildPrompt(ctx);
-      expect(built.systemPrompt).toContain('Traveler: ... for Traveler\'s spoken dialogue and actions.');
+      const lastUserMsg = built.history[built.history.length - 1];
+      expect(lastUserMsg.content).toContain('Traveler: ... for Traveler\'s spoken dialogue and actions.');
       expect(built.stop).toEqual([]);
     });
 
