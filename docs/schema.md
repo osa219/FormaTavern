@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS characters (
   description  TEXT,                          -- Character overview / background
   personality  TEXT,                          -- Behavioural trait guidelines
   scenario     TEXT,                          -- Initial narrative scene premise
-  first_message TEXT,                         -- Opening greeting / scene starter
+  first_message TEXT,                         -- Opening greeting / scene starter (always stored authentic; envelope chats transform at send time per greetingMode)
   alternate_greetings TEXT,                   -- JSON array of alternate greetings; NULL/empty = none (added in v9)
   style        TEXT NOT NULL,                 -- JSON: CharacterTheme (colors, fonts, bubble, background)
   created_at   INTEGER NOT NULL,              -- Unix timestamp in milliseconds
@@ -254,7 +254,12 @@ JSON columns are stringified during repository persistence and parsed upon retri
   initialState?: Record<string, unknown>, // Starting scene state vector
   tags?: string[],
   creator?: string,
-  version?: string
+  version?: string,
+  greetingMode?: 'prologue' | 'split' | 'ai', // Envelope greeting strategy (default prologue)
+  greetingEnvelope?: {              // Reviewed envelope overrides (directive-canonical)
+    first?: string,                 // Override for firstMessage (exact-text match)
+    alternates?: Record<string, string> // Overrides by alternate index
+  }
 }
 ```
 
