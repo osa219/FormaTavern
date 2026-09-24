@@ -1,3 +1,5 @@
+import type { AssetRecord } from '../db/contracts';
+
 export type AssetScope = 'persona' | 'draft' | 'character' | 'fonts';
 
 export interface AssetUploadOptions {
@@ -21,4 +23,6 @@ export interface AssetStore {
   promoteDraft(draftId: string, finalSlug: string): Promise<void>;
   deleteScope(scope: AssetScope, targetId: string): Promise<void>;
   cleanStaleDrafts(maxAgeMs: number): Promise<number>;
+  putPool(bytes: Uint8Array): Promise<AssetRecord>;
+  resolvePool(hash: string): Promise<string | null>;
 }

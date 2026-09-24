@@ -10,6 +10,7 @@ import {
 } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import type { AssetStore, AssetUploadOptions, AssetMeta, AssetScope } from './contracts';
+import type { AssetRecord } from '../db/contracts';
 import { sniffMimeType, sniffFontMimeType, type SupportedMime, type SupportedFontMime } from './sniff';
 import { getImageDimensions, MAX_DIMENSION } from './dimensions';
 import { newId } from '../db/ids';
@@ -278,5 +279,95 @@ export class FsAssetStore implements AssetStore {
     } catch {
       return 0;
     }
+  }
+
+  async putPool(bytes: Uint8Array): Promise<AssetRecord> {
+    // 1. Sniff magic bytes (PNG, JPEG, WebP, GIF only)
+    const mime = sniffMimeType(bytes);
+    if (!mime || !EXT_FOR_MIME[mime]) {
+      throw new ApiError('asset_type_rejected', 415, 'Only PNG, JPEG, WebP, and GIF images are allowed in the asset pool');
+    }
+
+    const ext = EXT_FOR_MIME[mime];
+
+    // 2. Extract dimensions from header
+    const dimensions = getImageDimensions(bytes, mime);
+    if (!dimensions) {
+      throw new ApiError('asset_dimensions', 400, 'Could not read image dimensions from header');
+    }
+    if (dimensions.width > MAX_DIMENSION || dimensions.height > MAX_DIMENSION) {
+      throw new ApiError(
+        'asset_dimensions',
+        422,
+        `Image dimensions ${dimensions.width}x${dimensions.height} exceed maximum allowed ${MAX_DIMENSION}x${MAX_DIMENSION}`
+      );
+    }
+
+    // 3. Content hash (64 hex lowercase)
+    const hash = createHash('sha256').update(bytes).digest('hex').toLowerCase();
+
+    // 4. Ensure pool directory exists
+    const poolDir = this.assertContained(join(this.rootDir, 'pool'));
+    await mkdir(poolDir, { recursive: true });
+
+    const finalName = `${hash}${ext}`;
+    const finalPath = this.assertContained(join(poolDir, finalName));
+
+    // Fast path: if identical pool file already exists on disk, skip write
+    let alreadyExists = false;
+    try {
+      const s = await stat(finalPath);
+      if (s.isFile() && s.size === bytes.length) {
+        alreadyExists = true;
+      }
+    } catch {}
+
+    if (!alreadyExists) {
+      const tmpName = `${hash}.${newId()}.tmp`;
+      const tmpPath = this.assertContained(join(poolDir, tmpName));
+      try {
+        await writeFile(tmpPath, bytes);
+        await rename(tmpPath, finalPath);
+      } catch (err: any) {
+        try {
+          await unlink(tmpPath);
+        } catch {}
+        throw err;
+      }
+    }
+
+    return {
+      id: hash,
+      mime,
+      ext,
+      size: bytes.length,
+      width: dimensions.width,
+      height: dimensions.height,
+      path: `/assets/pool/${finalName}`,
+      createdAt: Date.now()
+    };
+  }
+
+  async resolvePool(hash: string): Promise<string | null> {
+    if (!hash || typeof hash !== 'string' || !/^[0-9a-f]{64}$/i.test(hash)) {
+      return null;
+    }
+    const cleanHash = hash.toLowerCase();
+    const poolDir = this.assertContained(join(this.rootDir, 'pool'));
+    const candidateExts = ['.webp', '.png', '.jpg', '.gif'];
+
+    for (const ext of candidateExts) {
+      const candidatePath = join(poolDir, `${cleanHash}${ext}`);
+      try {
+        const s = await stat(candidatePath);
+        if (s.isFile()) {
+          return `/assets/pool/${cleanHash}${ext}`;
+        }
+      } catch {
+        // Continue searching
+      }
+    }
+
+    return null;
   }
 }
