@@ -2,6 +2,7 @@
   import type { ChatHubGroup, ChatView } from '@formatavern/shared';
   import Icon from '../ui/Icon.svelte';
   import Spinner from '../ui/Spinner.svelte';
+  import ShowcaseBody from '../showcase/ShowcaseBody.svelte';
 
   let {
     group,
@@ -120,7 +121,15 @@
                 "{character.tagline}"
               </p>
             {/if}
-            {#if character.description}
+            {#if character.showcase}
+              <div class="relative max-h-60 overflow-hidden" data-testid="hub-showcase-excerpt">
+                <ShowcaseBody markdown={character.showcase} />
+                <div
+                  class="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-(--chrome-surface) to-transparent"
+                  aria-hidden="true"
+                ></div>
+              </div>
+            {:else if character.description}
               <p class="line-clamp-3 text-xs leading-relaxed text-(--chrome-text)/80">
                 {character.description}
               </p>

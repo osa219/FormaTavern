@@ -259,7 +259,7 @@ export class SQLiteChatRepository implements ChatRepository {
         GROUP BY primary_character_id
       )
       SELECT 
-        c.id, c.name, c.character_name, c.tagline, c.avatar, c.creator, c.style, c.description, c.created_at, c.updated_at,
+        c.id, c.name, c.character_name, c.tagline, c.avatar, c.creator, c.style, c.description, c.showcase, c.created_at, c.updated_at,
         s.chat_count,
         s.last_chat_at
       FROM char_stats s
@@ -395,7 +395,8 @@ export class SQLiteChatRepository implements ChatRepository {
         storyCount: Number(r.chat_count ?? 0),
         lastStoryAt: Number(r.last_chat_at ?? 0),
         updatedAt: Number(r.updated_at),
-        description: r.description ?? undefined
+        description: r.description ?? undefined,
+        showcase: r.showcase ?? undefined
       },
       chatCount: Number(r.chat_count ?? 0),
       lastChatAt: Number(r.last_chat_at ?? 0),

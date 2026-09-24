@@ -51,6 +51,36 @@ describe('routes/chats/hub', () => {
     expect(eldrinGroup!.recentChats[2].id).toBe('chat-eldrin-2');
   });
 
+  it('includes character showcase in hub groups for rendered excerpts', async () => {
+    const { app, repos } = setupTestApp();
+
+    repos.characters.upsert({
+      id: 'char-showcase-hub',
+      name: 'Showcase Hero',
+      description: '',
+      personality: 'Bold',
+      scenario: 'Arena',
+      firstMessage: 'Welcome.',
+      style: repos.characters.get('eldrin-the-mage')!.style,
+      showcase: '<p>Hero blurb with <strong>formatting</strong></p>',
+      tags: []
+    } as any);
+    repos.chats.create({
+      id: 'chat-showcase-hub-1',
+      title: 'Showcase Chat',
+      primaryCharacterId: 'char-showcase-hub',
+      activePersonaId: 'persona-default'
+    });
+
+    const res = await app.handle(new Request('http://127.0.0.1/api/chats/hub'));
+    expect(res.status).toBe(200);
+    const data = (await res.json()) as ChatHubResponse;
+
+    const group = data.items.find((g) => g.character.id === 'char-showcase-hub');
+    expect(group).toBeDefined();
+    expect(group!.character.showcase).toBe('<p>Hero blurb with <strong>formatting</strong></p>');
+  });
+
   it('supports keyset pagination across pages and respects limit clamp', async () => {
     const { app, repos } = setupTestApp();
 

@@ -94,7 +94,8 @@ export type ChatHubRecentItem = Static<typeof ChatHubRecentItemSchema>;
 export const ChatHubCharacterSchema = Type.Composite([
   CharacterSummarySchema,
   Type.Object({
-    description: Type.Optional(Type.String())
+    description: Type.Optional(Type.String()),
+    showcase: Type.Optional(Type.String())
   })
 ]);
 export type ChatHubCharacter = Static<typeof ChatHubCharacterSchema>;
