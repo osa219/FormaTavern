@@ -846,6 +846,7 @@ export class SqliteCharacterRepository implements CharacterRepository {
 export class SqlitePersonaRepository implements PersonaRepository {
   private stmtList: Statement<PersonaRow, []>;
   private stmtGet: Statement<PersonaRow, [string]>;
+  private stmtFindByName: Statement<PersonaRow, [string]>;
   private stmtGetDefault: Statement<PersonaRow, []>;
   private stmtCount: Statement<{ count: number }, []>;
   private stmtRemove: Statement<void, [string]>;
@@ -856,6 +857,7 @@ export class SqlitePersonaRepository implements PersonaRepository {
   constructor(private db: Database) {
     this.stmtList = db.query(`SELECT * FROM personas ORDER BY updated_at DESC;`);
     this.stmtGet = db.query(`SELECT * FROM personas WHERE id = ?;`);
+    this.stmtFindByName = db.query(`SELECT * FROM personas WHERE name = ? LIMIT 1;`);
     this.stmtGetDefault = db.query(`SELECT * FROM personas WHERE is_default = 1 LIMIT 1;`);
     this.stmtCount = db.query(`SELECT count(*) as count FROM personas;`);
     this.stmtRemove = db.query(`DELETE FROM personas WHERE id = ?;`);
@@ -899,6 +901,11 @@ export class SqlitePersonaRepository implements PersonaRepository {
 
   get(id: string): Persona | null {
     const row = this.stmtGet.get(id);
+    return row ? rowToPersona(row) : null;
+  }
+
+  findByName(name: string): Persona | null {
+    const row = this.stmtFindByName.get(name);
     return row ? rowToPersona(row) : null;
   }
 

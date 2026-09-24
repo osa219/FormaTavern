@@ -20,6 +20,7 @@
     "db:reset": "bun run --cwd backend db:reset",
     "db:reindex": "bun run --cwd backend db:reindex",
     "assets:gc": "bun run --cwd backend assets:gc",
+    "import:custom-engine": "bun run --cwd backend import:custom-engine",
     "clean": "rm -rf node_modules frontend/.svelte-kit frontend/build"
   },
   "devDependencies": {

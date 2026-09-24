@@ -45,6 +45,7 @@ export interface CharacterRepository {
 export interface PersonaRepository {
   list(): Persona[];
   get(id: string): Persona | null;
+  findByName(name: string): Persona | null;
   getDefault(): Persona | null;
   create(input: PersonaCreate): Persona;
   patch(id: string, input: PersonaPatch): Persona | 'stale' | 'missing';
