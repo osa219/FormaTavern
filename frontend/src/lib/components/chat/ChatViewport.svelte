@@ -8,6 +8,7 @@
   import { api, toUiError } from '$lib/api';
   import { media } from '$lib/state/media.svelte';
   import { prefs } from '$lib/state/prefs.svelte';
+  import { settingsStore } from '$lib/state/settings.svelte';
   import { toasts } from '$lib/state/toasts.svelte';
 
   import { handleGlobalKeydown } from '$lib/actions/shortcuts';
@@ -22,7 +23,7 @@
   import SettingsSheet from '../settings/SettingsSheet.svelte';
   import ConfirmDialog from '../dialogs/ConfirmDialog.svelte';
   import CustomStyleOutlet from '../custom/CustomStyleOutlet.svelte';
-  import { selectPartitionSurface, resolveCharacterName } from '@formatavern/shared';
+  import { selectPartitionSurface, resolveCharacterName, resolveStateTracking } from '@formatavern/shared';
 
   let {
     session,
@@ -247,6 +248,36 @@
       toasts.error(toUiError(err).message);
     }
   }
+
+  async function handleUpdateStateTracking(policy: 'inherited' | 'on' | 'off') {
+    if (!session.chat) return;
+    const value = policy === 'inherited' ? null : policy === 'on';
+    const nextMeta = { ...session.chat.metadata };
+    if (value !== null) {
+      nextMeta.stateEnabled = value;
+    } else {
+      delete nextMeta.stateEnabled;
+    }
+    session.chat.metadata = nextMeta;
+    try {
+      await api.api.chats({ id: session.chatId }).patch({
+        metadata: { stateEnabled: value }
+      });
+    } catch (err: any) {
+      toasts.error(toUiError(err).message);
+    }
+  }
+
+  const stateTrackingEnabled = $derived(
+    resolveStateTracking({
+      chat: session.chat?.metadata ?? null,
+      card: session.character,
+      settings: settingsStore.settings
+    })
+  );
+  const chatIsNarrative = $derived(
+    (session.chat?.metadata?.narrativeMode ?? settingsStore.settings?.narrative?.defaultMode ?? 'narrative') === 'narrative'
+  );
 
   onDestroy(() => {
     clearTimeout(standingDebounce);
@@ -495,7 +526,11 @@
         onToggleNav: () => {
           settingsOpen = false;
           loreOpen = false;
-          loadNavData();
+    loadNavData();
+
+    if (!settingsStore.settings && !settingsStore.loading) {
+      void settingsStore.load();
+    }
           navOpen = !navOpen;
         },
         onToggleLore: () => {
@@ -541,6 +576,11 @@
   <TopBar
     character={session.character}
     chat={session.chat}
+    stateEnabled={stateTrackingEnabled && chatIsNarrative}
+    onOpenState={() => {
+      loreTab = 'state';
+      loreOpen = true;
+    }}
     currentState={session.currentState}
     stateSource={session.messages[session.messages.length - 1]?.metadata?.stateSource ?? 'initial'}
     onToggleNav={() => {
@@ -706,6 +746,7 @@
       }}
       onConvertChat={handleConvertChat}
       onUpdatePersonaVoicing={handleUpdatePersonaVoicing}
+      onUpdateStateTracking={handleUpdateStateTracking}
     />
   {/if}
 </div>

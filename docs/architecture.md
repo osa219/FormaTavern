@@ -233,11 +233,11 @@ Pure `buildPrompt(PromptContext) → BuiltPrompt` (E6). Fourteen ordered block i
 | 6 | Lorebook entries (pre-matched; engine deferred) | provided |
 | 6b | NPC voice cards (npcs seen in last 6 assistant turns + `chat.metadata.npcs[].voice`) | narrative |
 | 7 | User persona | always |
-| 7b | `[Scene state: k=v…]` in schema key order | narrative + state |
+| 7b | `[Scene state: k=v…]` in schema key order | narrative + state tracking on |
 | 8 | History: assistant rows via `stripOutOfBand` (fences kept, state/reasoning removed); every user row serialized with a header (`persona` included, raw fallback on delimiter collision); greeting roots (assistant, `parentId` null) go through the greeting pipeline (tagged→convert, else prologue/split/reviewed per `greetingMode`, raw in classic); skips `error`/`streaming`/director-only rows; past director notes never serialized | always |
-| 9a / 9b / 9c | Standing direction / one-shot director note / response format (dialect grammar, clean structural template, state field list) | as set / narrative |
+| 9a / 9b / 9c | Standing direction / one-shot director note / response format (dialect grammar, clean structural template, state field list) | as set / narrative; 9c state lines and 7b only when state tracking resolves on |
 
-Also: macros applied to every outbound string; `[Scene begins.]` prepended when history starts with assistant; `[Continue the scene.]` synthetic user turn when history ends on assistant; continuation via `assistantPrefill` (providers with `prefill`) or a nudge; budgeting with `gpt-tokenizer` (`cl100k_base`, 0.9 safety factor) dropping oldest turns whole, never the trigger (`PromptBudgetError` → 413). Golden file: `backend/test/prompt/__golden__/eldrin-narrative-directive.txt`.
+Also: macros applied to every outbound string; `[Scene begins.]` prepended when history starts with assistant; `[Continue the scene.]` synthetic user turn when history ends on assistant; continuation via `assistantPrefill` (providers with `prefill`) or a nudge; budgeting with `gpt-tokenizer` (`cl100k_base`, 0.9 safety factor) dropping oldest turns whole, never the trigger (`PromptBudgetError` → 413). State tracking resolves per turn as `chat.metadata.stateEnabled ?? card.stateEnabled ?? settings.narrative.stateEnabled ?? true` (default on; classic chats never track state and hide the state HUD). Golden file: `backend/test/prompt/__golden__/eldrin-narrative-directive.txt`.
 
 ---
 

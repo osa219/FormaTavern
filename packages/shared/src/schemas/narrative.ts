@@ -46,6 +46,7 @@ export const ChatMetadataSchema = Type.Object({
   narrativeMode: Type.Optional(Type.Union([Type.Literal('classic'), Type.Literal('narrative')])),
   envelopeDialect: Type.Optional(Type.Union([Type.Literal('directive'), Type.Literal('xml'), Type.Literal('prefix')])),
   personaVoicing: Type.Optional(Type.Union([PersonaVoicingPolicy, Type.Null()])),
+  stateEnabled: Type.Optional(Type.Union([Type.Boolean(), Type.Null()])),
   standingDirection: Type.Optional(Type.String()),
   npcs: Type.Optional(
     Type.Record(

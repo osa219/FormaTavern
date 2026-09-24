@@ -52,6 +52,49 @@ describe('engine/context', () => {
     expect(normalizeNpcKey('Apprentice')).toBe('apprentice');
   });
 
+  it('resolves state tracking chat over card over global with default on', () => {
+    const base = {
+      chat: dummyChat,
+      character: dummyCharacter,
+      persona: dummyPersona,
+      settings: DEFAULT_SETTINGS,
+      triggerId: '01-U1',
+      capabilities: { prefill: true },
+      pathRows: [] as MessageRow[]
+    };
+    // Unset everywhere: on, scene state present.
+    const onCtx = assembleContext(base);
+    expect(onCtx.stateEnabled).toBe(true);
+    expect(onCtx.sceneState).toBeDefined();
+
+    // Chat override wins over card and global.
+    const chatOff = assembleContext({
+      ...base,
+      chat: { metadata: { ...dummyChat.metadata, stateEnabled: false } },
+      character: { ...dummyCharacter, stateEnabled: true },
+      settings: { ...DEFAULT_SETTINGS, narrative: { ...DEFAULT_SETTINGS.narrative, stateEnabled: true } }
+    });
+    expect(chatOff.stateEnabled).toBe(false);
+    expect(chatOff.sceneState).toBeUndefined();
+
+    // Card beats global.
+    const cardOff = assembleContext({
+      ...base,
+      character: { ...dummyCharacter, stateEnabled: false },
+      settings: { ...DEFAULT_SETTINGS, narrative: { ...DEFAULT_SETTINGS.narrative, stateEnabled: true } }
+    });
+    expect(cardOff.stateEnabled).toBe(false);
+    expect(cardOff.sceneState).toBeUndefined();
+
+    // Global off applies when chat and card are silent.
+    const globalOff = assembleContext({
+      ...base,
+      settings: { ...DEFAULT_SETTINGS, narrative: { ...DEFAULT_SETTINGS.narrative, stateEnabled: false } }
+    });
+    expect(globalOff.stateEnabled).toBe(false);
+    expect(globalOff.sceneState).toBeUndefined();
+  });
+
   it('nearestState skips user rows and error rows, and falls back to defaultState', () => {
     const defaultRes = nearestState([], dummyCharacter);
     expect(defaultRes).toEqual({ mood: 'calm', affinity: 10 });

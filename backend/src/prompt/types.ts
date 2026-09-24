@@ -24,6 +24,8 @@ export interface PromptContext {
   character: CharacterCard;
   persona: Persona;
   chat: ChatMetadata;
+  /** Resolved state-tracking switch (chat → card → global → on). Gates 7b and the 9c state lines. */
+  stateEnabled?: boolean;
   /** Single canonical narrative example (directive-authored), rendered per dialect. */
   narrativeExample?: string;
   history: HistoryTurn[];

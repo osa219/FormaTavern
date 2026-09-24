@@ -86,6 +86,7 @@ function cardToRow(card: CharacterCard, now: number) {
   if (card.creatorUrl !== undefined) metadataObj.creatorUrl = card.creatorUrl;
   if (card.characterUrl !== undefined) metadataObj.characterUrl = card.characterUrl;
   if (card.origin !== undefined) metadataObj.origin = card.origin;
+  if (card.stateEnabled !== undefined) metadataObj.stateEnabled = card.stateEnabled;
   if (card.labels !== undefined) metadataObj.labels = card.labels;
   if (card.version !== undefined) metadataObj.version = card.version;
   if (card.greetingMode !== undefined) metadataObj.greetingMode = card.greetingMode;
@@ -167,6 +168,7 @@ function rowToCard(row: CharacterRow, tags: string[] = []): CharacterCard {
     if (!card.creatorUrl && meta.creatorUrl !== undefined) card.creatorUrl = meta.creatorUrl;
     if (!card.characterUrl && meta.characterUrl !== undefined) card.characterUrl = meta.characterUrl;
     if (!card.origin && meta.origin !== undefined) card.origin = meta.origin;
+    if (card.stateEnabled === undefined && meta.stateEnabled !== undefined) card.stateEnabled = meta.stateEnabled;
     if (meta.labels !== undefined) card.labels = meta.labels;
     if (meta.version !== undefined) card.version = meta.version;
     if (meta.greetingMode !== undefined) card.greetingMode = meta.greetingMode;
@@ -553,6 +555,7 @@ export class SqliteCharacterRepository implements CharacterRepository {
         ...currentCard,
         name: input.name !== undefined ? input.name : currentCard.name,
         characterName: input.characterName !== undefined ? input.characterName : currentCard.characterName,
+        stateEnabled: input.stateEnabled !== undefined ? input.stateEnabled : currentCard.stateEnabled,
         avatar: input.avatar !== undefined ? input.avatar : currentCard.avatar,
         tagline: input.tagline !== undefined ? input.tagline : currentCard.tagline,
         creator: input.creator !== undefined ? input.creator : currentCard.creator,

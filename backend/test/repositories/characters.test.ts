@@ -444,4 +444,28 @@ describe('SqliteCharacterRepository (Phase 5)', () => {
       expect(patched.greetingEnvelope?.first).toContain(':::narrator');
     }
   });
+
+  it('round-trips the card state-tracking default via metadata', () => {
+    inst = openTestDb(':memory:');
+    runMigrations(inst.db);
+    const repos = createRepositories(inst.db);
+
+    const c = repos.characters.create({ ...makeCard('stateless', 'Stateless'), stateEnabled: false });
+    expect(c.stateEnabled).toBe(false);
+    expect(repos.characters.get('stateless')?.stateEnabled).toBe(false);
+
+    // Cards without the flag read back as undefined (inherit → on).
+    repos.characters.upsert(makeCard('plain-s', 'Plain S'));
+    expect(repos.characters.get('plain-s')?.stateEnabled).toBeUndefined();
+
+    const patched = repos.characters.patch('stateless', {
+      stateEnabled: true,
+      expectedUpdatedAt: repos.characters.get('stateless')!.updatedAt!
+    });
+    expect(typeof patched).not.toBe('string');
+    if (typeof patched !== 'string') {
+      expect(patched.stateEnabled).toBe(true);
+    }
+    expect(repos.characters.get('stateless')?.stateEnabled).toBe(true);
+  });
 });

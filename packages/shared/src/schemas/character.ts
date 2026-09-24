@@ -50,6 +50,7 @@ export const CharacterCardSchema = Type.Object({
   creatorUrl: Type.Optional(HttpUrl),
   characterUrl: Type.Optional(HttpUrl),
   origin: Type.Optional(Type.String({ minLength: 1, maxLength: 120 })),
+  stateEnabled: Type.Optional(Type.Boolean()),
   labels: Type.Optional(Type.Object({
     startStory: Type.Optional(Type.String({ maxLength: 40 }))
   })),
@@ -147,6 +148,7 @@ export const CharacterMetadataSchema = Type.Object({
   creatorUrl: Type.Optional(HttpUrl),
   characterUrl: Type.Optional(HttpUrl),
   origin: Type.Optional(Type.String()),
+  stateEnabled: Type.Optional(Type.Boolean()),
   labels: Type.Optional(Type.Object({
     startStory: Type.Optional(Type.String({ maxLength: 40 }))
   })),

@@ -60,6 +60,29 @@
     </div>
   </div>
 
+  <!-- State Tracking Switch (card default; chats and global settings can override) -->
+  <div class="flex items-center justify-between gap-3 rounded-2xl border border-(--chrome-line) bg-(--chrome-surface)/60 px-4 py-3">
+    <div>
+      <span class="block text-xs font-semibold text-(--chrome-text)">State tracking</span>
+      <span class="block text-[11px] text-(--chrome-text)/60 mt-0.5">
+        When off, chats on this card skip the state block in the response format, the scene-state prompt line, and the state HUD.
+      </span>
+    </div>
+    <select
+      value={draft.card.stateEnabled === true ? 'on' : draft.card.stateEnabled === false ? 'off' : 'inherited'}
+      onchange={(e) => {
+        const v = (e.target as HTMLSelectElement).value;
+        draft.card.stateEnabled = v === 'inherited' ? undefined : v === 'on';
+      }}
+      class="rounded-lg border border-(--chrome-line) bg-(--chrome-bg) px-2 py-1.5 text-xs font-mono text-(--chrome-text) focus:border-accent focus:outline-none shrink-0"
+      aria-label="State tracking default for this card"
+    >
+      <option value="inherited">Inherited</option>
+      <option value="on">On</option>
+      <option value="off">Off</option>
+    </select>
+  </div>
+
   <!-- Add New State Variable -->
   <div class="flex items-center gap-3">
     <label for="new-state-key" class="sr-only">New State Variable Key</label>

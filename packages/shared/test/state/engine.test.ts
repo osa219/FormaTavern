@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test';
-import { defaultState, resolveState } from '../../src/state/engine';
+import { defaultState, resolveState, resolveStateTracking } from '../../src/state/engine';
 import type { CharacterCard } from '../../src/schemas/character';
 import type { StateField } from '../../src/schemas/state';
 
@@ -105,5 +105,35 @@ describe('State Engine (defaultState & resolveState)', () => {
     expect(res.source).toBe('inherited');
     expect(res.state).toEqual(prev);
     expect(res.warnings).toEqual([]);
+  });
+
+  it('treats an empty schema object as schemaless and keeps primitives', () => {
+    // Studio persists stateSchema: {} for cards without variables; it must
+    // not act as a strict schema that drops every reported key.
+    const res = resolveState({}, { mood: 'welcoming', scene: 'choosing a story genre' }, {});
+    expect(res.source).toBe('patch');
+    expect(res.state).toEqual({ mood: 'welcoming', scene: 'choosing a story genre' });
+    expect(res.warnings).toEqual([]);
+  });
+});
+
+describe('State Tracking Cascade (resolveStateTracking)', () => {
+  it('defaults to on when unset everywhere', () => {
+    expect(resolveStateTracking({})).toBe(true);
+    expect(resolveStateTracking({ chat: {}, card: {}, settings: {} })).toBe(true);
+    expect(resolveStateTracking({ chat: null, card: null, settings: null })).toBe(true);
+  });
+
+  it('prefers chat over card over global', () => {
+    expect(resolveStateTracking({ chat: { stateEnabled: false }, card: { stateEnabled: true }, settings: { narrative: { stateEnabled: true } } })).toBe(false);
+    expect(resolveStateTracking({ chat: { stateEnabled: true }, card: { stateEnabled: false }, settings: { narrative: { stateEnabled: false } } })).toBe(true);
+    expect(resolveStateTracking({ card: { stateEnabled: false }, settings: { narrative: { stateEnabled: true } } })).toBe(false);
+    expect(resolveStateTracking({ settings: { narrative: { stateEnabled: false } } })).toBe(false);
+    expect(resolveStateTracking({ settings: { narrative: { stateEnabled: true } } })).toBe(true);
+  });
+
+  it('treats null chat flag as inherited', () => {
+    expect(resolveStateTracking({ chat: { stateEnabled: null }, card: { stateEnabled: false } })).toBe(false);
+    expect(resolveStateTracking({ chat: { stateEnabled: null } })).toBe(true);
   });
 });

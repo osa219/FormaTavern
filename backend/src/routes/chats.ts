@@ -242,6 +242,9 @@ export function createChatsRouter(deps: {
         if (mergedMeta && (patch.metadata as any)?.personaVoicing === null) {
           delete (mergedMeta as any).personaVoicing;
         }
+        if (mergedMeta && (patch.metadata as any)?.stateEnabled === null) {
+          delete (mergedMeta as any).stateEnabled;
+        }
 
         const updated = repos.chats.update(params.id, {
           title: patch.title,

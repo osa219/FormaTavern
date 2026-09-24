@@ -56,19 +56,23 @@ export function resolveState(
   const warnings: string[] = [];
   const coercedPatch: StateVector = {};
 
+  // An empty schema object (what Studio persists for cards without variables)
+  // behaves as schemaless: primitives pass through instead of being dropped.
+  const effectiveSchema = schema && Object.keys(schema).length > 0 ? schema : undefined;
+
   for (const [key, rawVal] of Object.entries(patch)) {
     if (rawVal === null || rawVal === undefined) {
       warnings.push(`Key "${key}" has null or undefined value; dropped`);
       continue;
     }
 
-    if (schema) {
-      if (!(key in schema)) {
+    if (effectiveSchema) {
+      if (!(key in effectiveSchema)) {
         warnings.push(`Unknown state key "${key}"; dropped`);
         continue;
       }
 
-      const def = schema[key];
+      const def = effectiveSchema[key];
       if (def.type === 'enum') {
         const rawStr = String(rawVal).trim().toLowerCase();
 
@@ -140,4 +144,26 @@ export function resolveState(
     source: 'patch',
     warnings
   };
+}
+
+/**
+ * Card vs chat vs global cascade for state tracking (mirrors the
+ * personaVoicing cascade): per-chat override wins, then the card default,
+ * then the global narrative setting. Unset everywhere means ON, so every
+ * existing card and chat keeps today's behavior with no migration.
+ */
+export function resolveStateTracking(
+  opts: {
+    chat?: { stateEnabled?: boolean | null } | null;
+    card?: { stateEnabled?: boolean } | null;
+    settings?: { narrative?: { stateEnabled?: boolean } } | null;
+  } = {}
+): boolean {
+  const chatFlag = opts.chat?.stateEnabled;
+  if (chatFlag !== undefined && chatFlag !== null) return chatFlag;
+  const cardFlag = opts.card?.stateEnabled;
+  if (cardFlag !== undefined) return cardFlag;
+  const globalFlag = opts.settings?.narrative?.stateEnabled;
+  if (globalFlag !== undefined) return globalFlag;
+  return true;
 }

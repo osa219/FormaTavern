@@ -134,6 +134,10 @@ export class SQLiteSettingsRepository implements SettingsRepository {
         if (p.narrative.example === null || (typeof p.narrative.example === 'string' && p.narrative.example.trim() === '')) {
           delete merged.example;
         }
+        // Null clears the state-tracking override back to the default (on).
+        if (p.narrative.stateEnabled === null) {
+          delete merged.stateEnabled;
+        }
         upsertStmt.run('narrative', JSON.stringify(merged), now);
       }
 

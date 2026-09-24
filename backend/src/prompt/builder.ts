@@ -171,13 +171,15 @@ function skipReason(id: BlockId, ctx: PromptContext): string {
     case '7':
       return 'no persona';
     case '7b':
-      return mode !== 'narrative' ? CLASSIC_MODE_REASON : 'no scene state';
+      if (mode !== 'narrative') return CLASSIC_MODE_REASON;
+      return ctx.stateEnabled === false ? 'state tracking disabled' : 'no scene state';
     case '9a':
       return 'no standing direction';
     case '9b':
       return 'no director note for this turn';
     case '9c':
-      return mode !== 'narrative' ? CLASSIC_MODE_REASON : 'empty closing instruction';
+      if (mode !== 'narrative') return CLASSIC_MODE_REASON;
+      return ctx.stateEnabled === false ? 'state tracking disabled' : 'empty closing instruction';
     default:
       return 'empty';
   }

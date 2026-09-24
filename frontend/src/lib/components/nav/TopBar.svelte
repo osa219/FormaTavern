@@ -10,20 +10,24 @@
     currentState = {},
     stateSource = 'initial',
     stateWarnings = [],
+    stateEnabled = true,
     onToggleNav,
     onToggleSettings,
     onToggleLore,
-    onOverrideState
+    onOverrideState,
+    onOpenState
   }: {
     character?: CharacterCard | null;
     chat?: ChatView | null;
     currentState?: StateVector;
     stateSource?: 'initial' | 'patch' | 'inherited' | 'override';
     stateWarnings?: string[];
+    stateEnabled?: boolean;
     onToggleNav: () => void;
     onToggleSettings: () => void;
     onToggleLore?: () => void;
     onOverrideState?: (patch: StateVector) => void;
+    onOpenState?: () => void;
   } = $props();
 
 </script>
@@ -86,13 +90,14 @@
 
   <!-- Right: State HUD & Settings -->
   <div class="flex min-w-0 items-center gap-1.5 md:gap-2">
-    {#if character}
+    {#if character && stateEnabled}
       <StateHud
         {currentState}
         {stateSource}
         {stateWarnings}
         schema={character.stateSchema}
         onOverride={onOverrideState}
+        onOpenState={onOpenState}
       />
     {/if}
 

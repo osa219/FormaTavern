@@ -25,7 +25,8 @@
     onOpenStateOverride,
     onEditSettings,
     onConvertChat,
-    onUpdatePersonaVoicing
+    onUpdatePersonaVoicing,
+    onUpdateStateTracking
   }: {
     open: boolean;
     character: CharacterCard;
@@ -42,6 +43,7 @@
     onEditSettings?: () => void;
     onConvertChat?: (targetDialect: ConvertDialect) => Promise<{ converted: number; unchanged: number }>;
     onUpdatePersonaVoicing?: (policy: 'inherited' | 'prohibited' | 'allowed') => Promise<void>;
+    onUpdateStateTracking?: (policy: 'inherited' | 'on' | 'off') => Promise<void>;
   } = $props();
 
   type LoreTab = 'about' | 'voice' | 'you' | 'state' | 'prompt';
@@ -314,6 +316,29 @@
                   </span>
                 {/if}
               </div>
+
+              <div class="flex items-center justify-between gap-2 border-t border-(--chrome-line) pt-2 text-[11px]">
+                <div>
+                  <span class="text-(--chrome-text)/70">State Tracking:</span>
+                </div>
+                {#if onUpdateStateTracking}
+                  {@const inheritedState = character?.stateEnabled ?? settingsStore.settings?.narrative?.stateEnabled ?? true}
+                  <select
+                    value={chat?.metadata?.stateEnabled === true ? 'on' : chat?.metadata?.stateEnabled === false ? 'off' : 'inherited'}
+                    onchange={(e) => onUpdateStateTracking?.(e.currentTarget.value as any)}
+                    class="rounded border border-(--chrome-line) bg-(--chrome-bg) px-1.5 py-0.5 font-mono text-[11px] text-(--chrome-text) focus:border-accent focus:outline-none"
+                    aria-label="State Tracking Policy"
+                  >
+                    <option value="inherited">inherited ({inheritedState ? 'on' : 'off'})</option>
+                    <option value="on">on</option>
+                    <option value="off">off</option>
+                  </select>
+                {:else}
+                  <span class="rounded border border-(--chrome-line) bg-(--chrome-bg) px-1.5 py-0.5 font-mono text-(--chrome-text)/80">
+                    {chat?.metadata?.stateEnabled === true ? 'on' : chat?.metadata?.stateEnabled === false ? 'off' : `inherited (${(character?.stateEnabled ?? settingsStore.settings?.narrative?.stateEnabled ?? true) ? 'on' : 'off'})`}
+                  </span>
+                {/if}
+              </div>
             </div>
           {/if}
           {#if character.showcase}
@@ -438,7 +463,29 @@
             </div>
 
             {#if !character.stateSchema || Object.keys(character.stateSchema).length === 0}
-              <p class="text-(--chrome-text)/50 italic">This character has no state schema variables configured.</p>
+              {@const liveEntries = Object.entries(currentState ?? {})}
+              {#if liveEntries.length === 0}
+                <p class="text-(--chrome-text)/50 italic">This character has no state schema variables configured.</p>
+              {:else}
+                <div class="overflow-hidden rounded-xl border border-(--chrome-line)">
+                  <table class="w-full text-left text-xs font-mono">
+                    <thead class="border-b border-(--chrome-line) bg-(--chrome-bg) text-(--chrome-text)/70 text-[11px]">
+                      <tr>
+                        <th class="p-2.5">Key</th>
+                        <th class="p-2.5">Value</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-(--chrome-line)/60 bg-(--chrome-bg)/40">
+                      {#each liveEntries as [key, value] (key)}
+                        <tr>
+                          <td class="p-2.5 font-semibold text-(--chrome-text)">{key}</td>
+                          <td class="p-2.5 text-accent">{String(value ?? '—')}</td>
+                        </tr>
+                      {/each}
+                    </tbody>
+                  </table>
+                </div>
+              {/if}
             {:else}
               <div class="overflow-hidden rounded-xl border border-(--chrome-line)">
                 <table class="w-full text-left text-xs font-mono">

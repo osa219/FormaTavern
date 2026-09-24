@@ -44,7 +44,8 @@ export const AppSettingsSchema = Type.Object({
     personaVoicing: Type.Union([
       Type.Literal('prohibited'),
       Type.Literal('allowed')
-    ], { default: 'prohibited' })
+    ], { default: 'prohibited' }),
+    stateEnabled: Type.Optional(Type.Boolean())
   }, { default: { defaultMode: 'narrative', defaultDialect: 'prefix', personaVoicing: 'prohibited' } }),
   preamble: Type.Optional(Type.String({ maxLength: 20_000 }))
 });
@@ -98,7 +99,8 @@ export const SettingsViewSchema = Type.Object({
       Type.Literal('prefix')
     ]),
     example: Type.Optional(Type.String()),
-    personaVoicing: Type.Union([Type.Literal('prohibited'), Type.Literal('allowed')])
+    personaVoicing: Type.Union([Type.Literal('prohibited'), Type.Literal('allowed')]),
+    stateEnabled: Type.Optional(Type.Boolean())
   }),
   exampleRenderings: Type.Object({
     directive: Type.String(),
@@ -151,7 +153,8 @@ export const SettingsPatchSchema = Type.Object({
       Type.Literal('prefix')
     ]),
     example: Type.Optional(Type.Union([Type.String({ maxLength: 20_000 }), Type.Null()])),
-    personaVoicing: Type.Optional(Type.Union([Type.Literal('prohibited'), Type.Literal('allowed')]))
+    personaVoicing: Type.Optional(Type.Union([Type.Literal('prohibited'), Type.Literal('allowed')])),
+    stateEnabled: Type.Optional(Type.Union([Type.Boolean(), Type.Null()]))
   }))),
   preamble: Type.Optional(Type.Union([Type.String({ maxLength: 20_000 }), Type.Null()]))
 });

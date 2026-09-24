@@ -103,6 +103,7 @@ export function createCharactersRouter({ repos, assets, providers }: CharactersR
           characterUrl: draft.characterUrl,
           origin: draft.origin,
           version: draft.version,
+          stateEnabled: draft.stateEnabled,
           showcase: draft.showcase,
           customCss: draft.customCss,
           tagline: draft.tagline

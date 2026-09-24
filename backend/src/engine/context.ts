@@ -1,6 +1,7 @@
 import {
   DEFAULT_SETTINGS,
   defaultState,
+  resolveStateTracking,
   type AppSettings,
   type CharacterCard,
   type ChatMetadata,
@@ -72,7 +73,12 @@ export function assembleContext(input: AssembleContextInput): AssembledContext {
 
   const previousState = nearestState(pathRows, input.character);
   const isNarrative = input.chat.metadata.narrativeMode === 'narrative';
-  const sceneState = isNarrative ? previousState : undefined;
+  const stateEnabled = resolveStateTracking({
+    chat: input.chat.metadata,
+    card: input.character,
+    settings: input.settings
+  });
+  const sceneState = isNarrative && stateEnabled ? previousState : undefined;
 
   const assistantRows = pathRows.filter((r) => r.role === 'assistant').slice(-6);
   const activeNpcsMap = new Map<string, { displayName: string; voice?: string }>();
@@ -106,6 +112,7 @@ export function assembleContext(input: AssembleContextInput): AssembledContext {
     character: input.character,
     persona: input.persona,
     chat: input.chat.metadata,
+    stateEnabled,
     narrativeExample: input.settings.narrative.example,
     history,
     directorNote,

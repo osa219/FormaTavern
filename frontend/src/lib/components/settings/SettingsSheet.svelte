@@ -1161,6 +1161,24 @@ import { api } from '$lib/api';
           </p>
         </div>
 
+        <div>
+          <label for="state-tracking" class="mb-1 block font-medium text-(--chrome-text)">
+            State Tracking (Scene State Block)
+          </label>
+          <select
+            id="state-tracking"
+            value={s.narrative.stateEnabled === false ? 'off' : 'on'}
+            onchange={(e) => settingsStore.patch({ narrative: { stateEnabled: e.currentTarget.value === 'on' } })}
+            class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text) focus:border-accent focus:outline-none"
+          >
+            <option value="on">On — model reports scene state every turn (Default)</option>
+            <option value="off">Off — skip the state block in the response format</option>
+          </select>
+          <p class="mt-1 text-[11px] text-(--chrome-text)/60">
+            Applies to three-track narrative chats. Can be overridden per card and per chat. Classic chats never track state.
+          </p>
+        </div>
+
         {#if s.narrative.defaultMode === 'narrative'}
           <div>
             <label for="narrative-dialect" class="mb-1 block font-medium text-(--chrome-text)">

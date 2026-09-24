@@ -285,6 +285,54 @@ describe('PromptBuilder', () => {
     expect(idx9c).toBeGreaterThan(idx9b);
   });
 
+  describe('State tracking switch', () => {
+    it('omits state lines from 9c and the 7b scene line when disabled', () => {
+      const built = buildPrompt(makeContext({ stateEnabled: false }));
+      expect(built.blocks.find((b) => b.id === '9c')!.included).toBe(true);
+      expect(built.blocks.find((b) => b.id === '7b')!.included).toBe(false);
+      expect(built.systemPrompt).not.toContain('[Scene state:');
+      const lastUserMsg = built.history[built.history.length - 1];
+      // Voice grammar stays so envelope adherence is preserved.
+      expect(lastUserMsg.content).toContain('[Response Format]');
+      expect(lastUserMsg.content).toContain(':::character[Eldrin the Mage]');
+      // State pieces gone.
+      expect(lastUserMsg.content).not.toContain('```state');
+      expect(lastUserMsg.content).not.toContain('End every reply with a state block');
+      expect(lastUserMsg.content).not.toContain('State schema fields:');
+    });
+
+    it('strips the state fence per dialect when disabled', () => {
+      for (const dialect of ['directive', 'xml', 'prefix'] as const) {
+        const built = buildPrompt(
+          makeContext({
+            stateEnabled: false,
+            chat: { narrativeMode: 'narrative', envelopeDialect: dialect }
+          })
+        );
+        const lastUserMsg = built.history[built.history.length - 1];
+        expect(lastUserMsg.content).toContain('[Response Format]');
+        expect(lastUserMsg.content).not.toContain('```state');
+        expect(lastUserMsg.content).not.toContain('<state>');
+      }
+    });
+
+    it('strips the state fence from a custom example when disabled', () => {
+      const custom = ':::narrator\nSnow falls.\n:::\n\n```state\n{"mood":"calm"}\n```';
+      const built = buildPrompt(makeContext({ stateEnabled: false, narrativeExample: custom }));
+      const report = built.blocks.find((b) => b.id === '9c')!;
+      expect(report.included).toBe(true);
+      expect(report.text).toContain('Snow falls.');
+      expect(report.text).not.toContain('```state');
+    });
+
+    it('defaults to state on when the flag is unset', () => {
+      const built = buildPrompt(makeContext());
+      expect(built.blocks.find((b) => b.id === '9c')!.included).toBe(true);
+      expect(built.blocks.find((b) => b.id === '7b')!.included).toBe(true);
+      expect(built.history[built.history.length - 1].content).toContain('```state');
+    });
+  });
+
   it('handles ending on assistant by appending synthetic [Continue the scene.]', () => {
     const assistantOnlyHistory: HistoryTurn[] = [
       {

@@ -27,8 +27,12 @@ function macro(text: string, ctx: PromptContext): string {
  * example, state field list). Lives at the END of the prompt as block 9c
  * (Chub-style post-history instructions): output format belongs last so it
  * is closest to generation. Retired from the system slot (1b).
+ *
+ * When state tracking is disabled, the state bullet, the example's state
+ * fence, and the closing state paragraph are omitted; the voice grammar
+ * stays so envelope adherence is preserved.
  */
-function buildFormatSpec(ctx: PromptContext, warnings: string[] = []): string {
+function buildFormatSpec(ctx: PromptContext, warnings: string[] = [], includeState = true): string {
   const dialect = getDialect(ctx);
   const isAllowed = ctx.personaVoicing === 'allowed';
   let syntaxDesc = [
@@ -37,7 +41,7 @@ function buildFormatSpec(ctx: PromptContext, warnings: string[] = []): string {
     '- :::character[{{char}}] ... ::: for {{char}}\'s spoken dialogue and thoughts.',
     ...(isAllowed ? ['- :::persona[{{user}}] ... ::: for {{user}}\'s spoken dialogue and actions.'] : []),
     '- :::npc[Name] ... ::: when a side character speaks or acts (use their actual name).',
-    '- ```state ... ``` at the very end with current mood and scene as JSON.'
+    ...(includeState ? ['- ```state ... ``` at the very end with current mood and scene as JSON.'] : [])
   ].join('\n');
 
   if (dialect === 'xml') {
@@ -47,7 +51,7 @@ function buildFormatSpec(ctx: PromptContext, warnings: string[] = []): string {
       '- <character name="{{char}}"> ... </character> for {{char}}\'s spoken dialogue and thoughts.',
       ...(isAllowed ? ['- <persona name="{{user}}"> ... </persona> for {{user}}\'s spoken dialogue and actions.'] : []),
       '- <npc name="..."> ... </npc> when a side character speaks or acts (use their actual name).',
-      '- <state> ... </state> at the very end with current mood and scene as JSON.'
+      ...(includeState ? ['- <state> ... </state> at the very end with current mood and scene as JSON.'] : [])
     ].join('\n');
   } else if (dialect === 'prefix') {
     syntaxDesc = [
@@ -56,43 +60,59 @@ function buildFormatSpec(ctx: PromptContext, warnings: string[] = []): string {
       '- {{char}}: ... for {{char}}\'s spoken dialogue and thoughts.',
       ...(isAllowed ? ['- {{user}}: ... for {{user}}\'s spoken dialogue and actions.'] : []),
       '- Name: ... when a side character speaks or acts (use their actual name).',
-      '- ```state ... ``` at the very end with current mood and scene as JSON.'
+      ...(includeState ? ['- ```state ... ``` at the very end with current mood and scene as JSON.'] : [])
     ].join('\n');
   }
   // Single canonical example (directive-authored), rendered into the active
   // dialect; falls back to built-in with a warning on render failure.
-  const example = renderExampleForDialect(
+  let example = renderExampleForDialect(
     dialect === 'classic' ? 'directive' : dialect,
     ctx.narrativeExample,
     warnings
   );
-
-  let stateDesc = 'End every reply with a state block exactly as shown above.';
-  const schemaFields = ctx.character.stateSchema ? Object.entries(ctx.character.stateSchema) : [];
-  if (schemaFields.length > 0) {
-    const fieldLines: string[] = [];
-    for (const [key, field] of schemaFields) {
-      if (field.type === 'enum') {
-        fieldLines.push(`- ${key}: one of ${field.values.join(', ')} (default ${field.default})`);
-      } else if (field.type === 'int') {
-        fieldLines.push(`- ${key}: integer ${field.min}–${field.max} (default ${field.default})`);
-      } else {
-        fieldLines.push(`- ${key}: short string (default ${field.default})`);
-      }
-    }
-    stateDesc += '\nState schema fields:\n' + fieldLines.join('\n');
-  } else {
-    stateDesc += ' Include mood and scene in the state block.';
+  if (!includeState) {
+    example = stripExampleState(example);
   }
 
-  return [
+  const parts = [
     '[Response Format]',
     syntaxDesc,
     'Example structure:',
     example,
-    'The example above teaches format only. Draw all characters, settings, and dialogue from the ongoing story.',
-    stateDesc
-  ].join('\n\n');
+    'The example above teaches format only. Draw all characters, settings, and dialogue from the ongoing story.'
+  ];
+
+  if (includeState) {
+    let stateDesc = 'End every reply with a state block exactly as shown above.';
+    const schemaFields = ctx.character.stateSchema ? Object.entries(ctx.character.stateSchema) : [];
+    if (schemaFields.length > 0) {
+      const fieldLines: string[] = [];
+      for (const [key, field] of schemaFields) {
+        if (field.type === 'enum') {
+          fieldLines.push(`- ${key}: one of ${field.values.join(', ')} (default ${field.default})`);
+        } else if (field.type === 'int') {
+          fieldLines.push(`- ${key}: integer ${field.min}–${field.max} (default ${field.default})`);
+        } else {
+          fieldLines.push(`- ${key}: short string (default ${field.default})`);
+        }
+      }
+      stateDesc += '\nState schema fields:\n' + fieldLines.join('\n');
+    } else {
+      stateDesc += ' Include mood and scene in the state block.';
+    }
+    parts.push(stateDesc);
+  }
+
+  return parts.join('\n\n');
+}
+
+/** Removes a trailing state fence (```state, ~~~state, or <state>) from an example string. Never throws. */
+function stripExampleState(example: string): string {
+  return example
+    .replace(/```state[\s\S]*?```\s*$/m, '')
+    .replace(/~~~state[\s\S]*?~~~\s*$/m, '')
+    .replace(/<state>[\s\S]*?<\/state>\s*$/im, '')
+    .trimEnd();
 }
 
 export function generateBlock(id: BlockId, ctx: PromptContext, warnings: string[] = []): string | null {
@@ -165,7 +185,7 @@ export function generateBlock(id: BlockId, ctx: PromptContext, warnings: string[
     }
 
     case '7b': {
-      if (mode !== 'narrative' || !ctx.sceneState) return null;
+      if (mode !== 'narrative' || ctx.stateEnabled === false || !ctx.sceneState) return null;
       const stateObj = ctx.sceneState;
 
       const pairs: string[] = [];
@@ -210,7 +230,9 @@ export function generateBlock(id: BlockId, ctx: PromptContext, warnings: string[
       // Post-history position: the full response-format spec lives here,
       // closest to generation. Continuation turns keep the reminder line
       // on top so the model resumes the partial before re-reading the spec.
-      const spec = buildFormatSpec(ctx, warnings);
+      // State lines are omitted when state tracking is disabled.
+      const withState = ctx.stateEnabled !== false;
+      const spec = buildFormatSpec(ctx, warnings, withState);
       if (ctx.continuation && ctx.provider.prefill) {
         return macro(`${CONTINUATION_PREFILL_REMINDER}\n\n${spec}`, ctx);
       }
