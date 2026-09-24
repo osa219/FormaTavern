@@ -37,6 +37,8 @@ export const ChatViewSchema = Type.Object({
   metadata: ChatMetadataSchema,
   activeLeafId: Type.Union([Id, Type.Null()]),
   activeGenerationMessageId: Type.Union([Id, Type.Null()]),
+  activeGreetingIndex: Type.Optional(Type.Integer({ minimum: 0 })),
+  personaSnapshot: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   messageCount: Type.Integer()
 });
 export type ChatView = Static<typeof ChatViewSchema>;
@@ -49,6 +51,8 @@ export const ChatListItemSchema = Type.Object({
   personaId: Id,
   activeLeafId: Type.Union([Id, Type.Null()]),
   activeGenerationMessageId: Type.Union([Id, Type.Null()]),
+  activeGreetingIndex: Type.Optional(Type.Integer({ minimum: 0 })),
+  personaSnapshot: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   createdAt: UnixMs,
   updatedAt: UnixMs,
   metadata: ChatMetadataSchema,

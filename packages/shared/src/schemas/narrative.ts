@@ -60,6 +60,8 @@ export const ChatMetadataSchema = Type.Object({
     )
   ),
   currentState: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
-  stateOverrides: Type.Optional(Type.Array(StateOverrideSchema))
+  stateOverrides: Type.Optional(Type.Array(StateOverrideSchema)),
+  summary: Type.Optional(Type.String()),
+  forkSource: Type.Optional(Type.String())
 });
 export type ChatMetadata = Static<typeof ChatMetadataSchema>;

@@ -134,6 +134,18 @@ export const CharacterListQuerySchema = Type.Object({
 });
 export type CharacterListQuery = Static<typeof CharacterListQuerySchema>;
 
+export const CharacterImportMetadataSchema = Type.Object({
+  origin: Type.String(),
+  originId: Type.String(),
+  tagsRaw: Type.Optional(Type.Array(Type.String())),
+  tokenCounts: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
+  stats: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
+  soundcloudTrackId: Type.Optional(Type.String()),
+  isNsfw: Type.Optional(Type.Boolean()),
+  isImageNsfw: Type.Optional(Type.Boolean())
+});
+export type CharacterImportMetadata = Static<typeof CharacterImportMetadataSchema>;
+
 /** Shape of characters.metadata (JSON column). Everything not in a dedicated column lives here. */
 export const CharacterMetadataSchema = Type.Object({
   greetingMode: Type.Optional(GreetingModeSchema),
@@ -152,6 +164,7 @@ export const CharacterMetadataSchema = Type.Object({
   labels: Type.Optional(Type.Object({
     startStory: Type.Optional(Type.String({ maxLength: 40 }))
   })),
+  import: Type.Optional(CharacterImportMetadataSchema),
   version: Type.Optional(Type.String())
 });
 export type CharacterMetadata = Static<typeof CharacterMetadataSchema>;

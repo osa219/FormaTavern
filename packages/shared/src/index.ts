@@ -1,4 +1,4 @@
-export const SHARED_VERSION = '0.8.0-card-character-split';
+export const SHARED_VERSION = '0.8.1-import-export-foundation';
 
 export interface HealthResponse {
   ok: true;
@@ -26,6 +26,7 @@ export * from './schemas/message';
 export * from './schemas/settings';
 export * from './schemas/providerConfig';
 export * from './schemas/shellTheme';
+export * from './schemas/sync';
 export * from './types/llm';
 export * from './types/chatStream';
 export * from './validate';
@@ -37,6 +38,9 @@ export * from './text/emptyOutput';
 export * from './text/stop';
 export * from './text/tags';
 export * from './text/slug';
+export * from './text/sha256';
+export * from './mediaUrls';
+export * from './provenance';
 export * from './fixtures/stream';
 export * from './fixtures/envelope';
 export * from './theme';

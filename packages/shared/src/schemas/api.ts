@@ -30,6 +30,9 @@ export type ApiErrorCode =
   | 'too_many_requests'
   | 'greeting_locked'
   | 'invalid_greeting'
+  | 'sync_in_progress'
+  | 'unsupported_format'
+  | 'quarantined'
   | 'internal';
 
 export const ApiErrorCodeSchema = Type.Union([
@@ -62,6 +65,9 @@ export const ApiErrorCodeSchema = Type.Union([
   Type.Literal('too_many_requests'),
   Type.Literal('greeting_locked'),
   Type.Literal('invalid_greeting'),
+  Type.Literal('sync_in_progress'),
+  Type.Literal('unsupported_format'),
+  Type.Literal('quarantined'),
   Type.Literal('internal')
 ]);
 
