@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { StateField, StateVector } from '@formatavern/shared';
+  import Icon from '../ui/Icon.svelte';
   import StateOverridePopover from './StateOverridePopover.svelte';
 
   let {
@@ -52,6 +53,25 @@
   const currentSource = $derived(sourceMeta[stateSource] ?? sourceMeta.initial);
   const hasUpdate = $derived(changedKeys.size > 0);
 
+  // Ambient state chips (desktop only; phones get the dot and open the State tab).
+  const chips = $derived.by(() => {
+    if (!currentState) return [];
+    const entries = Object.entries(currentState);
+    return entries.map(([k, v]) => {
+      let display = '';
+      if (k.toLowerCase() === 'affinity') {
+        display = `♥ ${v}`;
+      } else if (typeof v === 'boolean') {
+        display = v ? k : `no ${k}`;
+      } else if (typeof v === 'string' || typeof v === 'number') {
+        display = `${v}`;
+      } else {
+        display = `${k}: ${v}`;
+      }
+      return { key: k, display, changed: changedKeys.has(k) };
+    });
+  });
+
   // Full values for the tooltip; the pill itself stays a tiny dot.
   const stateSummary = $derived.by(() => {
     const entries = Object.entries(currentState ?? {});
@@ -83,14 +103,15 @@
   <button
     type="button"
     onclick={activate}
-    class="flex items-center gap-1.5 rounded-lg border border-neutral-800/80 bg-neutral-900/60 px-2.5 py-1.5 text-neutral-300 transition-colors hover:border-neutral-700 hover:bg-neutral-850 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+    class="flex items-center gap-2 rounded-lg border border-neutral-800/80 bg-neutral-900/60 px-2.5 py-1.5 text-neutral-300 transition-colors hover:border-neutral-700 hover:bg-neutral-850 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
     aria-label="Open state details (Alt+S)"
     aria-expanded={popoverOpen}
     aria-haspopup="dialog"
     title={`State (${currentSource.label}): ${stateSummary}`}
   >
+    <!-- Status dot (all sizes) + label (desktop only) -->
     <span class="font-mono text-xs {hasUpdate ? 'text-accent font-bold' : 'opacity-75'}">
-      <span class={hasUpdate ? '' : 'text-accent'}>{currentSource.glyph}</span>
+      <span class={hasUpdate ? '' : 'text-accent'}>{currentSource.glyph}</span><span class="hidden md:inline"> {currentSource.label}</span>
     </span>
 
     {#if stateWarnings.length > 0}
@@ -98,6 +119,29 @@
         ⚠
       </span>
     {/if}
+
+    <!-- Separator -->
+    {#if chips.length > 0}
+      <span class="text-neutral-600 hidden md:inline">·</span>
+    {/if}
+
+    <!-- Ambient value chips (desktop only; phones open the State tab instead) -->
+    <div class="hidden md:flex items-center gap-1.5 opacity-80">
+      {#each chips as chip, i (chip.key)}
+        {#if i > 0}
+          <span class="text-neutral-600">·</span>
+        {/if}
+        <span
+          class="transition-opacity duration-300"
+          class:text-accent={chip.changed}
+          class:font-semibold={chip.changed}
+        >
+          {chip.display}
+        </span>
+      {/each}
+    </div>
+
+    <Icon name="sparkles" size={12} class="text-neutral-500 hidden md:block" />
   </button>
 
   <StateOverridePopover
