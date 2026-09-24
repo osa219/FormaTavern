@@ -3,9 +3,14 @@ import {
   rewriteHtmlMediaUrls,
   resolveMediaUrl,
   probeMediaExtension,
+  resolveMediaHashes,
   renderMissingAssetSlate,
   extractPersonaSnapshotName,
   clearMediaCache,
+  subscribeMediaCache,
+  seedMissingHashes,
+  seedExtMap,
+  getMediaCacheVersion,
   PROBE_EXTENSIONS
 } from '../src/lib/render/mediaRewrite';
 
@@ -228,4 +233,79 @@ describe('Media Rewrite & Fallback Engine (Invariant X4, P3)', () => {
       expect(extractPersonaSnapshotName(JSON.stringify({ name: '' }))).toBeNull();
     });
   });
+
+  describe('6. Reactive Cache & Batch Hash Resolution', () => {
+    it('seeds missing hashes and extension map into memory cache and notifies subscribers', () => {
+      let notified = 0;
+      const unsubscribe = subscribeMediaCache(() => {
+        notified++;
+      });
+
+      const initialVersion = getMediaCacheVersion();
+      seedExtMap({ [HASH_A]: 'png' });
+      expect(getMediaCacheVersion()).toBe(initialVersion + 1);
+      expect(notified).toBe(1);
+
+      seedMissingHashes([HASH_MISSING]);
+      expect(getMediaCacheVersion()).toBe(initialVersion + 2);
+      expect(notified).toBe(2);
+
+      // Rewriting now uses the seeded caches directly without options
+      const img = rewriteHtmlMediaUrls(`<img src="media://${HASH_A}" />`);
+      expect(img).toContain(`/assets/pool/${HASH_A}.png`);
+
+      const missing = rewriteHtmlMediaUrls(`<img src="media://${HASH_MISSING}" />`);
+      expect(missing).toContain(`data-missing-asset="${HASH_MISSING}"`);
+
+      unsubscribe();
+      seedMissingHashes(['1'.repeat(64)]);
+      expect(notified).toBe(2); // Unsubscribed listener was not invoked
+    });
+
+    it('resolves batches via POST /api/assets/resolve', async () => {
+      let capturedBody: any = null;
+      const mockFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+        const url = String(input);
+        if (url === '/api/assets/resolve') {
+          capturedBody = JSON.parse(init?.body as string);
+          return new Response(
+            JSON.stringify({
+              extMap: { [HASH_A]: 'png' },
+              missingHashes: [HASH_MISSING]
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
+        return new Response(null, { status: 404 });
+      };
+
+      const result = await resolveMediaHashes([HASH_A, HASH_MISSING], { fetchFn: mockFetch as any });
+      expect(capturedBody).toEqual({ hashes: [HASH_A, HASH_MISSING] });
+      expect(result.extMap[HASH_A]).toBe('png');
+      expect(result.missingHashes).toContain(HASH_MISSING);
+
+      // Verify that subsequent rewrite uses resolved ext and missing slate
+      const outputA = rewriteHtmlMediaUrls(`<img src="media://${HASH_A}" />`);
+      expect(outputA).toContain(`/assets/pool/${HASH_A}.png`);
+      const outputM = rewriteHtmlMediaUrls(`<img src="media://${HASH_MISSING}" />`);
+      expect(outputM).toContain(`data-missing-asset="${HASH_MISSING}"`);
+    });
+
+    it('falls back to candidate HEAD probing when batch endpoint throws or fails', async () => {
+      const mockFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+        const url = String(input);
+        if (url === '/api/assets/resolve') {
+          return new Response('Internal error', { status: 500 });
+        }
+        if (url.endsWith('.jpg')) {
+          return new Response(null, { status: 200 });
+        }
+        return new Response(null, { status: 404 });
+      };
+
+      const result = await resolveMediaHashes([HASH_B], { fetchFn: mockFetch as any });
+      expect(result.extMap[HASH_B]).toBe('jpg');
+    });
+  });
 });
+

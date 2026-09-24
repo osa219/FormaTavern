@@ -12,6 +12,72 @@ export type ProbedExtension = (typeof PROBE_EXTENSIONS)[number];
 
 const extensionCache = new Map<string, string>();
 const missingCache = new Set<string>();
+const inFlightProbes = new Set<string>();
+
+type CacheListener = () => void;
+const listeners = new Set<CacheListener>();
+let cacheVersion = 0;
+
+/**
+ * Returns current cache version number, incremented whenever assets resolve.
+ */
+export function getMediaCacheVersion(): number {
+  return cacheVersion;
+}
+
+/**
+ * Subscribes to cache updates (probes resolving, batch lookups completing).
+ */
+export function subscribeMediaCache(listener: CacheListener): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+/**
+ * Notifies all subscribers that cache has been updated.
+ */
+export function notifyMediaCacheUpdated(): void {
+  cacheVersion++;
+  for (const listener of listeners) {
+    try {
+      listener();
+    } catch {
+      // Ignore listener errors
+    }
+  }
+}
+
+/**
+ * Seeds missing hashes into memory cache (e.g. from messages.missing_assets).
+ */
+export function seedMissingHashes(hashes: Iterable<string>): void {
+  let anyNew = false;
+  for (const h of hashes) {
+    if (!missingCache.has(h)) {
+      missingCache.add(h);
+      anyNew = true;
+    }
+  }
+  if (anyNew) notifyMediaCacheUpdated();
+}
+
+/**
+ * Seeds extension map into memory cache.
+ */
+export function seedExtMap(map: Record<string, string> | Map<string, string>): void {
+  let anyNew = false;
+  const entries = map instanceof Map ? map.entries() : Object.entries(map);
+  for (const [h, ext] of entries) {
+    const cleanExt = ext.replace(/^\./, '');
+    if (extensionCache.get(h) !== cleanExt) {
+      extensionCache.set(h, cleanExt);
+      anyNew = true;
+    }
+  }
+  if (anyNew) notifyMediaCacheUpdated();
+}
 
 /**
  * Clears extension and missing asset caches. Useful for unit testing.
@@ -19,6 +85,8 @@ const missingCache = new Set<string>();
 export function clearMediaCache(): void {
   extensionCache.clear();
   missingCache.clear();
+  inFlightProbes.clear();
+  notifyMediaCacheUpdated();
 }
 
 /**
@@ -48,8 +116,9 @@ export function resolveExtension(
   if (extMap) {
     const fromMap = extMap instanceof Map ? extMap.get(hash) : extMap[hash];
     if (fromMap) {
-      extensionCache.set(hash, fromMap);
-      return fromMap;
+      const clean = fromMap.replace(/^\./, '');
+      extensionCache.set(hash, clean);
+      return clean;
     }
   }
   return extensionCache.get(hash) ?? 'webp';
@@ -76,6 +145,7 @@ export async function probeMediaExtension(
       const res = await fn(`/assets/pool/${hash}.${ext}`, { method: 'HEAD' });
       if (res && (res.ok || res.status === 200)) {
         extensionCache.set(hash, ext);
+        notifyMediaCacheUpdated();
         return ext;
       }
     } catch {
@@ -84,7 +154,113 @@ export async function probeMediaExtension(
   }
 
   missingCache.add(hash);
+  notifyMediaCacheUpdated();
   return null;
+}
+
+/**
+ * Resolves a list of media hashes by:
+ * 1. Checking in-memory cache and options
+ * 2. Invoking POST /api/assets/resolve batch endpoint
+ * 3. Falling back to candidate HEAD probing (.webp -> .png -> .jpg -> .gif)
+ */
+export async function resolveMediaHashes(
+  hashes: string[],
+  options?: MediaRewriteOptions
+): Promise<{ extMap: Record<string, string>; missingHashes: string[] }> {
+  const extMap: Record<string, string> = {};
+  const missingHashes: string[] = [];
+
+  const needed: string[] = [];
+  for (const hash of hashes) {
+    if (!/^[a-f0-9]{64}$/.test(hash)) continue;
+    if (isMediaMissing(hash, options?.missingHashes)) {
+      missingHashes.push(hash);
+    } else if (extensionCache.has(hash)) {
+      extMap[hash] = extensionCache.get(hash)!;
+    } else if (options?.extMap) {
+      const fromMap = options.extMap instanceof Map ? options.extMap.get(hash) : options.extMap[hash];
+      if (fromMap) {
+        const clean = fromMap.replace(/^\./, '');
+        extensionCache.set(hash, clean);
+        extMap[hash] = clean;
+      } else {
+        needed.push(hash);
+      }
+    } else {
+      needed.push(hash);
+    }
+  }
+
+  const toFetch = [...new Set(needed)].filter((h) => !inFlightProbes.has(h));
+  if (toFetch.length === 0) {
+    return { extMap, missingHashes };
+  }
+
+  for (const h of toFetch) inFlightProbes.add(h);
+
+  try {
+    const fn = options?.fetchFn ?? (typeof fetch !== 'undefined' ? fetch : null);
+    let apiSucceeded = false;
+
+    // 1. Try batch resolve endpoint if fetch is available
+    if (fn) {
+      try {
+        const res = await fn('/api/assets/resolve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ hashes: toFetch })
+        });
+        if (res && (res.ok || res.status === 200)) {
+          const data = (await res.json()) as {
+            extMap?: Record<string, string>;
+            missingHashes?: string[];
+          };
+          if (data && typeof data === 'object') {
+            apiSucceeded = true;
+            if (data.extMap) {
+              for (const [h, ext] of Object.entries(data.extMap)) {
+                const clean = ext.replace(/^\./, '');
+                extensionCache.set(h, clean);
+                extMap[h] = clean;
+              }
+            }
+            if (Array.isArray(data.missingHashes)) {
+              for (const h of data.missingHashes) {
+                missingCache.add(h);
+                missingHashes.push(h);
+              }
+            }
+            notifyMediaCacheUpdated();
+          }
+        }
+      } catch {
+        // API endpoint not available or network error, fallback to candidate probe
+      }
+    }
+
+    // 2. Fallback: probe candidate extensions if batch endpoint failed
+    if (!apiSucceeded) {
+      let anyChanged = false;
+      for (const h of toFetch) {
+        const probedExt = await probeMediaExtension(h, { fetchFn: fn ?? undefined });
+        if (probedExt) {
+          extMap[h] = probedExt;
+          anyChanged = true;
+        } else {
+          missingHashes.push(h);
+          anyChanged = true;
+        }
+      }
+      if (anyChanged) {
+        notifyMediaCacheUpdated();
+      }
+    }
+  } finally {
+    for (const h of toFetch) inFlightProbes.delete(h);
+  }
+
+  return { extMap, missingHashes };
 }
 
 /**
@@ -102,8 +278,8 @@ export async function resolveMediaUrl(
     : options.extMap?.[hash] ?? extensionCache.get(hash);
 
   if (!ext) {
-    const probed = await probeMediaExtension(hash, { fetchFn: options.fetchFn });
-    if (probed) ext = probed;
+    const { extMap } = await resolveMediaHashes([hash], options);
+    ext = extMap[hash];
   }
 
   if (ext) {
@@ -126,6 +302,15 @@ export async function resolveMediaUrl(
  */
 export function rewriteHtmlMediaUrls(html: string, options: MediaRewriteOptions = {}): string {
   if (!html || typeof html !== 'string') return '';
+
+  // Auto-schedule background resolution for un-cached hashes when running in browser
+  const allHashes = extractMediaHashes(html);
+  const uncached = allHashes.filter(
+    (h) => !extensionCache.has(h) && !missingCache.has(h) && !inFlightProbes.has(h)
+  );
+  if (uncached.length > 0 && typeof window !== 'undefined') {
+    void resolveMediaHashes(uncached, options);
+  }
 
   // 1. Process <img> tags with src="media://{hash}"
   const imgRegex = /<img\b([^>]*?)\bsrc=["']media:\/\/([a-f0-9]{64})["']([^>]*?)\/?>/gi;

@@ -1,7 +1,13 @@
 <script lang="ts">
   import { renderShowcaseMarkdown } from '$lib/render/showcase';
-  import { rewriteHtmlMediaUrls, type MediaRewriteOptions } from '$lib/render/mediaRewrite';
-  import { HOOKS } from '@formatavern/shared';
+  import {
+    rewriteHtmlMediaUrls,
+    resolveMediaHashes,
+    subscribeMediaCache,
+    getMediaCacheVersion,
+    type MediaRewriteOptions
+  } from '$lib/render/mediaRewrite';
+  import { extractMediaHashes, HOOKS } from '@formatavern/shared';
 
   interface Props {
     markdown: string;
@@ -10,7 +16,27 @@
   }
 
   let { markdown, class: className = '', mediaOptions }: Props = $props();
-  let html = $derived(rewriteHtmlMediaUrls(renderShowcaseMarkdown(markdown), mediaOptions));
+
+  let version = $state(getMediaCacheVersion());
+
+  $effect(() => {
+    const unsub = subscribeMediaCache(() => {
+      version = getMediaCacheVersion();
+    });
+    return unsub;
+  });
+
+  $effect(() => {
+    const hashes = extractMediaHashes(markdown);
+    if (hashes.length > 0) {
+      void resolveMediaHashes(hashes, mediaOptions);
+    }
+  });
+
+  const html = $derived.by(() => {
+    void version;
+    return rewriteHtmlMediaUrls(renderShowcaseMarkdown(markdown), mediaOptions);
+  });
 </script>
 
 <div class="showcase-body {HOOKS.character.showcaseBody} {className}">

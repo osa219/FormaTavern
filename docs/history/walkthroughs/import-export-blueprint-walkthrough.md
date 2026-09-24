@@ -15,7 +15,7 @@ It is updated after the completion of each execution step.
 | **Step 3** | Content-Addressed Media Pool Store & Serving | X3, X10, A-AS1 | Backend: `FsAssetStore.putPool`, static route nosniff, security guards | **Complete** | [`af4b245`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend) |
 | **Step 4** | CustomEngine ETL Pipeline Service & CLI Runner | X1, X2, X5, X6, X9 | Backend: Sniff/Plan/Copy/Upsert/Append/Rebuild service, CLI, 6 test suites | **Complete** | [`3fac6be`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend) |
 | **Step 5** | API Routes, Background Runner & Format Exporters | X8, N6, S2, I6 | API endpoints, progress polling, V2 PNG, JSONL, CharX, Relational Pack | **Complete** | [`d61e976`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend) |
-| **Step 6** | Frontend Render Boundary, Media Rewrite & Snapshot Label | X4, X5, U2, U10 | Frontend: pure mediaRewrite, missing slate, You panel snapshot label | **Complete** | [`77e3aff`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend) |
+| **Step 6** | Frontend Render Boundary, Media Rewrite & Snapshot Label | X4, X5, U2, U10 | Frontend: pure mediaRewrite, missing slate, You panel snapshot label, production hydration | **Complete** | [`e666f0e`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend) |
 | **Step 7** | Documentation, Production Static Proofs & PR Verification | All | Docs update (v11 schema/arch), live dump full run artifacts, verification proofs | *Queued* | — |
 
 ---
@@ -308,18 +308,29 @@ Establish a secure, pure client-side render boundary for content-addressed media
 - **Architecture Boundary Guard** ([`frontend/unit/boundaries.test.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/unit/boundaries.test.ts)):
   - Added boundary assertion verifying `rewriteMediaUrls` is imported exclusively by `lib/render/mediaRewrite.ts` across the entire frontend application.
   - Confirmed `{@html}` remains restricted to `Markdown.svelte` and `ShowcaseBody.svelte`.
+- **Production Asset Hydration & Reactive Cache Invalidation** (Reviewer Feedback Resolution):
+  - **Batch Backend Resolver Endpoint** ([`backend/src/routes/assets.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/routes/assets.ts)): Added `POST /api/assets/resolve` accepting `{ hashes: string[] }`, batch-querying the SQLite `assets` repository, and returning `{ extMap, missingHashes }` in <1 ms, resolving non-WebP pool assets (PNG, JPG, GIF) without 404 storms.
+  - **Reactive Cache Subsystem** ([`frontend/src/lib/render/mediaRewrite.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/render/mediaRewrite.ts)): Implemented isomorphic pub/sub (`subscribeMediaCache`, `notifyMediaCacheUpdated`, `getMediaCacheVersion`, `seedMissingHashes`, `seedExtMap`) and `resolveMediaHashes(hashes)` with auto-fallback to candidate probing when offline or during mocks.
+  - **Component Reactivity Wiring** ([`Markdown.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/ui/Markdown.svelte), [`ShowcaseBody.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/showcase/ShowcaseBody.svelte)): Subscribed to media cache notifications via `$effect` and made rewritten HTML derived via `$derived.by` with cache version tracking, dynamically re-rendering in place when background resolution completes.
+  - **Session Message Hydration** ([`frontend/src/lib/state/session.svelte.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/state/session.svelte.ts)): Injected `hydrateMessageMedia` in `constructor`, `loadOlder()`, and `refetchState()` to extract inline message media hashes and seed `missing_assets` directly from database rows.
+  - **Chat Snapshot & Greeting Forwarding** ([`backend/src/routes/chats.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/routes/chats.ts), [`packages/shared/src/schemas/message.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/packages/shared/src/schemas/message.ts)): Updated `toChatView` to forward `activeGreetingIndex` and `personaSnapshot`; aligned `MessageViewSchema` in `@formatavern/shared` with `missingAssets`, `originId`, and `sequenceIndex` for complete end-to-end type safety.
 
 ### Verification
-- **Unit Test Suite** ([`frontend/unit/mediaRewrite.test.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/unit/mediaRewrite.test.ts) — 22/22 green):
+- **Unit Test Suite** ([`frontend/unit/mediaRewrite.test.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/unit/mediaRewrite.test.ts) — 25/25 green):
   - Hash-to-URL translation via `extMap` (objects and Maps) and `.webp` defaulting.
   - Probe sequence order (`.webp` -> `.png` -> `.jpg` -> `.gif`) stopping on first 200 and caching hits.
   - Missing asset slate replacement (`data-missing-asset="<hash>"`).
   - Zero remote fetch validation (rejects external hosts).
   - Idempotency under repeated rewrites (`rewrite(rewrite(html)) === rewrite(html)`).
   - Persona snapshot name extraction across JSON, strings, and null inputs.
+  - Reactive cache seeding (`seedExtMap`, `seedMissingHashes`) and listener notification.
+  - Batch resolution via `POST /api/assets/resolve` with graceful fallback to candidate probing.
+- **Backend Route Test Suite** ([`backend/test/routes/assets.test.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/test/routes/assets.test.ts) — 2/2 green):
+  - `POST /api/assets/resolve` resolves known extensions and returns missing hashes.
+  - `GET /api/chats/:id` forwards `activeGreetingIndex` and `personaSnapshot` in `toChatView`.
 - **Monorepo Health**:
   - `bun run typecheck`: 0 errors, 0 warnings across all 3 packages (`shared`, `backend`, `frontend`).
-  - `bun run test`: 100% green across all packages (Shared: 265/265 green, Backend: 425/425 green, Frontend: 280/280 green; 970 total tests).
+  - `bun run test`: 100% green across all packages (Shared: 265/265 green, Backend: 427/427 green, Frontend: 283/283 green; 975 total tests).
   - `bun run db:check`: Clean integrity at `user_version = 11`.
 
 ---

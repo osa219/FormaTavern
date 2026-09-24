@@ -52,7 +52,7 @@ export function createApp({ repos, hub, providers, assets, importService, option
   const providerConfigsRouter = createProviderConfigsRouter({ repos, providers });
   const chatsRouter = createChatsRouter({ repos, hub, providers });
   const messagesRouter = createMessagesRouter({ repos, hub, providers });
-  const assetsRouter = createAssetsRouter(assets);
+  const assetsRouter = createAssetsRouter({ assets, repos });
   const importRouter = createImportRouter({
     repos,
     assets,

@@ -1,9 +1,47 @@
 import { Elysia, t } from 'elysia';
 import type { AssetStore, AssetScope } from '../assets/contracts';
+import type { Repositories } from '../db/contracts';
 import { ApiError } from '../engine/errors';
 
-export function createAssetsRouter(assets?: AssetStore) {
+export interface AssetsRouterDeps {
+  assets?: AssetStore;
+  repos?: Repositories;
+}
+
+export function createAssetsRouter(deps?: AssetStore | AssetsRouterDeps) {
+  const assets = deps && 'save' in deps ? deps : deps?.assets;
+  const repos = deps && 'repos' in deps ? deps.repos : undefined;
+
   return new Elysia({ prefix: '/assets' })
+    .post(
+      '/resolve',
+      ({ body }): { extMap: Record<string, string>; missingHashes: string[] } => {
+        const { hashes } = body as { hashes: string[] };
+        const extMap: Record<string, string> = {};
+        const missingHashes: string[] = [];
+
+        const unique = [...new Set(hashes || [])];
+        for (const hash of unique) {
+          if (!/^[a-f0-9]{64}$/.test(hash)) {
+            missingHashes.push(hash);
+            continue;
+          }
+          const asset = repos?.assets.get(hash);
+          if (asset && asset.ext) {
+            extMap[hash] = asset.ext.replace(/^\./, '');
+          } else {
+            missingHashes.push(hash);
+          }
+        }
+
+        return { extMap, missingHashes };
+      },
+      {
+        body: t.Object({
+          hashes: t.Array(t.String())
+        })
+      }
+    )
     .post(
       '/upload',
       async ({ body, set }) => {

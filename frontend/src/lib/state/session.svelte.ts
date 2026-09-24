@@ -15,6 +15,26 @@ import { api, readSse as defaultReadSse, toUiError } from '../api';
 import { toasts } from './toasts.svelte';
 import { prefs } from './prefs.svelte';
 import { StreamController } from './stream.svelte';
+import { seedMissingHashes, resolveMediaHashes } from '../render/mediaRewrite';
+import { extractMediaHashes } from '@formatavern/shared';
+
+function hydrateMessageMedia(messages: MessageWithTree[]): void {
+  const allHashes: string[] = [];
+  for (const m of messages) {
+    if (m.missingAssets) {
+      try {
+        const parsed = JSON.parse(m.missingAssets);
+        if (Array.isArray(parsed)) seedMissingHashes(parsed);
+      } catch {}
+    }
+    if (m.content) {
+      allHashes.push(...extractMediaHashes(m.content));
+    }
+  }
+  if (allHashes.length > 0) {
+    void resolveMediaHashes(allHashes);
+  }
+}
 
 export interface LiveTurn {
   messageId: string | null;
@@ -95,6 +115,9 @@ export class ChatSession {
     if (this.chat.activeGenerationMessageId) {
       this.reattach();
     }
+    if (this.messages.length > 0) {
+      hydrateMessageMedia(this.messages);
+    }
   }
 
   async loadOlder(): Promise<{ beforeHeight: number } | void> {
@@ -111,7 +134,9 @@ export class ChatSession {
           this.hasOlder = false;
         }
         if (data.length > 0) {
-          this.messages = [...(data as MessageWithTree[]), ...this.messages];
+          const older = data as MessageWithTree[];
+          this.messages = [...older, ...this.messages];
+          hydrateMessageMedia(older);
         }
       }
     } catch (err: any) {
@@ -609,6 +634,7 @@ export class ChatSession {
           hidden.length === 0
             ? (msgsRes.data as MessageWithTree[])
             : (msgsRes.data as MessageWithTree[]).filter((m) => !hidden.includes(m.id));
+        hydrateMessageMedia(this.messages);
       }
     } catch {
       // ignore

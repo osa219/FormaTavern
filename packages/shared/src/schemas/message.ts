@@ -98,7 +98,10 @@ export const MessageViewSchema = Type.Object({
   metadata: MessageMetadataSchema,
   siblingIndex: Type.Integer(),
   siblingCount: Type.Integer(),
-  hasChildren: Type.Boolean()
+  hasChildren: Type.Boolean(),
+  originId: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  sequenceIndex: Type.Optional(Type.Union([Type.Integer(), Type.Null()])),
+  missingAssets: Type.Optional(Type.Union([Type.String(), Type.Null()]))
 });
 export type MessageView = Static<typeof MessageViewSchema>;
 export type MessageWithTree = MessageView;

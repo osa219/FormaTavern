@@ -66,6 +66,8 @@ export function toChatView(chat: ChatRow, hub: GenerationHub, messageCount?: num
     createdAt: chat.createdAt,
     updatedAt: chat.updatedAt,
     metadata: chat.metadata,
+    activeGreetingIndex: chat.activeGreetingIndex ?? 0,
+    personaSnapshot: chat.personaSnapshot ?? null,
     messageCount: messageCount ?? 0
   };
 }
