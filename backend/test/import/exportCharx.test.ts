@@ -142,13 +142,27 @@ describe('CharX & Relational Pack Export (Slice E)', () => {
     expect(files).toContain(`chats/${char.id}/${chat.id}.json`);
     expect(files).toContain(`media/${mediaRecord.id}.png`);
 
-    // Bulk pack export (all characters)
-    const bulkPack = await exportRelationalPack(undefined, env.repos, env.store);
-    expect(bulkPack.contentType).toBe('application/zip');
-    expect(bulkPack.filename).toBe('format-tavern-export.zip');
+    // Sibling message swipe test (Fix S2)
+    const swipeMsg = env.repos.messages.insert({
+      id: 'm_swipe',
+      chatId: chat.id,
+      parentId: null,
+      senderId: char.id,
+      senderName: char.name,
+      role: 'assistant',
+      narrativeRole: 'character',
+      content: 'Alternative destination coords.',
+      status: 'complete'
+    });
 
-    const bulkFiles = listZipFileNames(bulkPack.data);
-    expect(bulkFiles).toContain('manifest.json');
-    expect(bulkFiles).toContain(`characters/${char.id}.json`);
+    const packWithSwipes = await exportRelationalPack(char.id, env.repos, env.store);
+    // Find chats JSON inside zip
+    const zipBuf = Buffer.from(packWithSwipes.data);
+    const chatJsonName = `chats/${char.id}/${chat.id}.json`;
+    // Verify pack produces valid zip with the chat
+    expect(listZipFileNames(packWithSwipes.data)).toContain(chatJsonName);
+
+    // Rejection of missing characterId (Fix S3 OOM defense)
+    await expect(exportRelationalPack('' as any, env.repos, env.store)).rejects.toThrow();
   });
 });

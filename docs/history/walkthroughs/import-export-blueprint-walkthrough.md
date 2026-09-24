@@ -241,17 +241,17 @@ Expose the Universal Exchange Layer over HTTP with:
   - Pure binary parser for PNG `tEXt` chunks decoding UTF-8 keyword/value pairs (`chara` and `ccv3`). Decodes base64-encoded JSON specifications.
   - `injectPngTextChunk`: Pure binary injector inserting a `tEXt` chunk before `IEND` while updating CRC32 checksums.
   - `generateCarrierPng`: Generates a minimal 1x1 neutral transparent PNG carrier for cards exported without an avatar.
-- **V2 Card Service** ([`backend/src/import/v2/service.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/import/v2/service.ts)):
-  - `importV2Card`: Ingests V2 card data (either direct JSON or extracted from PNG `tEXt` carrier). Ingests avatar into content-addressed pool via `putPool`, falls back cleanly to neutral defaults, and sets `creatorNotes` and `alternateGreetings`.
-  - `exportV2Card`: Generates V2 JSON or PNG binary embedding `chara` base64 metadata. Preserves pool asset immutability (**Invariant X8**).
-- **SillyTavern JSONL Chat Service** ([`backend/src/import/jsonl/service.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/import/jsonl/service.ts)):
-  - `importJsonlChat`: Parses SillyTavern JSONL chat files. Reconciles Line-0 metadata header (`user_name`, `character_name`, `create_date`, `chat_metadata`, `title`). Maps linear messages into the conversation tree, and stores swipe alternates with `metadata.imported_swipe = true`.
-  - `exportJsonlChat`: Traverses the active conversation branch, queries swipe siblings, exports Line-0 header with `title`, and serializes messages with `swipes` and `swipe_id`.
-- **CharX & Relational Pack Service** ([`backend/src/import/charx/service.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/import/charx/service.ts)):
+- **V2 Card Service with Image Transcoding** ([`backend/src/import/v2/service.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/import/v2/service.ts)):
+  - `importV2Card`: Ingests V2 card data (either direct JSON or extracted from PNG `tEXt` carrier). Validates schema before pool insertion to prevent orphan blobs. Computes deterministic provenance (`origin: 'tavern_v2'`, `originId`, `originHash`), skips identical cards idempotently, and patches on modified re-import (**Fix S4, S5**).
+  - `exportV2Card`: Converts WebP, JPEG, or GIF avatars in-memory to genuine PNG images using `sharp` during export (**Fix S1**). Embeds specification cleanly in `chara` chunk without improper `ccv3` wrapping (**Fix S5**). Preserves pool asset immutability (**Invariant X8**).
+- **SillyTavern JSONL Chat Service with Swipe Fidelity** ([`backend/src/import/jsonl/service.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/import/jsonl/service.ts)):
+  - `importJsonlChat`: Parses SillyTavern JSONL chat files. Reconciles Line-0 metadata header (`user_name`, `character_name`, `create_date`, `chat_metadata`, `title`). Maps linear messages into the conversation tree, stores original `swipe_index` on metadata, and populates provenance columns (`origin: 'sillytavern'`, `originId`, `originHash`) (**Fix S4**).
+  - `exportJsonlChat`: Traverses the active conversation branch, queries all role-matching siblings sharing the same `parentId` (both native regenerations and imported swipes), exports `swipes` in preserved order, and sets `swipe_id` to the active branch leaf index (**Fix S2**).
+- **CharX & Relational Pack Service with Alternate Swipes** ([`backend/src/import/charx/service.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/import/charx/service.ts)):
   - `exportCharx`: Generates standard `.charx` ZIP archive containing `card.json` and bound assets in `assets/<role>/<label>`.
-  - `exportRelationalPack`: Exports lossless CustomEngine relational package containing `manifest.json`, `characters/<slug>.json`, `chats/<id>.json`, and `media/<hash>.<ext>`.
-- **Elysia Route Declarations & Purity Boundary** ([`backend/src/routes/import.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/routes/import.ts), [`characters.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/routes/characters.ts), [`chats.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/routes/chats.ts), [`app.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/app.ts)):
-  - Mounted `/api/import/custom-engine/sync` (`?wait=true` synchronous 200 or 202 `{ runId }`).
+  - `exportRelationalPack`: Requires `characterId` to bound memory consumption and eliminate OOM vectors over HTTP (**Fix S3**). Groups all sibling messages sharing `parentId` into the parent message's `alternate_swipes` array alongside `media_hashes`, ensuring 100% lossless round-trip upon re-import (**Fix S2**).
+- **Elysia Route Declarations & Concurrency Guard** ([`backend/src/routes/import.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/routes/import.ts), [`characters.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/routes/characters.ts), [`chats.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/routes/chats.ts), [`app.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/app.ts)):
+  - Mounted `/api/import/custom-engine/sync` (checks `isSyncLocked()` immediately and returns HTTP 409 `sync_in_progress` on conflict (**Fix S5**)).
   - Mounted `/api/import/runs/:runId` (polling status).
   - Mounted `/api/import/custom-engine/single` (multipart single card/chat file).
   - Mounted `/api/import/v2` (multipart V2 PNG or JSON).
@@ -270,12 +270,12 @@ Expose the Universal Exchange Layer over HTTP with:
   - Single file import, V2 card import, and JSONL chat import: all return HTTP 201 with created entities.
   - Export endpoints: verified 200 responses with correct `Content-Type` and attachment headers across `.png`, `.json`, `.charx`, `.jsonl`, and `.zip`.
 - **Format Exporter Unit Tests**:
-  - `backend/test/import/exportV2.test.ts` (3/3 pass): JSON/PNG round-trip and Invariant X8 immutability proof.
-  - `backend/test/import/exportJsonl.test.ts` (2/2 pass): Line-0 metadata and swipe alternates round-trip.
-  - `backend/test/import/exportCharx.test.ts` (2/2 pass): CharX hierarchy and lossless relational pack integrity.
+  - `backend/test/import/exportV2.test.ts` (4/4 pass): JSON/PNG round-trip, Invariant X8 immutability proof, and WebP avatar transcoding to genuine PNG preserving 10x10 dimensions and `chara` metadata.
+  - `backend/test/import/exportJsonl.test.ts` (3/3 pass): Line-0 metadata, swipe alternates round-trip, and native regenerated sibling assistant messages exported with accurate active `swipe_id`.
+  - `backend/test/import/exportCharx.test.ts` (2/2 pass): CharX hierarchy, relational pack alternate swipe grouping, and HTTP OOM guard requiring `characterId`.
 - **Monorepo Health**:
   - `bun run typecheck`: 0 errors, 0 warnings across `packages/shared`, `backend`, and `frontend`.
-  - `bun run test`: 100% green across all packages (Shared: all green, Backend: 423/423 green, Frontend: 257/257 green).
+  - `bun run test`: 100% green across all packages (Shared: 265/265 green, Backend: 425/425 green, Frontend: 257/257 green).
   - `bun run db:check`: clean integrity at `user_version = 11`.
 
 ---

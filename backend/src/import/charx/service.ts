@@ -106,25 +106,19 @@ export async function exportCharx(
 }
 
 export async function exportRelationalPack(
-  characterId: string | undefined,
+  characterId: string,
   repos: Repositories,
   assetStore?: AssetStore
 ): Promise<{ data: Uint8Array; contentType: string; filename: string }> {
-  let characters: CharacterCard[] = [];
-
-  if (characterId) {
-    const card = repos.characters.get(characterId);
-    if (!card) {
-      throw new ApiError('not_found', 404, `Character ${characterId} not found`);
-    }
-    characters = [card];
-  } else {
-    const listResult = repos.characters.list({ limit: 10000 });
-    for (const item of listResult.items) {
-      const full = repos.characters.get(item.id);
-      if (full) characters.push(full);
-    }
+  if (!characterId || typeof characterId !== 'string' || !characterId.trim()) {
+    throw new ApiError('validation_failed', 422, 'characterId parameter is required for relational pack export');
   }
+
+  const card = repos.characters.get(characterId);
+  if (!card) {
+    throw new ApiError('not_found', 404, `Character ${characterId} not found`);
+  }
+  const characters = [card];
 
   const entries: ZipEntry[] = [];
   const referencedHashes = new Set<string>();
@@ -188,13 +182,21 @@ export async function exportRelationalPack(
       totalChats++;
 
       const chatOriginId = (chat.origin === 'custom_engine' && chat.originId) ? chat.originId : chat.id;
-      const allMsgs = repos.messages.listInChat(chat.id);
+      const pathMsgs = chat.activeLeafId ? repos.messages.path(chat.activeLeafId) : [];
 
-      const mappedMessages = allMsgs.map((m) => {
+      const mappedMessages = pathMsgs.map((m) => {
         const inlineHashes = extractMediaHashes(m.content ?? '');
         for (const h of inlineHashes) referencedHashes.add(h);
 
-        return {
+        // Group sibling messages sharing parentId with same role into alternate_swipes
+        const siblings = repos.messages.siblings(m.id);
+        const swipeSiblings = siblings.filter((s) => s.id !== m.id && s.role === m.role);
+        const alternateSwipes = swipeSiblings.map((s) => s.content);
+        for (const s of swipeSiblings) {
+          for (const h of extractMediaHashes(s.content ?? '')) referencedHashes.add(h);
+        }
+
+        const msgObj: Record<string, unknown> = {
           id: m.originId || m.id,
           chat_id: chatOriginId,
           sequence_index: m.sequenceIndex ?? 0,
@@ -202,8 +204,14 @@ export async function exportRelationalPack(
           sender_name: m.senderName ?? null,
           content: m.content,
           timestamp: m.createdAt,
-          is_main: !(m.metadata as any)?.imported_swipe
+          is_main: true
         };
+
+        if (alternateSwipes.length > 0) {
+          msgObj.alternate_swipes = alternateSwipes;
+        }
+
+        return msgObj;
       });
 
       const persona = repos.personas.get(chat.activePersonaId);

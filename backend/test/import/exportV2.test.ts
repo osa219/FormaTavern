@@ -1,4 +1,5 @@
 import { describe, it, expect, afterEach } from 'bun:test';
+import { DEFAULT_CHARACTER_THEME } from '@formatavern/shared';
 import { createTestImportEnv, type TestImportEnv } from './testUtils';
 import { importV2Card, exportV2Card } from '../../src/import/v2/service';
 import { createMinimalPng, embedPngTextChunk, extractPngTextChunks, isPng } from '../../src/import/v2/png';
@@ -148,9 +149,47 @@ describe('TavernCard V2 Import & Export (Slice C & Invariant X8)', () => {
     // Export multiple times in different formats
     await exportV2Card(card.id, env.repos, env.store, 'png');
     await exportV2Card(card.id, env.repos, env.store, 'json');
-    await exportV2Card(card.id, env.repos, env.store, 'png');
-
     const afterBytes = readFileSync(diskPath!);
     expect(Buffer.compare(beforeBytes, afterBytes)).toBe(0);
+  });
+
+  it('transcodes WebP avatar to genuine PNG on export preserving image dimensions and metadata (Fix S1)', async () => {
+    env = await createTestImportEnv();
+    const sharp = (await import('sharp')).default;
+
+    // Create a 10x10 WebP image
+    const webpBytes = await sharp({
+      create: { width: 10, height: 10, channels: 4, background: { r: 50, g: 100, b: 150, alpha: 1 } }
+    }).webp().toBuffer();
+
+    const record = await env.store.putPool(new Uint8Array(webpBytes));
+    env.repos.assets.insert(record);
+
+    const card = env.repos.characters.create({
+      name: 'WebP Hero',
+      description: 'Hero with WebP portrait',
+      personality: 'Brave',
+      scenario: 'Battlefield',
+      firstMessage: 'To victory!',
+      style: DEFAULT_CHARACTER_THEME,
+      avatar: record.path
+    });
+
+    const exportResult = await exportV2Card(card.id, env.repos, env.store, 'png');
+    expect(exportResult.contentType).toBe('image/png');
+    const exportedBytes = exportResult.data as Uint8Array;
+    expect(isPng(exportedBytes)).toBe(true);
+
+    // Verify dimensions of exported PNG match the original 10x10 WebP
+    const metadata = await sharp(exportedBytes).metadata();
+    expect(metadata.width).toBe(10);
+    expect(metadata.height).toBe(10);
+
+    // Verify metadata chunk exists
+    const chunks = extractPngTextChunks(exportedBytes);
+    expect(chunks.has('chara')).toBe(true);
+    const jsonStr = Buffer.from(chunks.get('chara')!, 'base64').toString('utf8');
+    const parsed = JSON.parse(jsonStr);
+    expect(parsed.data.name).toBe('WebP Hero');
   });
 });

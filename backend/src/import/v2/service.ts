@@ -1,10 +1,13 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
+import sharp from 'sharp';
 import {
   DEFAULT_CHARACTER_THEME,
   normalizeTag,
   pruneAlternateGreetings,
   slugify,
+  hashCanonical,
+  sha256,
   type CharacterCard,
   type CharacterCreate
 } from '@formatavern/shared';
@@ -81,21 +84,6 @@ export async function importV2Card(
     throw new ApiError('unsupported_format', 422, 'Invalid TavernCard V2 payload structure');
   }
 
-  // Put avatar into pool if PNG bytes are available
-  let avatarPath: string | undefined;
-  let avatarHash: string | undefined;
-  if (avatarBytes && assetStore) {
-    try {
-      const record = await assetStore.putPool(avatarBytes);
-      repos.assets.insert(record);
-      avatarPath = record.path;
-      avatarHash = record.id;
-    } catch (err: any) {
-      // Non-fatal if asset dimensions or format rejected
-      console.warn('[import-v2] Could not store avatar in pool:', err.message);
-    }
-  }
-
   const name = (v2Data.name?.trim() || 'Unnamed Character').slice(0, 120);
   const description = v2Data.description ?? '';
   const personality = v2Data.personality ?? '';
@@ -116,8 +104,42 @@ export async function importV2Card(
     }
   }
 
+  // Provenance hash computation (Invariant X1)
+  const originId = sha256(fileBytes);
+  const originHash = hashCanonical({
+    name,
+    description,
+    personality,
+    scenario,
+    first_mes: v2Data.first_mes,
+    mes_example: v2Data.mes_example,
+    tags,
+    alternate_greetings: alternateGreetings
+  });
+
+  const existing = repos.characters.findByProvenance('tavern_v2', originId);
+  if (existing && existing.originHash === originHash) {
+    return existing;
+  }
+
+  // Put avatar into pool if PNG bytes are available and card validation passed
+  let avatarPath: string | undefined;
+  let avatarHash: string | undefined;
+  if (avatarBytes && assetStore) {
+    try {
+      const record = await assetStore.putPool(avatarBytes);
+      repos.assets.insert(record);
+      avatarPath = record.path;
+      avatarHash = record.id;
+    } catch (err: any) {
+      console.warn('[import-v2] Could not store avatar in pool:', err.message);
+    }
+  }
+
   const importMeta: Record<string, unknown> = {
     origin: 'tavern_v2',
+    originId,
+    originHash,
     tagsRaw: v2Data.tags ?? []
   };
   if (v2Data.extensions?.token_counts) {
@@ -132,6 +154,26 @@ export async function importV2Card(
   if (v2Data.creator_notes) metadata.creatorNotes = v2Data.creator_notes;
   if (v2Data.extensions) metadata.extensions = v2Data.extensions;
 
+  if (existing) {
+    const patchResult = repos.characters.patch(existing.id, {
+      name,
+      description,
+      personality,
+      scenario,
+      firstMessage,
+      alternateGreetings: alternateGreetings.length > 0 ? alternateGreetings : undefined,
+      exampleDialogue,
+      creator,
+      version,
+      tags,
+      avatar: avatarPath ?? existing.avatar,
+      expectedUpdatedAt: existing.updatedAt ?? Date.now()
+    });
+    if (typeof patchResult !== 'string') {
+      return patchResult;
+    }
+  }
+
   const cardInput: CharacterCreate = {
     name,
     description,
@@ -145,6 +187,9 @@ export async function importV2Card(
     tags,
     style: DEFAULT_CHARACTER_THEME,
     avatar: avatarPath,
+    origin: 'tavern_v2',
+    originId,
+    originHash,
     metadata
   };
 
@@ -217,9 +262,17 @@ export async function exportV2Card(
         (card.avatar.startsWith('/assets/') ? resolve(ASSETS_DIR, card.avatar.slice('/assets/'.length)) : null);
       if (diskPath && existsSync(diskPath)) {
         const buf = readFileSync(diskPath);
-        if (isPng(buf)) rawPng = new Uint8Array(buf);
+        if (isPng(buf)) {
+          rawPng = new Uint8Array(buf);
+        } else {
+          // Transcode WebP/JPEG/GIF into genuine PNG format
+          const pngBuf = await sharp(buf).png().toBuffer();
+          rawPng = new Uint8Array(pngBuf);
+        }
       }
-    } catch {}
+    } catch (err: any) {
+      console.warn('[export-v2] Image transcoding failed, using carrier PNG:', err.message);
+    }
   }
 
   if (!rawPng) {
@@ -228,10 +281,9 @@ export async function exportV2Card(
 
   const base64Json = Buffer.from(JSON.stringify(v2Payload), 'utf8').toString('base64');
   const withChara = embedPngTextChunk(rawPng, 'chara', base64Json);
-  const withBoth = embedPngTextChunk(withChara, 'ccv3', base64Json);
 
   return {
-    data: withBoth,
+    data: withChara,
     contentType: 'image/png',
     filename: `${baseSlug}.png`
   };

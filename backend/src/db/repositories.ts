@@ -110,7 +110,7 @@ function cardToRow(card: CharacterCard, now: number) {
     creator: card.creator ?? null,
     creator_url: card.creatorUrl ?? null,
     character_url: card.characterUrl ?? null,
-    origin: card.origin ?? null,
+    origin: card.origin ?? card.metadata?.import?.origin ?? (card as any).import?.origin ?? null,
     origin_id: (card as any).originId ?? card.metadata?.import?.originId ?? (card as any).import?.originId ?? null,
     origin_hash: (card as any).originHash ?? card.metadata?.import?.originHash ?? (card as any).import?.originHash ?? null,
     showcase: card.showcase ?? null,

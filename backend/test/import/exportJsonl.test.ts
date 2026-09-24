@@ -143,4 +143,84 @@ describe('SillyTavern JSONL Chat Import & Export (Slice D)', () => {
       expect(branch2[i].role).toBe(branch1[i].role);
     }
   });
+
+  it('exports native regenerated sibling assistant messages into SillyTavern swipes with active swipe_id (Fix S2)', async () => {
+    env = await createTestImportEnv();
+
+    const char = env.repos.characters.create({
+      name: 'Storyteller',
+      description: 'Bard',
+      personality: 'Lively',
+      scenario: 'Tavern',
+      firstMessage: 'Welcome traveler.',
+      style: DEFAULT_CHARACTER_THEME
+    });
+
+    const persona = env.repos.personas.create({
+      id: 'p-adventurer',
+      name: 'Adventurer',
+      description: '',
+      isDefault: false
+    });
+
+    const chat = env.repos.chats.create({
+      id: 'c-story',
+      title: 'Tale of Dragons',
+      primaryCharacterId: char.id,
+      activePersonaId: persona.id
+    });
+
+    // 1. User message
+    const userMsg = env.repos.messages.insert({
+      id: 'm-u1',
+      chatId: chat.id,
+      parentId: null,
+      senderId: persona.id,
+      senderName: persona.name,
+      role: 'user',
+      narrativeRole: 'persona',
+      content: 'Tell me about the dragon.',
+      status: 'complete'
+    });
+
+    // 2. Native assistant first generation
+    const assistant1 = env.repos.messages.insert({
+      id: 'm-a1',
+      chatId: chat.id,
+      parentId: userMsg.id,
+      senderId: char.id,
+      senderName: char.name,
+      role: 'assistant',
+      narrativeRole: 'character',
+      content: 'The dragon sleeps in the volcano.',
+      status: 'complete'
+    });
+
+    // 3. Native assistant second generation (regenerated sibling with same parentId)
+    const assistant2 = env.repos.messages.insert({
+      id: 'm-a2',
+      chatId: chat.id,
+      parentId: userMsg.id,
+      senderId: char.id,
+      senderName: char.name,
+      role: 'assistant',
+      narrativeRole: 'character',
+      content: 'The dragon soars above the jagged peaks.',
+      status: 'complete'
+    });
+
+    // Set assistant2 as the active leaf (so swipe 2 is the active one)
+    env.repos.chats.setActiveLeaf(chat.id, assistant2.id);
+
+    const exported = await exportJsonlChat(chat.id, env.repos);
+    const lines = exported.data.trim().split('\n').map((l) => JSON.parse(l));
+
+    expect(lines.length).toBe(3); // header + user + active assistant
+    const assistantLine = lines[2];
+    expect(assistantLine.mes).toBe('The dragon soars above the jagged peaks.');
+    expect(assistantLine.swipes.length).toBe(2);
+    expect(assistantLine.swipes).toContain('The dragon sleeps in the volcano.');
+    expect(assistantLine.swipes).toContain('The dragon soars above the jagged peaks.');
+    expect(assistantLine.swipe_id).toBe(1); // second swipe is active
+  });
 });

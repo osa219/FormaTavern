@@ -1,5 +1,5 @@
 import { ulid } from 'ulid';
-import { slugify, type ChatView } from '@formatavern/shared';
+import { slugify, sha256, type ChatView } from '@formatavern/shared';
 import type { Repositories } from '../../db/contracts';
 import { ApiError } from '../../engine/errors';
 
@@ -84,12 +84,35 @@ export async function importJsonlChat(
         : `Chat with ${char.name}`;
   const personaSnapshot = JSON.stringify({ name: userName });
 
+  const originId = typeof chatMetadata.id === 'string' && chatMetadata.id ? chatMetadata.id : sha256(fileBytes);
+  const originHash = sha256(fileBytes);
+
+  const existingChat = repos.chats.findByProvenance('sillytavern', originId);
+  if (existingChat && existingChat.originHash === originHash) {
+    const finalChat = repos.chats.get(existingChat.id)!;
+    return {
+      id: finalChat.id,
+      title: finalChat.title,
+      primaryCharacterId: finalChat.primaryCharacterId,
+      activePersonaId: finalChat.activePersonaId,
+      activeLeafId: finalChat.activeLeafId,
+      activeGenerationMessageId: null,
+      createdAt: finalChat.createdAt,
+      updatedAt: finalChat.updatedAt,
+      metadata: finalChat.metadata,
+      messageCount: repos.messages.countInChat(finalChat.id)
+    };
+  }
+
   const createdChat = repos.chats.create({
-    id: 'c_' + ulid().toLowerCase(),
+    id: existingChat?.id ?? ('c_' + ulid().toLowerCase()),
     title,
     primaryCharacterId: char.id,
     activePersonaId: persona.id,
     personaSnapshot,
+    origin: 'sillytavern',
+    originId,
+    originHash,
     metadata: chatMetadata as any
   });
 
@@ -126,10 +149,12 @@ export async function importJsonlChat(
     let activeContent = msgData.mes ?? '';
     const swipes = Array.isArray(msgData.swipes) ? msgData.swipes.filter((s) => typeof s === 'string') : [];
 
+    let activeIdx = 0;
     if (swipes.length > 0) {
-      const activeIdx = typeof msgData.swipe_id === 'number' && msgData.swipe_id >= 0 && msgData.swipe_id < swipes.length
-        ? msgData.swipe_id
-        : 0;
+      activeIdx =
+        typeof msgData.swipe_id === 'number' && msgData.swipe_id >= 0 && msgData.swipe_id < swipes.length
+          ? msgData.swipe_id
+          : 0;
       activeContent = swipes[activeIdx] ?? activeContent;
     }
 
@@ -147,7 +172,7 @@ export async function importJsonlChat(
       status: 'complete',
       createdAt: msgTime,
       sequenceIndex,
-      metadata: metadata as any
+      metadata: { ...metadata, swipe_index: activeIdx } as any
     });
 
     currentMainId = mainMsg.id;
@@ -156,7 +181,7 @@ export async function importJsonlChat(
     // Insert alternate swipe sibling rows sharing the same parentId
     if (swipes.length > 1) {
       for (let sIdx = 0; sIdx < swipes.length; sIdx++) {
-        if (swipes[sIdx] === activeContent) continue;
+        if (sIdx === activeIdx) continue;
         repos.messages.insert({
           id: 'm_' + ulid().toLowerCase(),
           chatId,
@@ -171,7 +196,7 @@ export async function importJsonlChat(
           status: 'complete',
           createdAt: msgTime + sIdx + 1,
           sequenceIndex,
-          metadata: { ...metadata, imported_swipe: true } as any
+          metadata: { ...metadata, imported_swipe: true, swipe_index: sIdx } as any
         });
       }
     }
@@ -233,10 +258,20 @@ export async function exportJsonlChat(
       const isUser = msg.narrativeRole === 'persona';
       const isSystem = msg.narrativeRole === 'narrator' || Boolean((msg.metadata as any)?.system);
 
+      // Collect all siblings with the same role (both native regenerations and imported swipes)
       const siblings = repos.messages.siblings(msg.id);
-      const swipeSiblings = siblings.filter((s) => (s.metadata as any)?.imported_swipe === true);
-
-      const allSwipes = [msg.content, ...swipeSiblings.map((s) => s.content)];
+      const roleSiblings = siblings
+        .filter((s) => s.role === msg.role)
+        .sort((a, b) => {
+          const aIdx = (a.metadata as any)?.swipe_index;
+          const bIdx = (b.metadata as any)?.swipe_index;
+          if (typeof aIdx === 'number' && typeof bIdx === 'number') {
+            return aIdx - bIdx;
+          }
+          return a.createdAt - b.createdAt;
+        });
+      const allSwipes = roleSiblings.map((s) => s.content);
+      const activeSwipeId = Math.max(0, roleSiblings.findIndex((s) => s.id === msg.id));
 
       const lineObj: SillyTavernMessageLine = {
         name: msg.senderName || (isUser ? userName : charName),
@@ -246,7 +281,7 @@ export async function exportJsonlChat(
         mes: msg.content,
         extra: msg.metadata ?? {},
         swipes: allSwipes.length > 1 ? allSwipes : [msg.content],
-        swipe_id: 0
+        swipe_id: activeSwipeId
       };
 
       lines.push(JSON.stringify(lineObj));

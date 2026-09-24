@@ -19,3 +19,5 @@ export function acquireSyncLock(): () => void {
 export function isSyncActive(): boolean {
   return activeSync;
 }
+
+export const isSyncLocked = isSyncActive;

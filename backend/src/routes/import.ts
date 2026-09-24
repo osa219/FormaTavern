@@ -8,6 +8,7 @@ import type { AssetStore } from '../assets/contracts';
 import type { ImportService } from '../import/contracts';
 import { ImportRunManager } from '../import/runs';
 import { validateImportPath, DEFAULT_KNOWN_IMPORT_ROOT } from '../import/pathAllowlist';
+import { isSyncLocked } from '../import/customEngine/guard';
 import { importV2Card } from '../import/v2/service';
 import { importJsonlChat } from '../import/jsonl/service';
 import { exportRelationalPack } from '../import/charx/service';
@@ -34,6 +35,10 @@ export function createImportRouter({
       async ({ body, query, set }) => {
         if (!importService) {
           throw new ApiError('internal', 500, 'Import service is not configured');
+        }
+
+        if (isSyncLocked()) {
+          throw new ApiError('sync_in_progress', 409, 'Another import/sync operation is currently in progress');
         }
 
         const rawRoot = (body as any)?.root || DEFAULT_KNOWN_IMPORT_ROOT;
@@ -150,7 +155,10 @@ export function createExportRouter({ repos, assets }: { repos: Repositories; ass
     .get(
       '/relational-pack',
       async ({ query, set }) => {
-        const characterId = query?.characterId as string | undefined;
+        const characterId = query?.characterId;
+        if (!characterId) {
+          throw new ApiError('validation_failed', 422, 'characterId parameter is required for relational pack export');
+        }
         const result = await exportRelationalPack(characterId, repos, assets);
 
         set.headers['Content-Type'] = result.contentType;
@@ -163,11 +171,9 @@ export function createExportRouter({ repos, assets }: { repos: Repositories; ass
         });
       },
       {
-        query: t.Optional(
-          t.Object({
-            characterId: t.Optional(t.String())
-          })
-        )
+        query: t.Object({
+          characterId: t.String({ minLength: 1 })
+        })
       }
     );
 }
