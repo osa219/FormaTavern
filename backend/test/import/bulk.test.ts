@@ -83,9 +83,14 @@ describe('CustomEngine Bulk Import & Atomicity (X2)', () => {
     expect(ftsCount).toBe(charCount);
     expect(ftsCount).toBe(5);
 
-    // Test FTS search via character list
+    // Test FTS search via character list. Source blurbs land in showcase
+    // (lore description stays empty), so this proves showcase indexing.
     const searchRes = env.repos.characters.list({ q: 'elemental fire' });
     expect(searchRes.items.length).toBe(5);
+
+    // Name and tag search paths are unaffected by the mapping change.
+    expect(env.repos.characters.list({ q: 'wizard' }).items.length).toBe(5);
+    expect(env.repos.characters.list({ q: 'sorcery' }).items.length).toBe(5);
   });
 
   it('rejects concurrent sync with 409 sync_in_progress', async () => {

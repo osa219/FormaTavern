@@ -31,6 +31,10 @@ export const CharacterImportMetadataSchema = Type.Object({
   originId: Type.Optional(Type.String()),
   originHash: Type.Optional(Type.String()),
   tagsRaw: Type.Optional(Type.Array(Type.String())),
+  // Verbatim source marketing blurb (custom_engine `description`). The lore
+  // description column stays empty for imports; exporters read this snapshot
+  // to reproduce the original card losslessly.
+  sourceDescription: Type.Optional(Type.String()),
   tokenCounts: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
   stats: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
   soundcloudTrackId: Type.Optional(Type.String()),

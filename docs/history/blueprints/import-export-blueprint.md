@@ -59,10 +59,12 @@ Measured against the live dump (`exports/custom_engine/`, manifest `version 1.0.
 | `card_title` | `characters.tagline` fallback chain | If `tagline` empty, use `card_title`. Both display-only, never enter the prompt (P4). |
 | `chat_name` (nullable, 605 set) | `characters.character_name` (v10 column, NULL = fall back to `name`) | Only when set; else NULL. |
 | `avatar_hash` | pool blob + `characters.avatar` = `/assets/pool/<hash>.<ext>` | 1 card has none → initials fallback (existing behavior). |
-| `description`, `personality`, `scenario`, `first_message`, `mes_example` | same-named columns (`mes_example` → `metadata.exampleDialogue`) | `media://` URIs kept verbatim (X4). No dialect conversion in this phase (deferred §11). |
+| `description` | → `characters.showcase` (verbatim, clamped to 65_536) + verbatim copy in `metadata.import.sourceDescription` for lossless exports; lore `description` column stays `''` | Source blurbs are author marketing (HTML), not prompt lore — Block 2 stays silent for imports. `media://` kept verbatim (X4). |
+| `personality`, `scenario`, `first_message`, `mes_example` | same-named columns (`mes_example` → `metadata.exampleDialogue`) | `media://` URIs kept verbatim (X4). No dialect conversion in this phase (deferred §11). |
 | `alternate_greetings[]` | `characters.alternate_greetings` (JSON array, v9 column) | Order preserved; max observed 13, no cap imposed. |
 | `creator_name`, `creator_url`, `character_url`, `source_platform` | `characters.creator`, `creator_url`, `character_url`, `origin='custom_engine'` | `origin` column exists from v10; this phase adds `origin_id`/`origin_hash` (§3). |
-| `creator_notes` | appended to `showcase` under an "Author notes" disclosure, or `showcase` when empty | Display-only (P4). Never prompt-injected. |
+| `creator_notes` | appended to `showcase` after the source blurb under an "Author notes" disclosure | Display-only (P4). Never prompt-injected. |
+| `CUSTOM_ENGINE_MAPPING_VERSION` (= 2) | mixed into `origin_hash` (`plan.ts:characterOriginHash`) | Mapping changes re-sync old rows once instead of skipping forever (X1/X7). Bump on any future mapping change. |
 | `tags[]` | `character_tags` join + FTS (normalize via existing `normalizeTag`) | Emoji tags (e.g. `👩‍🦰 Female`) normalize to null → stored in `metadata.importedTagsRaw`, excluded from FTS, still displayed. |
 | `token_counts`, `stats`, `soundcloud_track_id`, `is_nsfw`, `is_image_nsfw` | `characters.metadata` extensions block | Stored verbatim under `metadata.import.{...}`; `is_nsfw` additionally drives the existing blur/visibility hint where the UI already supports it. No new filtering UI in this phase. |
 | `created_at` / `updated_at` (ISO strings) | `characters.created_at` / `updated_at` (UnixMs) | Parse ISO → ms; null `updated_at` → `created_at`. Import never sets `updated_at` newer than wall-clock. |

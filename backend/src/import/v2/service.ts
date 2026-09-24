@@ -223,13 +223,16 @@ export async function exportV2Card(
 
   const meta = (card.metadata ?? {}) as Record<string, any>;
   const baseSlug = slugify(card.name) || 'character';
+  const importMeta = (meta.import ?? {}) as Record<string, any>;
 
   const v2Payload: TavernCardV2Payload = {
     spec: 'chara_card_v2',
     spec_version: '2.0',
     data: {
       name: card.name,
-      description: card.description,
+      // Prefer the preserved import source blurb so exported cards match
+      // the original; fall back to the lore description for native cards.
+      description: (importMeta.sourceDescription as string | undefined) ?? card.description,
       personality: card.personality,
       scenario: card.scenario,
       first_mes: card.firstMessage,

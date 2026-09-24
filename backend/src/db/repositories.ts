@@ -322,6 +322,7 @@ export class SqliteCharacterRepository implements CharacterRepository {
     characterName: string | null,
     tagline: string | null,
     description: string,
+    showcase: string | null,
     creator: string | null,
     tags: string[]
   ) {
@@ -329,15 +330,23 @@ export class SqliteCharacterRepository implements CharacterRepository {
     this.db.run(`DELETE FROM characters_fts WHERE id = ?;`, [id]);
     try {
       this.db.run(
-        `INSERT INTO characters_fts(id, name, character_name, tagline, description, creator, tags) VALUES (?, ?, ?, ?, ?, ?, ?);`,
-        [id, name, characterName ?? '', tagline ?? '', description, creator ?? '', tags.join(' ')]
+        `INSERT INTO characters_fts(id, name, character_name, tagline, description, showcase, creator, tags) VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
+        [id, name, characterName ?? '', tagline ?? '', description, showcase ?? '', creator ?? '', tags.join(' ')]
       );
     } catch {
-      // Fallback for pre-v10 FTS tables without the character_name column.
-      this.db.run(
-        `INSERT INTO characters_fts(id, name, tagline, description, creator, tags) VALUES (?, ?, ?, ?, ?, ?);`,
-        [id, name, tagline ?? '', description, creator ?? '', tags.join(' ')]
-      );
+      // Fallback for older FTS tables without the showcase column (pre-v12).
+      try {
+        this.db.run(
+          `INSERT INTO characters_fts(id, name, character_name, tagline, description, creator, tags) VALUES (?, ?, ?, ?, ?, ?, ?);`,
+          [id, name, characterName ?? '', tagline ?? '', description, creator ?? '', tags.join(' ')]
+        );
+      } catch {
+        // Fallback for pre-v10 FTS tables without the character_name column.
+        this.db.run(
+          `INSERT INTO characters_fts(id, name, tagline, description, creator, tags) VALUES (?, ?, ?, ?, ?, ?);`,
+          [id, name, tagline ?? '', description, creator ?? '', tags.join(' ')]
+        );
+      }
     }
   }
 
@@ -380,8 +389,8 @@ export class SqliteCharacterRepository implements CharacterRepository {
         params.push(ftsTerm);
       } else {
         const escaped = queryStr.replace(/([%_\\])/g, '\\$1');
-        wheres.push(`(c.name LIKE ? ESCAPE '\\' OR c.character_name LIKE ? ESCAPE '\\' OR c.tagline LIKE ? ESCAPE '\\' OR c.description LIKE ? ESCAPE '\\' OR c.creator LIKE ? ESCAPE '\\')`);
-        params.push(`%${escaped}%`, `%${escaped}%`, `%${escaped}%`, `%${escaped}%`, `%${escaped}%`);
+        wheres.push(`(c.name LIKE ? ESCAPE '\\' OR c.character_name LIKE ? ESCAPE '\\' OR c.tagline LIKE ? ESCAPE '\\' OR c.description LIKE ? ESCAPE '\\' OR c.showcase LIKE ? ESCAPE '\\' OR c.creator LIKE ? ESCAPE '\\')`);
+        params.push(`%${escaped}%`, `%${escaped}%`, `%${escaped}%`, `%${escaped}%`, `%${escaped}%`, `%${escaped}%`);
       }
     }
 
@@ -563,7 +572,7 @@ export class SqliteCharacterRepository implements CharacterRepository {
 
       const safeTags = card.tags ?? [];
       this.syncTags(finalId, safeTags);
-      this.syncFts(finalId, card.name, card.characterName ?? null, card.tagline ?? null, card.description, card.creator ?? null, safeTags);
+      this.syncFts(finalId, card.name, card.characterName ?? null, card.tagline ?? null, card.description, card.showcase ?? null, card.creator ?? null, safeTags);
     })();
 
     return card;
@@ -698,6 +707,7 @@ export class SqliteCharacterRepository implements CharacterRepository {
         mergedCard.characterName ?? null,
         mergedCard.tagline ?? null,
         mergedCard.description,
+        mergedCard.showcase ?? null,
         mergedCard.creator ?? null,
         safeMergedTags
       );
@@ -797,7 +807,7 @@ export class SqliteCharacterRepository implements CharacterRepository {
       });
       const tags = (card.tags ?? []).map((t) => normalizeTag(t)).filter(Boolean) as string[];
       this.syncTags(card.id, tags);
-      this.syncFts(card.id, card.name, card.characterName ?? null, card.tagline ?? null, card.description, card.creator ?? null, tags);
+      this.syncFts(card.id, card.name, card.characterName ?? null, card.tagline ?? null, card.description, card.showcase ?? null, card.creator ?? null, tags);
     })();
   }
 
@@ -836,7 +846,7 @@ export class SqliteCharacterRepository implements CharacterRepository {
       if (inserted) {
         const tags = (card.tags ?? []).map((t) => normalizeTag(t)).filter(Boolean) as string[];
         this.syncTags(card.id, tags);
-        this.syncFts(card.id, card.name, card.characterName ?? null, card.tagline ?? null, card.description, card.creator ?? null, tags);
+        this.syncFts(card.id, card.name, card.characterName ?? null, card.tagline ?? null, card.description, card.showcase ?? null, card.creator ?? null, tags);
       }
     })();
     return inserted;

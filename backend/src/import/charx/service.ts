@@ -147,7 +147,10 @@ export async function exportRelationalPack(
       creator_url: char.creatorUrl ?? null,
       character_url: char.characterUrl ?? null,
       avatar_hash: avatarHash,
-      description: char.description,
+      // Lore description stays empty for custom_engine imports (the source
+      // blurb is showcase content); reproduce the original card verbatim
+      // from the preserved source snapshot when present.
+      description: (importMeta.sourceDescription as string | undefined) ?? char.description,
       personality: char.personality,
       scenario: char.scenario,
       first_message: char.firstMessage,

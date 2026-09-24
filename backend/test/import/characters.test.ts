@@ -202,7 +202,103 @@ describe('CustomEngine Character Import', () => {
     expect(report3.updatedChars).toBe(1);
 
     const updatedCard = env.repos.characters.findByProvenance('custom_engine', 'uuid-skip-test');
-    expect(updatedCard!.description).toBe('Now modified with new powers');
+    // Source description is showcase content: updates land in showcase,
+    // lore description stays empty so prompt Block 2 is silent.
+    expect(updatedCard!.showcase).toContain('Now modified with new powers');
+    expect(updatedCard!.description).toBeFalsy();
     expect(updatedCard!.id).toBe(initialCard!.id); // Keeps same slug ID!
+  });
+
+  it('routes source description to showcase and keeps lore description empty', async () => {
+    env = await createTestImportEnv();
+
+    const char = {
+      id: 'uuid-showcase-route',
+      name: 'Shizuku',
+      card_title: 'Shizuku - Your Neighbor',
+      description: '<p style="text-align: center;">Your shy neighbor made you tea...</p>',
+      personality: 'Shy and kind',
+      scenario: 'Neighborhood',
+      first_message: 'Hi...',
+      creator_notes: 'Remastered by Necoza'
+    };
+
+    await env.writeCharacter(char);
+
+    const report = await env.service.sync(env.sourceDir);
+    expect(report.insertedChars).toBe(1);
+
+    const card = env.repos.characters.findByProvenance('custom_engine', 'uuid-showcase-route');
+    expect(card).not.toBeNull();
+    expect(card!.description).toBeFalsy();
+    expect(card!.showcase).toContain('Your shy neighbor made you tea');
+    expect(card!.showcase).toContain('Author notes');
+    expect(card!.showcase).toContain('Remastered by Necoza');
+    expect(card!.personality).toBe('Shy and kind');
+    expect(card!.metadata?.import?.sourceDescription).toBe(char.description);
+  });
+
+  it('clamps oversized source blurbs to the 65_536 showcase limit', async () => {
+    env = await createTestImportEnv();
+
+    const char = {
+      id: 'uuid-long-blurb',
+      name: 'Verbose',
+      description: 'x'.repeat(70_000),
+      personality: 'Talkative',
+      scenario: 'Library',
+      first_message: 'Hello'
+    };
+
+    await env.writeCharacter(char);
+
+    const report = await env.service.sync(env.sourceDir);
+    expect(report.insertedChars).toBe(1);
+
+    const card = env.repos.characters.findByProvenance('custom_engine', 'uuid-long-blurb');
+    expect(card).not.toBeNull();
+    expect(card!.showcase!.length).toBeLessThanOrEqual(65_536);
+    expect(card!.description).toBeFalsy();
+  });
+
+  it('self-heals legacy rows: moves lore description to showcase on re-sync', async () => {
+    env = await createTestImportEnv();
+
+    // Legacy row as written by mapping v1 (source blurb stored as lore).
+    const now = Date.now();
+    env.inst.db.run(
+      `INSERT INTO characters (id, name, style, created_at, updated_at, origin, origin_id, origin_hash, description, showcase)
+       VALUES (?, ?, ?, ?, ?, 'custom_engine', ?, ?, ?, NULL);`,
+      [
+        'legacy-shizuku',
+        'Shizuku',
+        JSON.stringify({}),
+        now,
+        now,
+        'uuid-legacy',
+        'stale-hash-from-v1',
+        'Old lore text'
+      ]
+    );
+
+    const char = {
+      id: 'uuid-legacy',
+      name: 'Shizuku',
+      description: '<p>Your shy neighbor made you tea...</p>',
+      personality: 'Shy',
+      scenario: 'Doorway',
+      first_message: 'Hi...'
+    };
+    await env.writeCharacter(char);
+
+    const report = await env.service.sync(env.sourceDir);
+    expect(report.updatedChars).toBe(1);
+    expect(report.skipped).toBe(0);
+
+    const card = env.repos.characters.findByProvenance('custom_engine', 'uuid-legacy');
+    expect(card).not.toBeNull();
+    expect(card!.id).toBe('legacy-shizuku');
+    expect(card!.description).toBeFalsy();
+    expect(card!.showcase).toContain('Your shy neighbor made you tea');
   });
 });

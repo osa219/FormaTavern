@@ -310,6 +310,28 @@ export const migrations: readonly Migration[] = [
         PRIMARY KEY (message_id, asset_id)
       ) WITHOUT ROWID;`);
     }
+  },
+  {
+    version: 12,
+    name: 'fts_showcase_index',
+    up: (db) => {
+      // FTS is derived data: rebuild the index with the showcase column so
+      // imported marketing blurbs (now stored in showcase, not description)
+      // stay discoverable via Foyer search. No source rows are touched.
+      const ftsRow = db.query(`SELECT 1 FROM pragma_compile_options WHERE compile_options = 'ENABLE_FTS5';`).get();
+      const ftsExists = db.query(`SELECT 1 FROM sqlite_master WHERE type='table' AND name='characters_fts';`).get();
+      if (!ftsRow || !ftsExists) return;
+      db.run(`DROP TABLE characters_fts;`);
+      db.run(`CREATE VIRTUAL TABLE IF NOT EXISTS characters_fts USING fts5(
+        id UNINDEXED, name, character_name, tagline, description, showcase, creator, tags,
+        tokenize = 'unicode61 remove_diacritics 2'
+      );`);
+      db.run(`INSERT INTO characters_fts(id, name, character_name, tagline, description, showcase, creator, tags)
+        SELECT c.id, c.name, coalesce(c.character_name, ''), coalesce(c.tagline, ''), c.description, coalesce(c.showcase, ''), coalesce(c.creator, ''),
+               coalesce((SELECT group_concat(tag, ' ') FROM character_tags WHERE character_id = c.id), '')
+        FROM characters c;`);
+      db.run(`INSERT INTO characters_fts(characters_fts) VALUES('optimize');`);
+    }
   }
 ];
 

@@ -22,11 +22,11 @@ export function reindexCharactersFts(db: Database): ReindexResult {
   db.transaction(() => {
     db.run(`DROP TABLE IF EXISTS characters_fts;`);
     db.run(`CREATE VIRTUAL TABLE characters_fts USING fts5(
-      id UNINDEXED, name, character_name, tagline, description, creator, tags,
+      id UNINDEXED, name, character_name, tagline, description, showcase, creator, tags,
       tokenize = 'unicode61 remove_diacritics 2'
     );`);
-    db.run(`INSERT INTO characters_fts(id, name, character_name, tagline, description, creator, tags)
-      SELECT c.id, c.name, coalesce(c.character_name, ''), coalesce(c.tagline, ''), c.description, coalesce(c.creator, ''),
+    db.run(`INSERT INTO characters_fts(id, name, character_name, tagline, description, showcase, creator, tags)
+      SELECT c.id, c.name, coalesce(c.character_name, ''), coalesce(c.tagline, ''), c.description, coalesce(c.showcase, ''), coalesce(c.creator, ''),
              coalesce((SELECT group_concat(tag, ' ') FROM character_tags WHERE character_id = c.id), '')
       FROM characters c;`);
     db.run(`INSERT INTO characters_fts(characters_fts) VALUES('optimize');`);

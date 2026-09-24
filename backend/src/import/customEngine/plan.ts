@@ -12,6 +12,22 @@ import type {
 } from './types';
 import type { SniffResult } from './sniff';
 
+/**
+ * Source→DB field mapping version. Bump whenever the character mapping
+ * changes so rows imported under an older mapping re-sync once (update)
+ * instead of skipping forever (X1/X7). Current: v2 routes the source
+ * `description` marketing blurb to the display-only showcase column and
+ * keeps the lore description empty; v1 stored it as lore description.
+ */
+export const CUSTOM_ENGINE_MAPPING_VERSION = 2;
+
+export function characterOriginHash(raw: CustomEngineCharacter): string {
+  return hashCanonical(
+    canonicalCharacter(raw as unknown as Record<string, unknown>) +
+      `#mapping:v${CUSTOM_ENGINE_MAPPING_VERSION}`
+  );
+}
+
 export async function planCustomEngineSync(
   sniffed: SniffResult,
   options: CustomEngineImportOptions,
@@ -26,7 +42,7 @@ export async function planCustomEngineSync(
   // 1. Collect Characters
   if (sniffed.kind === 'single_character') {
     const raw = sniffed.raw as CustomEngineCharacter;
-    const originHash = hashCanonical(canonicalCharacter(raw as unknown as Record<string, unknown>));
+    const originHash = characterOriginHash(raw);
     const existing = charRepo.findByProvenance('custom_engine', raw.id);
     let action: 'insert' | 'update' | 'skip' = 'insert';
     let existingId: string | undefined = undefined;
@@ -72,7 +88,7 @@ export async function planCustomEngineSync(
           continue;
         }
 
-        const originHash = hashCanonical(canonicalCharacter(raw as unknown as Record<string, unknown>));
+        const originHash = characterOriginHash(raw);
         const existing = charRepo.findByProvenance('custom_engine', raw.id);
         let action: 'insert' | 'update' | 'skip' = 'insert';
         let existingId: string | undefined = undefined;

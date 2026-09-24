@@ -193,10 +193,20 @@ export class CustomEngineImportService {
               avatarPath = this.assetRepo.get(char.avatar_hash)!.path;
             }
 
-            let showcase: string | null = null;
-            if (char.creator_notes && char.creator_notes.trim()) {
-              showcase = `<details><summary>Author notes</summary>\n\n${char.creator_notes.trim()}\n</details>`;
+            // Source `description` is author showcase/marketing content
+            // (Janitor-style HTML blurbs, thank-you notes, credits), not prompt
+            // lore: route it verbatim to the display-only showcase column and
+            // keep the lore description empty so prompt Block 2 stays silent.
+            // Showcase schema caps at 65_536 chars; clamp oversized blurbs.
+            const showcaseParts: string[] = [];
+            if (char.description && char.description.trim()) {
+              showcaseParts.push(char.description.trim());
             }
+            if (char.creator_notes && char.creator_notes.trim()) {
+              showcaseParts.push(`<details><summary>Author notes</summary>\n\n${char.creator_notes.trim()}\n</details>`);
+            }
+            let showcase: string | null = showcaseParts.length > 0 ? showcaseParts.join('\n\n') : null;
+            if (showcase && showcase.length > 65_536) showcase = showcase.slice(0, 65_536);
 
             const prunedAlternates = pruneAlternateGreetings(char.alternate_greetings);
 
@@ -220,6 +230,10 @@ export class CustomEngineImportService {
                 originHash: pChar.originHash,
                 tagsRaw: char.tags ?? []
               };
+              // Preserve the verbatim source blurb so lossless exporters
+              // (relational pack, V2) can reproduce the original card even
+              // though the lore description column stays empty.
+              if (char.description && char.description.trim()) importMeta.sourceDescription = char.description;
               if (char.token_counts !== undefined && char.token_counts !== null) importMeta.tokenCounts = char.token_counts;
               if (char.stats !== undefined && char.stats !== null) importMeta.stats = char.stats;
               if (char.soundcloud_track_id !== undefined && char.soundcloud_track_id !== null) importMeta.soundcloudTrackId = char.soundcloud_track_id;
@@ -254,7 +268,7 @@ export class CustomEngineImportService {
                   char.id,
                   pChar.originHash,
                   showcase,
-                  char.description,
+                  '',
                   char.personality,
                   char.scenario,
                   char.first_message ?? '',
@@ -319,6 +333,8 @@ export class CustomEngineImportService {
                 originHash: pChar.originHash,
                 tagsRaw: char.tags ?? []
               };
+              if (char.description && char.description.trim()) importMeta.sourceDescription = char.description;
+              else delete importMeta.sourceDescription;
               if (char.token_counts !== undefined && char.token_counts !== null) importMeta.tokenCounts = char.token_counts;
               if (char.stats !== undefined && char.stats !== null) importMeta.stats = char.stats;
               if (char.soundcloud_track_id !== undefined && char.soundcloud_track_id !== null) importMeta.soundcloudTrackId = char.soundcloud_track_id;
@@ -359,7 +375,7 @@ export class CustomEngineImportService {
                   char.creator_url || null,
                   char.character_url || null,
                   showcase,
-                  char.description,
+                  '',
                   char.personality,
                   char.scenario,
                   char.first_message ?? '',

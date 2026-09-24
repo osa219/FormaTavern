@@ -280,12 +280,12 @@ describe('Database Migrations', () => {
       [now]
     );
 
-    // Run migration 11
+    // Run migration 11+
     const upgrade = runMigrations(inst.db);
     expect(upgrade).toEqual({ from: 10, to: migrations.length });
 
     const { user_version } = inst.db.query('PRAGMA user_version;').get() as { user_version: number };
-    expect(user_version).toBe(11);
+    expect(user_version).toBe(migrations.length);
 
     // Verify characters table has origin, origin_id, origin_hash
     const charCols = inst.db.query('PRAGMA table_info(characters);').all() as Array<{ name: string }>;
@@ -334,6 +334,45 @@ describe('Database Migrations', () => {
     expect(indexSet.has('idx_char_assets_role')).toBe(true);
 
     // Verify foreign key integrity
+    expect(inst.db.query('PRAGMA foreign_key_check;').all()).toEqual([]);
+  });
+
+  it('upgrades v11 database to v12 and indexes showcase in FTS without touching rows', () => {
+    inst = openTestDb(':memory:');
+    const v11Only = migrations.slice(0, 11);
+    runMigrations(inst.db, v11Only);
+
+    const now = Date.now();
+    inst.db.run(
+      `INSERT INTO characters (id, name, description, showcase, style, created_at, updated_at) VALUES ('c11', 'Hero11', '', '<p>shy neighbor tea</p>', '{}', ?, ?)`,
+      [now, now]
+    );
+
+    const upgrade = runMigrations(inst.db);
+    expect(upgrade.from).toBe(11);
+
+    const { user_version } = inst.db.query('PRAGMA user_version;').get() as { user_version: number };
+    expect(user_version).toBe(12);
+
+    // Source row untouched
+    const row = inst.db.query(`SELECT description, showcase FROM characters WHERE id = 'c11';`).get() as {
+      description: string;
+      showcase: string;
+    };
+    expect(row.description).toBe('');
+    expect(row.showcase).toBe('<p>shy neighbor tea</p>');
+
+    // Showcase text is searchable when FTS5 is available
+    const ftsExists = inst.db.query(
+      `SELECT 1 FROM sqlite_master WHERE type='table' AND name='characters_fts';`
+    ).get();
+    if (ftsExists) {
+      const cols = inst.db.query(`SELECT sql FROM sqlite_master WHERE name='characters_fts';`).get() as { sql: string };
+      expect(cols.sql).toContain('showcase');
+      const hit = inst.db.query(`SELECT id FROM characters_fts WHERE characters_fts MATCH ?;`).all('"neighbor"*');
+      expect(hit.map((r: any) => r.id)).toContain('c11');
+    }
+
     expect(inst.db.query('PRAGMA foreign_key_check;').all()).toEqual([]);
   });
 });
