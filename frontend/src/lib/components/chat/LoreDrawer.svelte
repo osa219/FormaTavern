@@ -6,6 +6,7 @@
   import Icon from '$lib/components/ui/Icon.svelte';
   import PromptTab from './PromptTab.svelte';
   import type { PromptDraft } from '$lib/prompt/preview';
+  import { extractPersonaSnapshotName } from '$lib/render/mediaRewrite';
 
   const CONVERT_DIALECTS = ['directive', 'xml', 'prefix'] as const;
   type ConvertDialect = (typeof CONVERT_DIALECTS)[number];
@@ -67,6 +68,10 @@
 
   const chatDialect = $derived(
     chat?.metadata?.narrativeMode === 'narrative' ? (chat.metadata.envelopeDialect ?? 'directive') : null
+  );
+
+  const snapshotName = $derived(
+    extractPersonaSnapshotName(chat?.personaSnapshot)
   );
 
   // Global default for the misalignment prompt below. Loaded on demand: the
@@ -381,9 +386,19 @@
         {:else if activeTab === 'you'}
           <div class="space-y-5 text-xs">
             <div class="rounded-xl border border-(--chrome-line) bg-(--chrome-bg) p-4 space-y-3">
-              <span class="block text-[11px] font-mono text-(--chrome-text)/60 uppercase tracking-wider">
-                Active Persona
-              </span>
+              <div class="flex items-center justify-between gap-2">
+                <span class="block text-[11px] font-mono text-(--chrome-text)/60 uppercase tracking-wider">
+                  Active Persona
+                </span>
+                {#if snapshotName}
+                  <span
+                    class="rounded-md border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-mono text-accent font-medium select-none"
+                    data-testid="persona-snapshot-badge"
+                  >
+                    Snapshot: {snapshotName}
+                  </span>
+                {/if}
+              </div>
 
               {#if currentPersona}
                 <div class="flex items-center gap-3">

@@ -1,9 +1,16 @@
 <script lang="ts">
   import { renderRoleplayMarkdown } from '$lib/render/markdown';
+  import { rewriteHtmlMediaUrls, type MediaRewriteOptions } from '$lib/render/mediaRewrite';
 
-  let { text = '' }: { text?: string } = $props();
+  let {
+    text = '',
+    mediaOptions
+  }: {
+    text?: string;
+    mediaOptions?: MediaRewriteOptions;
+  } = $props();
 
-  const html = $derived(renderRoleplayMarkdown(text));
+  const html = $derived(rewriteHtmlMediaUrls(renderRoleplayMarkdown(text), mediaOptions));
 </script>
 
 <div class="prose-roleplay">

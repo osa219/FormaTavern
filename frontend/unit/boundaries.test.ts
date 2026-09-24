@@ -74,6 +74,18 @@ describe('Architecture & Boundary Police (Invariant U2, U3, U6)', () => {
     }
   });
 
+  it('ensures rewriteMediaUrls is imported ONLY in lib/render/mediaRewrite.ts across frontend src (Invariant X4)', () => {
+    for (const file of allSourceFiles) {
+      const normalizedPath = file.replace(/\\/g, '/');
+      if (normalizedPath.includes('/routes/dev/')) continue;
+      const isApprovedModule = normalizedPath.endsWith('/lib/render/mediaRewrite.ts');
+      const content = readFileSync(file, 'utf-8');
+      if (content.includes('rewriteMediaUrls')) {
+        expect(isApprovedModule).toBe(true);
+      }
+    }
+  });
+
   it('ensures {@html is used ONLY inside Markdown.svelte and ShowcaseBody.svelte (Sanitization Guard, Amendment A-U2)', () => {
     for (const file of allSourceFiles) {
       const normalizedPath = file.replace(/\\/g, '/');

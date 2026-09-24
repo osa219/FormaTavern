@@ -19,7 +19,11 @@ markedInstance.use({
     table(token: any) {
       return token.raw;
     },
-    image() {
+    image(token: any) {
+      const src = token.href ?? '';
+      if (src.startsWith('media://')) {
+        return src;
+      }
       return '';
     },
     html(token: any) {

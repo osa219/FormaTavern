@@ -15,7 +15,7 @@ It is updated after the completion of each execution step.
 | **Step 3** | Content-Addressed Media Pool Store & Serving | X3, X10, A-AS1 | Backend: `FsAssetStore.putPool`, static route nosniff, security guards | **Complete** | [`af4b245`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend) |
 | **Step 4** | CustomEngine ETL Pipeline Service & CLI Runner | X1, X2, X5, X6, X9 | Backend: Sniff/Plan/Copy/Upsert/Append/Rebuild service, CLI, 6 test suites | **Complete** | [`3fac6be`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend) |
 | **Step 5** | API Routes, Background Runner & Format Exporters | X8, N6, S2, I6 | API endpoints, progress polling, V2 PNG, JSONL, CharX, Relational Pack | **Complete** | [`d61e976`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend) |
-| **Step 6** | Frontend Render Boundary, Media Rewrite & Snapshot Label | X4, X5, U2, U10 | Frontend: pure mediaRewrite, missing slate, You panel snapshot label | *Queued* | — |
+| **Step 6** | Frontend Render Boundary, Media Rewrite & Snapshot Label | X4, X5, U2, U10 | Frontend: pure mediaRewrite, missing slate, You panel snapshot label | **Complete** | [`77e3aff`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend) |
 | **Step 7** | Documentation, Production Static Proofs & PR Verification | All | Docs update (v11 schema/arch), live dump full run artifacts, verification proofs | *Queued* | — |
 
 ---
@@ -280,16 +280,55 @@ Expose the Universal Exchange Layer over HTTP with:
 
 ---
 
-## Queued Steps
+## Step 6: Frontend Render Boundary, Media Rewrite & Snapshot Label
 
-### Step 6: Frontend Render Boundary, Media Rewrite & Snapshot Label
-- Implementation of `lib/render/mediaRewrite.ts` in frontend.
-- Markdown and ShowcaseBody integration for `media://{64hex}` rewrite with broken-asset slate fallback.
-- Chat "You" panel displaying historical `Snapshot: <name>` when `persona_snapshot` is present.
-- Unit tests and updating `boundaries.test.ts`.
+### Objective
+Establish a secure, pure client-side render boundary for content-addressed media (`media://{64hex}`) with offline-first local pool resolution, candidate extension probing, accessible broken-asset slates, and immutable historical persona snapshot visibility in chat sessions.
+
+### Implementation Summary
+- **Pure Media Rewrite Engine** ([`frontend/src/lib/render/mediaRewrite.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/render/mediaRewrite.ts)):
+  - Implemented `rewriteHtmlMediaUrls(html, options)` importing pure `rewriteMediaUrls` from `@formatavern/shared`.
+  - Resolves `media://{64hex}` hashes to local `/assets/pool/<hash>.<ext>` using in-memory caches, prefetched `extMap` dictionaries, or `Map` instances, defaulting cleanly to `.webp`.
+  - Enforces Invariant X4: Zero remote network fetches (`http(s)://` or `//` origins are strictly rejected).
+  - Handles `<img>` tags (`src="media://..."`), `<a>` links (`href="media://..."`), and standalone media references in prose.
+- **Candidate Extension Prober**:
+  - Implemented `probeMediaExtension(hash, options)` executing `HEAD` requests probing candidate extensions in strict priority order: `.webp` -> `.png` -> `.jpg` -> `.gif`.
+  - Stops on the first HTTP 200 response, caches the resolved extension, and avoids redundant network calls on subsequent renders.
+  - If all 4 candidates return 404, flags the hash in `missingCache` and renders the missing asset slate.
+- **Accessible Broken-Asset Slate**:
+  - Implemented `renderMissingAssetSlate(hash)` rendering `<span class="missing-asset-slate ..." data-missing-asset="<hash>"><span class="opacity-70">📷</span><span>Missing media</span></span>`.
+  - Replaces whole `<img>` tags or standalone references where blobs are unresolvable, preventing broken image icons or browser network retries.
+- **Component Render Integrations** ([`Markdown.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/ui/Markdown.svelte), [`ShowcaseBody.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/showcase/ShowcaseBody.svelte)):
+  - Integrated `rewriteHtmlMediaUrls` inside `Markdown.svelte` (chat message turns and narrator blocks) and `ShowcaseBody.svelte` (character description and author showcases).
+  - Positioned strictly *after* sanitization (`renderRoleplayMarkdown` and `renderShowcaseMarkdown`), immediately before `{@html}`.
+  - Updated `showcase.ts` and `markdown.ts` marked/purifier passes to permit `media://` scheme without triggering remote URL rejections.
+- **Persona Snapshot Badge** ([`LoreDrawer.svelte`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/src/lib/components/chat/LoreDrawer.svelte)):
+  - Implemented `extractPersonaSnapshotName(snapshot)` parsing JSON snapshots (`{ name: string }`) or verbatim raw strings.
+  - Added `Snapshot: <name>` badge in the "You (Persona)" drawer panel whenever `chat.personaSnapshot` is present, while leaving live persona switching controls completely functional (Invariant X5).
+- **Architecture Boundary Guard** ([`frontend/unit/boundaries.test.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/unit/boundaries.test.ts)):
+  - Added boundary assertion verifying `rewriteMediaUrls` is imported exclusively by `lib/render/mediaRewrite.ts` across the entire frontend application.
+  - Confirmed `{@html}` remains restricted to `Markdown.svelte` and `ShowcaseBody.svelte`.
+
+### Verification
+- **Unit Test Suite** ([`frontend/unit/mediaRewrite.test.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/frontend/unit/mediaRewrite.test.ts) — 22/22 green):
+  - Hash-to-URL translation via `extMap` (objects and Maps) and `.webp` defaulting.
+  - Probe sequence order (`.webp` -> `.png` -> `.jpg` -> `.gif`) stopping on first 200 and caching hits.
+  - Missing asset slate replacement (`data-missing-asset="<hash>"`).
+  - Zero remote fetch validation (rejects external hosts).
+  - Idempotency under repeated rewrites (`rewrite(rewrite(html)) === rewrite(html)`).
+  - Persona snapshot name extraction across JSON, strings, and null inputs.
+- **Monorepo Health**:
+  - `bun run typecheck`: 0 errors, 0 warnings across all 3 packages (`shared`, `backend`, `frontend`).
+  - `bun run test`: 100% green across all packages (Shared: 265/265 green, Backend: 425/425 green, Frontend: 280/280 green; 970 total tests).
+  - `bun run db:check`: Clean integrity at `user_version = 11`.
+
+---
+
+## Queued Steps
 
 ### Step 7: Documentation, Production Static Proofs & PR Verification
 - Update `docs/schema.md` to `user_version = 11`.
 - Update `docs/architecture.md` (§5 asset pool, §10 import/export rows).
 - Update `.agents/AGENTS.md` and `docs/development.md` §6.3 with Invariants X1–X10 and amendments A-P3 / A-AS1.
 - Complete live dump full bulk execution, record `SyncReport` benchmarks, verify no-op idempotency, and collect PR evidence.
+

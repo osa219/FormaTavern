@@ -12,7 +12,7 @@ markedShowcase.use({
     image(token: any) {
       const src = token.href ?? '';
       // P3 Invariant: Never allow remote images (http/https/protocol-relative)
-      if (!src.startsWith('/assets/') && !src.startsWith('data:image/')) {
+      if (!src.startsWith('/assets/') && !src.startsWith('data:image/') && !src.startsWith('media://')) {
         return '';
       }
       const alt = token.text ? ` alt="${token.text}"` : '';
@@ -78,7 +78,7 @@ function getShowcasePurifier(): any {
       // 2. Strict image src check (P3)
       if (data.attrName === 'src' && node.nodeName?.toLowerCase() === 'img') {
         const src = data.attrValue ?? '';
-        if (!src.startsWith('/assets/') && !src.startsWith('data:image/')) {
+        if (!src.startsWith('/assets/') && !src.startsWith('data:image/') && !src.startsWith('media://')) {
           data.keepAttr = false;
         }
       }
