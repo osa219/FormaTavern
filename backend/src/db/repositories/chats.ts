@@ -32,7 +32,12 @@ function toChatRow(raw: any): ChatRow {
     activeLeafId: raw.active_leaf_id ?? null,
     createdAt: raw.created_at,
     updatedAt: raw.updated_at,
-    metadata: raw.metadata ? JSON.parse(raw.metadata) : {}
+    metadata: raw.metadata ? JSON.parse(raw.metadata) : {},
+    origin: raw.origin ?? 'native',
+    originId: raw.origin_id ?? null,
+    originHash: raw.origin_hash ?? null,
+    activeGreetingIndex: raw.active_greeting_index !== undefined && raw.active_greeting_index !== null ? Number(raw.active_greeting_index) : 0,
+    personaSnapshot: raw.persona_snapshot ?? null
   };
 }
 
@@ -45,11 +50,21 @@ export class SQLiteChatRepository implements ChatRepository {
     primaryCharacterId: string;
     activePersonaId: string;
     metadata?: ChatMetadata;
+    origin?: string;
+    originId?: string | null;
+    originHash?: string | null;
+    activeGreetingIndex?: number;
+    personaSnapshot?: string | null;
   }): ChatRow {
     const now = Date.now();
+    const origin = input.origin ?? 'native';
+    const activeGreetingIndex = input.activeGreetingIndex ?? 0;
     this.db.run(
-      `INSERT INTO chats (id, title, primary_character_id, active_persona_id, active_leaf_id, created_at, updated_at, metadata)
-       VALUES (?, ?, ?, ?, NULL, ?, ?, ?);`,
+      `INSERT INTO chats (
+         id, title, primary_character_id, active_persona_id, active_leaf_id,
+         created_at, updated_at, metadata, origin, origin_id, origin_hash,
+         active_greeting_index, persona_snapshot
+       ) VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?);`,
       [
         input.id,
         input.title,
@@ -57,7 +72,12 @@ export class SQLiteChatRepository implements ChatRepository {
         input.activePersonaId,
         now,
         now,
-        JSON.stringify(input.metadata)
+        JSON.stringify(input.metadata ?? {}),
+        origin,
+        input.originId ?? null,
+        input.originHash ?? null,
+        activeGreetingIndex,
+        input.personaSnapshot ?? null
       ]
     );
 
@@ -69,8 +89,18 @@ export class SQLiteChatRepository implements ChatRepository {
       activeLeafId: null,
       createdAt: now,
       updatedAt: now,
-      metadata: input.metadata ?? {}
+      metadata: input.metadata ?? {},
+      origin,
+      originId: input.originId ?? null,
+      originHash: input.originHash ?? null,
+      activeGreetingIndex,
+      personaSnapshot: input.personaSnapshot ?? null
     };
+  }
+
+  findByProvenance(origin: string, originId: string): ChatRow | null {
+    const row = this.db.query('SELECT * FROM chats WHERE origin = ? AND origin_id = ? LIMIT 1;').get(origin, originId);
+    return row ? toChatRow(row) : null;
   }
 
   get(id: string): ChatRow | null {
@@ -135,6 +165,8 @@ export class SQLiteChatRepository implements ChatRepository {
       activeLeafId?: string | null;
       metadata?: ChatMetadata;
       updatedAt?: number;
+      activeGreetingIndex?: number;
+      personaSnapshot?: string | null;
     }
   ): ChatRow {
     const sets: string[] = [];
@@ -155,6 +187,14 @@ export class SQLiteChatRepository implements ChatRepository {
     if (patch.metadata !== undefined) {
       sets.push('metadata = ?');
       params.push(JSON.stringify(patch.metadata));
+    }
+    if (patch.activeGreetingIndex !== undefined) {
+      sets.push('active_greeting_index = ?');
+      params.push(patch.activeGreetingIndex);
+    }
+    if (patch.personaSnapshot !== undefined) {
+      sets.push('persona_snapshot = ?');
+      params.push(patch.personaSnapshot);
     }
 
     sets.push('updated_at = ?');

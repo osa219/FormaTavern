@@ -256,4 +256,84 @@ describe('Database Migrations', () => {
     ];
     expect(() => runMigrations(inst.db, nonContiguous)).toThrow(/Migrations must be contiguous from 1/);
   });
+
+  it('upgrades v10 database to v11 and supports assets, bindings, and provenance', () => {
+    inst = openTestDb(':memory:');
+    const v10Only = migrations.slice(0, 10);
+    runMigrations(inst.db, v10Only);
+
+    const now = Date.now();
+    inst.db.run(
+      `INSERT INTO characters (id, name, style, created_at, updated_at) VALUES ('c10', 'Hero10', '{}', ?, ?)`,
+      [now, now]
+    );
+    inst.db.run(
+      `INSERT INTO personas (id, name, created_at, updated_at) VALUES ('p10', 'Player10', ?, ?)`,
+      [now, now]
+    );
+    inst.db.run(
+      `INSERT INTO chats (id, title, primary_character_id, active_persona_id, created_at, updated_at) VALUES ('chat10', 'Chat10', 'c10', 'p10', ?, ?)`,
+      [now, now]
+    );
+    inst.db.run(
+      `INSERT INTO messages (id, chat_id, role, narrative_role, content, status, created_at) VALUES ('m10', 'chat10', 'user', 'persona', 'Hello', 'complete', ?)`,
+      [now]
+    );
+
+    // Run migration 11
+    const upgrade = runMigrations(inst.db);
+    expect(upgrade).toEqual({ from: 10, to: migrations.length });
+
+    const { user_version } = inst.db.query('PRAGMA user_version;').get() as { user_version: number };
+    expect(user_version).toBe(11);
+
+    // Verify characters table has origin, origin_id, origin_hash
+    const charCols = inst.db.query('PRAGMA table_info(characters);').all() as Array<{ name: string }>;
+    const charColMap = new Set(charCols.map((c) => c.name));
+    expect(charColMap.has('origin')).toBe(true);
+    expect(charColMap.has('origin_id')).toBe(true);
+    expect(charColMap.has('origin_hash')).toBe(true);
+
+    // Verify existing characters have origin set to 'native'
+    const charRow = inst.db.query(`SELECT origin FROM characters WHERE id = 'c10';`).get() as { origin: string };
+    expect(charRow.origin).toBe('native');
+
+    // Verify chats table has provenance, active_greeting_index, persona_snapshot
+    const chatCols = inst.db.query('PRAGMA table_info(chats);').all() as Array<{ name: string }>;
+    const chatColMap = new Set(chatCols.map((c) => c.name));
+    expect(chatColMap.has('origin')).toBe(true);
+    expect(chatColMap.has('origin_id')).toBe(true);
+    expect(chatColMap.has('origin_hash')).toBe(true);
+    expect(chatColMap.has('active_greeting_index')).toBe(true);
+    expect(chatColMap.has('persona_snapshot')).toBe(true);
+
+    // Verify messages table has origin_id, sequence_index, missing_assets
+    const msgCols = inst.db.query('PRAGMA table_info(messages);').all() as Array<{ name: string }>;
+    const msgColMap = new Set(msgCols.map((c) => c.name));
+    expect(msgColMap.has('origin_id')).toBe(true);
+    expect(msgColMap.has('sequence_index')).toBe(true);
+    expect(msgColMap.has('missing_assets')).toBe(true);
+
+    // Verify new tables exist
+    const masterTables = inst.db
+      .query(`SELECT name FROM sqlite_master WHERE type='table';`)
+      .all() as Array<{ name: string }>;
+    const tableSet = new Set(masterTables.map((t) => t.name));
+    expect(tableSet.has('assets')).toBe(true);
+    expect(tableSet.has('character_assets')).toBe(true);
+    expect(tableSet.has('message_assets')).toBe(true);
+
+    // Verify indexes exist
+    const indexes = inst.db.query(`SELECT name FROM sqlite_master WHERE type='index';`).all() as Array<{
+      name: string;
+    }>;
+    const indexSet = new Set(indexes.map((i) => i.name));
+    expect(indexSet.has('idx_characters_origin')).toBe(true);
+    expect(indexSet.has('idx_chats_origin')).toBe(true);
+    expect(indexSet.has('idx_messages_origin')).toBe(true);
+    expect(indexSet.has('idx_char_assets_role')).toBe(true);
+
+    // Verify foreign key integrity
+    expect(inst.db.query('PRAGMA foreign_key_check;').all()).toEqual([]);
+  });
 });

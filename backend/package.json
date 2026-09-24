@@ -19,6 +19,7 @@
     "db:check": "bun scripts/check.ts",
     "db:reset": "bun scripts/reset.ts",
     "db:reindex": "bun scripts/reindex.ts",
+    "assets:gc": "bun scripts/assets-gc.ts",
     "smoke:openrouter": "bun scripts/smoke-openrouter.ts"
   },
   "dependencies": {

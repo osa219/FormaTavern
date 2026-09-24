@@ -1,4 +1,6 @@
-import { DB_PATH } from '../src/db/paths';
+import { join } from 'node:path';
+import { readdirSync, existsSync } from 'node:fs';
+import { DB_PATH, ASSETS_POOL_DIR } from '../src/db/paths';
 import { openDatabase } from '../src/db/connection';
 import { createRepositories } from '../src/db/repositories';
 import { nearestState } from '../src/engine/context';
@@ -31,8 +33,8 @@ try {
     console.error(`[check] ERROR: foreign_keys is not 1`);
     hasFailure = true;
   }
-  if (user_version !== 10) {
-    console.error(`[check] ERROR: user_version is ${user_version}, expected 10`);
+  if (user_version !== 11) {
+    console.error(`[check] ERROR: user_version is ${user_version}, expected 11`);
     hasFailure = true;
   }
 
@@ -98,11 +100,19 @@ try {
     }
   }
 
+  const requiredCharCols = ['custom_css', 'layout', 'origin', 'origin_id', 'origin_hash'];
+  for (const col of requiredCharCols) {
+    if (!charColNames.includes(col)) {
+      console.error(`[check] ERROR: characters table missing required column '${col}'`);
+      hasFailure = true;
+    }
+  }
+
   const msgCols = db.query('PRAGMA table_info(messages);').all() as Array<{ name: string }>;
   const msgColNames = msgCols.map((c) => c.name);
   console.log(`messages columns: ${msgColNames.join(', ')}`);
 
-  const requiredMsgCols = ['narrative_role', 'sender_name', 'segments', 'state'];
+  const requiredMsgCols = ['narrative_role', 'sender_name', 'segments', 'state', 'origin_id', 'sequence_index', 'missing_assets'];
   for (const col of requiredMsgCols) {
     if (!msgColNames.includes(col)) {
       console.error(`[check] ERROR: messages table missing required column '${col}'`);
@@ -112,9 +122,21 @@ try {
 
   const chatCols = db.query('PRAGMA table_info(chats);').all() as Array<{ name: string }>;
   const chatColNames = chatCols.map((c) => c.name);
-  if (!chatColNames.includes('active_leaf_id')) {
-    console.error(`[check] ERROR: chats table missing required column 'active_leaf_id'`);
-    hasFailure = true;
+  const requiredChatCols = ['active_leaf_id', 'origin', 'origin_id', 'origin_hash', 'active_greeting_index', 'persona_snapshot'];
+  for (const col of requiredChatCols) {
+    if (!chatColNames.includes(col)) {
+      console.error(`[check] ERROR: chats table missing required column '${col}'`);
+      hasFailure = true;
+    }
+  }
+
+  const requiredTables = ['assets', 'character_assets', 'message_assets'];
+  for (const tbl of requiredTables) {
+    const exists = db.query(`SELECT name FROM sqlite_master WHERE type='table' AND name=?;`).get(tbl);
+    if (!exists) {
+      console.error(`[check] ERROR: missing required table '${tbl}'`);
+      hasFailure = true;
+    }
   }
 
   const cfgCols = db.query('PRAGMA table_info(provider_configs);').all() as Array<{ name: string }>;
@@ -203,6 +225,49 @@ try {
     }
   } else {
     console.log(`fts_parity=skipped (no characters_fts table)`);
+  }
+
+  // Audit 7: provenance_orphans
+  const provenanceOrphans = (
+    db.query(`SELECT COUNT(*) as count FROM chats c LEFT JOIN characters ch ON c.primary_character_id = ch.id WHERE c.origin_id IS NOT NULL AND ch.id IS NULL;`).get() as { count: number }
+  )?.count ?? 0;
+  if (provenanceOrphans > 0) {
+    console.error(`[check] ERROR: Found ${provenanceOrphans} orphaned chats with origin_id referencing non-existent characters`);
+    hasFailure = true;
+  } else {
+    console.log(`provenance_orphans=0`);
+  }
+
+  // Audit 8: pool_orphans
+  let diskFilesCount = 0;
+  let unindexedFiles = 0;
+  if (existsSync(ASSETS_POOL_DIR)) {
+    const diskFiles = readdirSync(ASSETS_POOL_DIR).filter((f) => !f.startsWith('.'));
+    diskFilesCount = diskFiles.length;
+    for (const f of diskFiles) {
+      const dotIdx = f.lastIndexOf('.');
+      const id = dotIdx > 0 ? f.slice(0, dotIdx) : f;
+      const row = db.query('SELECT 1 FROM assets WHERE id = ?;').get(id);
+      if (!row) {
+        unindexedFiles++;
+      }
+    }
+  }
+
+  const assetRows = db.query('SELECT id, path FROM assets;').all() as Array<{ id: string; path: string }>;
+  let missingFiles = 0;
+  for (const a of assetRows) {
+    const basename = a.path.split('/').pop()!;
+    const filePath = join(ASSETS_POOL_DIR, basename);
+    if (!existsSync(filePath)) {
+      missingFiles++;
+    }
+  }
+
+  console.log(`pool_orphans=unindexed:${unindexedFiles},missing:${missingFiles} (disk:${diskFilesCount},db:${assetRows.length})`);
+  if (missingFiles > 0) {
+    console.error(`[check] ERROR: Found ${missingFiles} assets in DB without file on disk`);
+    hasFailure = true;
   }
 
   const characterSummaries = repos.characters.list().items;

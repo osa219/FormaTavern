@@ -28,7 +28,10 @@ function toMessageRow(raw: any): MessageRow {
     status: raw.status,
     createdAt: raw.created_at,
     metrics: raw.metrics ? JSON.parse(raw.metrics) : null,
-    metadata: raw.metadata ? JSON.parse(raw.metadata) : {}
+    metadata: raw.metadata ? JSON.parse(raw.metadata) : {},
+    originId: raw.origin_id ?? null,
+    sequenceIndex: raw.sequence_index !== undefined && raw.sequence_index !== null ? Number(raw.sequence_index) : null,
+    missingAssets: raw.missing_assets ?? null
   };
 }
 
@@ -44,11 +47,16 @@ export class SQLiteMessageRepository implements MessageRepository {
     const state = row.state ?? null;
     const metrics = row.metrics ?? null;
     const metadata = row.metadata ?? {};
+    const originId = row.originId ?? null;
+    const sequenceIndex = row.sequenceIndex !== undefined && row.sequenceIndex !== null ? Number(row.sequenceIndex) : null;
+    const missingAssets = row.missingAssets ?? null;
+
     this.db.run(
       `INSERT INTO messages (
         id, chat_id, parent_id, sender_id, sender_name, role, narrative_role,
-        content, segments, state, status, created_at, metrics, metadata
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+        content, segments, state, status, created_at, metrics, metadata,
+        origin_id, sequence_index, missing_assets
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
       [
         row.id,
         row.chatId,
@@ -63,7 +71,10 @@ export class SQLiteMessageRepository implements MessageRepository {
         status,
         createdAt,
         metrics ? JSON.stringify(metrics) : null,
-        JSON.stringify(metadata)
+        JSON.stringify(metadata),
+        originId,
+        sequenceIndex,
+        missingAssets
       ]
     );
 
@@ -81,8 +92,18 @@ export class SQLiteMessageRepository implements MessageRepository {
       status,
       createdAt,
       metrics,
-      metadata
+      metadata,
+      originId,
+      sequenceIndex,
+      missingAssets
     };
+  }
+
+  getMaxSequenceIndex(chatId: string): number {
+    const row = this.db.query(
+      `SELECT MAX(sequence_index) as maxSeq FROM messages WHERE chat_id = ?;`
+    ).get(chatId) as any;
+    return row?.maxSeq !== null && row?.maxSeq !== undefined ? Number(row.maxSeq) : -1;
   }
 
   get(id: string): MessageWithTree | null {

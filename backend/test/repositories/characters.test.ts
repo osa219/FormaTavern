@@ -468,4 +468,31 @@ describe('SqliteCharacterRepository (Phase 5)', () => {
     }
     expect(repos.characters.get('stateless')?.stateEnabled).toBe(true);
   });
+
+  it('looks up character by provenance and persists origin fields', () => {
+    inst = openTestDb(':memory:');
+    runMigrations(inst.db);
+    const repos = createRepositories(inst.db);
+
+    const card = makeCard('char-prov', 'Provenance Char');
+    card.origin = 'custom_engine';
+    card.metadata = {
+      import: {
+        originId: 'ce-char-123',
+        originHash: 'hash-abc-123'
+      }
+    };
+
+    repos.characters.upsert(card);
+
+    const found = repos.characters.findByProvenance('custom_engine', 'ce-char-123');
+    expect(found).not.toBeNull();
+    expect(found!.id).toBe('char-prov');
+    expect(found!.origin).toBe('custom_engine');
+    expect(found!.metadata?.import?.originId).toBe('ce-char-123');
+    expect(found!.metadata?.import?.originHash).toBe('hash-abc-123');
+
+    const notFound = repos.characters.findByProvenance('custom_engine', 'nonexistent');
+    expect(notFound).toBeNull();
+  });
 });

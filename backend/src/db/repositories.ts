@@ -22,6 +22,7 @@ import { SQLiteChatRepository } from './repositories/chats';
 import { SQLiteMessageRepository } from './repositories/messages';
 import { SQLiteSettingsRepository } from './repositories/settings';
 import { SQLiteProviderConfigRepository } from './repositories/providerConfigs';
+import { SQLiteAssetRepository } from './repositories/assets';
 import { newId } from './ids';
 
 interface CharacterRow {
@@ -34,6 +35,8 @@ interface CharacterRow {
   creator_url: string | null;
   character_url: string | null;
   origin: string | null;
+  origin_id: string | null;
+  origin_hash: string | null;
   showcase: string | null;
   custom_css: string | null;
   layout: string | null;
@@ -75,7 +78,7 @@ function decodeCursor(cursor: string): [any, string] | null {
 }
 
 function cardToRow(card: CharacterCard, now: number) {
-  const metadataObj: Record<string, unknown> = {};
+  const metadataObj: Record<string, unknown> = { ...(card.metadata ?? {}) };
   if (card.exampleDialogue !== undefined) metadataObj.exampleDialogue = card.exampleDialogue;
   if (card.stateSchema !== undefined) metadataObj.stateSchema = card.stateSchema;
   if (card.stateBindings !== undefined) metadataObj.stateBindings = card.stateBindings;
@@ -108,6 +111,8 @@ function cardToRow(card: CharacterCard, now: number) {
     creator_url: card.creatorUrl ?? null,
     character_url: card.characterUrl ?? null,
     origin: card.origin ?? null,
+    origin_id: (card as any).originId ?? card.metadata?.import?.originId ?? (card as any).import?.originId ?? null,
+    origin_hash: (card as any).originHash ?? card.metadata?.import?.originHash ?? (card as any).import?.originHash ?? null,
     showcase: card.showcase ?? null,
     custom_css: card.customCss ?? null,
     layout: card.layout !== undefined ? JSON.stringify(card.layout) : null,
@@ -144,6 +149,8 @@ function rowToCard(row: CharacterRow, tags: string[] = []): CharacterCard {
   if (row.creator_url) card.creatorUrl = row.creator_url;
   if (row.character_url) card.characterUrl = row.character_url;
   if (row.origin) card.origin = row.origin;
+  if (row.origin_id) (card as any).originId = row.origin_id;
+  if (row.origin_hash) (card as any).originHash = row.origin_hash;
   if (row.showcase) card.showcase = row.showcase;
   if (row.custom_css) card.customCss = row.custom_css;
   if (row.layout) card.layout = JSON.parse(row.layout);
@@ -173,6 +180,22 @@ function rowToCard(row: CharacterRow, tags: string[] = []): CharacterCard {
     if (meta.version !== undefined) card.version = meta.version;
     if (meta.greetingMode !== undefined) card.greetingMode = meta.greetingMode;
     if (meta.greetingEnvelope !== undefined) card.greetingEnvelope = meta.greetingEnvelope;
+    if (meta.import !== undefined) (card as any).import = meta.import;
+    card.metadata = meta;
+  }
+
+  if (row.origin_id || row.origin_hash) {
+    if (!card.metadata) card.metadata = {};
+    const importMeta = card.metadata.import ?? {};
+    if (row.origin_id) {
+      importMeta.originId = row.origin_id;
+      card.originId = row.origin_id;
+    }
+    if (row.origin_hash) {
+      importMeta.originHash = row.origin_hash;
+      card.originHash = row.origin_hash;
+    }
+    card.metadata.import = importMeta;
   }
 
   return card;
@@ -224,20 +247,20 @@ export class SqliteCharacterRepository implements CharacterRepository {
 
     this.stmtInsert = db.query(`
       INSERT INTO characters (
-        id, name, character_name, avatar, tagline, creator, creator_url, character_url, origin, showcase, custom_css, layout, description, personality, scenario,
+        id, name, character_name, avatar, tagline, creator, creator_url, character_url, origin, origin_id, origin_hash, showcase, custom_css, layout, description, personality, scenario,
         first_message, alternate_greetings, style, created_at, updated_at, metadata
       ) VALUES (
-        $id, $name, $character_name, $avatar, $tagline, $creator, $creator_url, $character_url, $origin, $showcase, $custom_css, $layout, $description, $personality, $scenario,
+        $id, $name, $character_name, $avatar, $tagline, $creator, $creator_url, $character_url, $origin, $origin_id, $origin_hash, $showcase, $custom_css, $layout, $description, $personality, $scenario,
         $first_message, $alternate_greetings, $style, $created_at, $updated_at, $metadata
       );
     `);
 
     this.stmtUpsert = db.query(`
       INSERT INTO characters (
-        id, name, character_name, avatar, tagline, creator, creator_url, character_url, origin, showcase, custom_css, layout, description, personality, scenario,
+        id, name, character_name, avatar, tagline, creator, creator_url, character_url, origin, origin_id, origin_hash, showcase, custom_css, layout, description, personality, scenario,
         first_message, alternate_greetings, style, created_at, updated_at, metadata
       ) VALUES (
-        $id, $name, $character_name, $avatar, $tagline, $creator, $creator_url, $character_url, $origin, $showcase, $custom_css, $layout, $description, $personality, $scenario,
+        $id, $name, $character_name, $avatar, $tagline, $creator, $creator_url, $character_url, $origin, $origin_id, $origin_hash, $showcase, $custom_css, $layout, $description, $personality, $scenario,
         $first_message, $alternate_greetings, $style, $created_at, $updated_at, $metadata
       )
       ON CONFLICT(id) DO UPDATE SET
@@ -249,6 +272,8 @@ export class SqliteCharacterRepository implements CharacterRepository {
         creator_url = excluded.creator_url,
         character_url = excluded.character_url,
         origin = excluded.origin,
+        origin_id = excluded.origin_id,
+        origin_hash = excluded.origin_hash,
         showcase = excluded.showcase,
         custom_css = excluded.custom_css,
         layout = excluded.layout,
@@ -264,14 +289,26 @@ export class SqliteCharacterRepository implements CharacterRepository {
 
     this.stmtInsertIfAbsent = db.query(`
       INSERT INTO characters (
-        id, name, character_name, avatar, tagline, creator, creator_url, character_url, origin, showcase, custom_css, layout, description, personality, scenario,
+        id, name, character_name, avatar, tagline, creator, creator_url, character_url, origin, origin_id, origin_hash, showcase, custom_css, layout, description, personality, scenario,
         first_message, alternate_greetings, style, created_at, updated_at, metadata
       ) VALUES (
-        $id, $name, $character_name, $avatar, $tagline, $creator, $creator_url, $character_url, $origin, $showcase, $custom_css, $layout, $description, $personality, $scenario,
+        $id, $name, $character_name, $avatar, $tagline, $creator, $creator_url, $character_url, $origin, $origin_id, $origin_hash, $showcase, $custom_css, $layout, $description, $personality, $scenario,
         $first_message, $alternate_greetings, $style, $created_at, $updated_at, $metadata
       )
       ON CONFLICT(id) DO NOTHING;
     `);
+  }
+
+  findByProvenance(origin: string, originId: string): CharacterCard | null {
+    const row = this.db
+      .query(`SELECT * FROM characters WHERE origin = ? AND origin_id = ? LIMIT 1;`)
+      .get(origin, originId) as any;
+    if (!row) return null;
+    const tags = this.db
+      .query(`SELECT tag FROM character_tags WHERE character_id = ? ORDER BY tag ASC;`)
+      .all(row.id)
+      .map((r: any) => r.tag);
+    return rowToCard(row, tags);
   }
 
   private hasFts5(): boolean {
@@ -508,6 +545,8 @@ export class SqliteCharacterRepository implements CharacterRepository {
         creator_url: row.creator_url,
         character_url: row.character_url,
         origin: row.origin,
+        origin_id: row.origin_id,
+        origin_hash: row.origin_hash,
         showcase: row.showcase,
         custom_css: row.custom_css,
         layout: row.layout,
@@ -741,6 +780,8 @@ export class SqliteCharacterRepository implements CharacterRepository {
         creator_url: row.creator_url,
         character_url: row.character_url,
         origin: row.origin,
+        origin_id: row.origin_id,
+        origin_hash: row.origin_hash,
         showcase: row.showcase,
         custom_css: row.custom_css,
         layout: row.layout,
@@ -776,6 +817,8 @@ export class SqliteCharacterRepository implements CharacterRepository {
         creator_url: row.creator_url,
         character_url: row.character_url,
         origin: row.origin,
+        origin_id: row.origin_id,
+        origin_hash: row.origin_hash,
         showcase: row.showcase,
         custom_css: row.custom_css,
         layout: row.layout,
@@ -1046,6 +1089,7 @@ export function createRepositories(db: Database): Repositories {
   const messages = new SQLiteMessageRepository(db);
   const settings = new SQLiteSettingsRepository(db);
   const providerConfigs = new SQLiteProviderConfigRepository(db);
+  const assets = new SQLiteAssetRepository(db);
 
   return {
     characters,
@@ -1054,6 +1098,7 @@ export function createRepositories(db: Database): Repositories {
     messages,
     settings,
     providerConfigs,
+    assets,
     schemaVersion() {
       const row = db.query('PRAGMA user_version;').get() as { user_version: number };
       return row.user_version;

@@ -228,4 +228,41 @@ describe('SQLiteMessageRepository', () => {
     expect(repos.messages.get('N1')).not.toBeNull();
     expect(repos.messages.get('N2')).not.toBeNull();
   });
+
+  it('persists originId, sequenceIndex, missingAssets, and computes getMaxSequenceIndex', () => {
+    const repos = createRepositories(inst.db);
+
+    expect(repos.messages.getMaxSequenceIndex('test-chat')).toBe(-1);
+
+    const m1 = repos.messages.insert(
+      makeMsg({
+        id: 'msg-seq-1',
+        originId: 'orig-m-1',
+        sequenceIndex: 0,
+        missingAssets: JSON.stringify(['hash1', 'hash2'])
+      })
+    );
+
+    expect(m1.originId).toBe('orig-m-1');
+    expect(m1.sequenceIndex).toBe(0);
+    expect(m1.missingAssets).toContain('hash1');
+    expect(repos.messages.getMaxSequenceIndex('test-chat')).toBe(0);
+
+    const m2 = repos.messages.insert(
+      makeMsg({
+        id: 'msg-seq-2',
+        parentId: 'msg-seq-1',
+        originId: 'orig-m-2',
+        sequenceIndex: 1
+      })
+    );
+
+    expect(m2.sequenceIndex).toBe(1);
+    expect(repos.messages.getMaxSequenceIndex('test-chat')).toBe(1);
+
+    const fetched1 = repos.messages.get('msg-seq-1')!;
+    expect(fetched1.originId).toBe('orig-m-1');
+    expect(fetched1.sequenceIndex).toBe(0);
+    expect(fetched1.missingAssets).toContain('hash2');
+  });
 });

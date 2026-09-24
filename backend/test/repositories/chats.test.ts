@@ -167,4 +167,40 @@ describe('SQLiteChatRepository', () => {
     expect(repos.messages.get('01LEAF')).toBeNull();
     expect(repos.chats.count()).toBe(0);
   });
+
+  it('stores provenance, greeting index, persona snapshot and looks up by provenance', () => {
+    const repos = createRepositories(inst.db);
+    const chat = repos.chats.create({
+      id: 'chat-prov-001',
+      title: 'Imported Chat',
+      primaryCharacterId: eldrin.id,
+      activePersonaId: defaultPersona.id,
+      origin: 'custom_engine',
+      originId: 'ce-chat-456',
+      originHash: 'hash-xyz-789',
+      activeGreetingIndex: 2,
+      personaSnapshot: JSON.stringify({ name: 'OldPersona', description: 'Snapshot desc' })
+    });
+
+    expect(chat.origin).toBe('custom_engine');
+    expect(chat.originId).toBe('ce-chat-456');
+    expect(chat.originHash).toBe('hash-xyz-789');
+    expect(chat.activeGreetingIndex).toBe(2);
+    expect(chat.personaSnapshot).toContain('OldPersona');
+
+    const found = repos.chats.findByProvenance('custom_engine', 'ce-chat-456');
+    expect(found).not.toBeNull();
+    expect(found!.id).toBe('chat-prov-001');
+    expect(found!.activeGreetingIndex).toBe(2);
+
+    // Update greeting index and persona snapshot
+    repos.chats.update('chat-prov-001', {
+      activeGreetingIndex: 3,
+      personaSnapshot: JSON.stringify({ name: 'UpdatedSnapshot' })
+    });
+
+    const updated = repos.chats.get('chat-prov-001');
+    expect(updated!.activeGreetingIndex).toBe(3);
+    expect(updated!.personaSnapshot).toContain('UpdatedSnapshot');
+  });
 });

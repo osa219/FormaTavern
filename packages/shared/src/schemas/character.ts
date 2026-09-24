@@ -26,6 +26,42 @@ export const GreetingEnvelopeSchema = Type.Object({
 });
 export type GreetingEnvelope = Static<typeof GreetingEnvelopeSchema>;
 
+export const CharacterImportMetadataSchema = Type.Object({
+  origin: Type.Optional(Type.String()),
+  originId: Type.Optional(Type.String()),
+  originHash: Type.Optional(Type.String()),
+  tagsRaw: Type.Optional(Type.Array(Type.String())),
+  tokenCounts: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
+  stats: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
+  soundcloudTrackId: Type.Optional(Type.String()),
+  isNsfw: Type.Optional(Type.Boolean()),
+  isImageNsfw: Type.Optional(Type.Boolean())
+});
+export type CharacterImportMetadata = Static<typeof CharacterImportMetadataSchema>;
+
+/** Shape of characters.metadata (JSON column). Everything not in a dedicated column lives here. */
+export const CharacterMetadataSchema = Type.Object({
+  greetingMode: Type.Optional(GreetingModeSchema),
+  greetingEnvelope: Type.Optional(GreetingEnvelopeSchema),
+  exampleDialogue: Type.Optional(Type.String()),
+  stateSchema: Type.Optional(Type.Record(Type.String(), StateFieldSchema)),
+  stateBindings: Type.Optional(Type.Array(StateBindingSchema)),
+  initialState: Type.Optional(StateVectorSchema),
+  tags: Type.Optional(Type.Array(Type.String())),
+  creator: Type.Optional(Type.String()),
+  characterName: Type.Optional(Type.String()),
+  creatorUrl: Type.Optional(HttpUrl),
+  characterUrl: Type.Optional(HttpUrl),
+  origin: Type.Optional(Type.String()),
+  stateEnabled: Type.Optional(Type.Boolean()),
+  labels: Type.Optional(Type.Object({
+    startStory: Type.Optional(Type.String({ maxLength: 40 }))
+  })),
+  import: Type.Optional(CharacterImportMetadataSchema),
+  version: Type.Optional(Type.String())
+});
+export type CharacterMetadata = Static<typeof CharacterMetadataSchema>;
+
 export const CharacterCardSchema = Type.Object({
   $schema: Type.Optional(Type.String()),
   id: Id,
@@ -50,6 +86,10 @@ export const CharacterCardSchema = Type.Object({
   creatorUrl: Type.Optional(HttpUrl),
   characterUrl: Type.Optional(HttpUrl),
   origin: Type.Optional(Type.String({ minLength: 1, maxLength: 120 })),
+  originId: Type.Optional(Type.String()),
+  originHash: Type.Optional(Type.String()),
+  import: Type.Optional(CharacterImportMetadataSchema),
+  metadata: Type.Optional(CharacterMetadataSchema),
   stateEnabled: Type.Optional(Type.Boolean()),
   labels: Type.Optional(Type.Object({
     startStory: Type.Optional(Type.String({ maxLength: 40 }))
@@ -133,41 +173,6 @@ export const CharacterListQuerySchema = Type.Object({
   cursor: Type.Optional(Type.String())
 });
 export type CharacterListQuery = Static<typeof CharacterListQuerySchema>;
-
-export const CharacterImportMetadataSchema = Type.Object({
-  origin: Type.String(),
-  originId: Type.String(),
-  tagsRaw: Type.Optional(Type.Array(Type.String())),
-  tokenCounts: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
-  stats: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
-  soundcloudTrackId: Type.Optional(Type.String()),
-  isNsfw: Type.Optional(Type.Boolean()),
-  isImageNsfw: Type.Optional(Type.Boolean())
-});
-export type CharacterImportMetadata = Static<typeof CharacterImportMetadataSchema>;
-
-/** Shape of characters.metadata (JSON column). Everything not in a dedicated column lives here. */
-export const CharacterMetadataSchema = Type.Object({
-  greetingMode: Type.Optional(GreetingModeSchema),
-  greetingEnvelope: Type.Optional(GreetingEnvelopeSchema),
-  exampleDialogue: Type.Optional(Type.String()),
-  stateSchema: Type.Optional(Type.Record(Type.String(), StateFieldSchema)),
-  stateBindings: Type.Optional(Type.Array(StateBindingSchema)),
-  initialState: Type.Optional(StateVectorSchema),
-  tags: Type.Optional(Type.Array(Type.String())),
-  creator: Type.Optional(Type.String()),
-  characterName: Type.Optional(Type.String()),
-  creatorUrl: Type.Optional(HttpUrl),
-  characterUrl: Type.Optional(HttpUrl),
-  origin: Type.Optional(Type.String()),
-  stateEnabled: Type.Optional(Type.Boolean()),
-  labels: Type.Optional(Type.Object({
-    startStory: Type.Optional(Type.String({ maxLength: 40 }))
-  })),
-  import: Type.Optional(CharacterImportMetadataSchema),
-  version: Type.Optional(Type.String())
-});
-export type CharacterMetadata = Static<typeof CharacterMetadataSchema>;
 
 /**
  * Drop blank entries from an alternate-greetings list. Shared so Studio

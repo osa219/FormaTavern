@@ -255,6 +255,61 @@ export const migrations: readonly Migration[] = [
         }
       } catch {}
     }
+  },
+  {
+    version: 11,
+    name: 'import_export_foundation',
+    up: (db) => {
+      // 1. Provenance on existing entities (X1, X7)
+      try {
+        db.run(`UPDATE characters SET origin = 'native' WHERE origin IS NULL;`);
+      } catch {}
+      db.run(`ALTER TABLE characters ADD COLUMN origin_id TEXT;`);
+      db.run(`ALTER TABLE characters ADD COLUMN origin_hash TEXT;`);
+      db.run(`CREATE INDEX IF NOT EXISTS idx_characters_origin ON characters(origin, origin_id);`);
+
+      db.run(`ALTER TABLE chats ADD COLUMN origin TEXT DEFAULT 'native';`);
+      db.run(`ALTER TABLE chats ADD COLUMN origin_id TEXT;`);
+      db.run(`ALTER TABLE chats ADD COLUMN origin_hash TEXT;`);
+      db.run(`ALTER TABLE chats ADD COLUMN active_greeting_index INTEGER NOT NULL DEFAULT 0;`);
+      db.run(`ALTER TABLE chats ADD COLUMN persona_snapshot TEXT;`);
+      db.run(`CREATE INDEX IF NOT EXISTS idx_chats_origin ON chats(origin, origin_id);`);
+
+      db.run(`ALTER TABLE messages ADD COLUMN origin_id TEXT;`);
+      db.run(`ALTER TABLE messages ADD COLUMN sequence_index INTEGER;`);
+      db.run(`ALTER TABLE messages ADD COLUMN missing_assets TEXT;`);
+      db.run(`CREATE INDEX IF NOT EXISTS idx_messages_origin ON messages(chat_id, origin_id);`);
+
+      // 2. Global content-addressed pool index (X3; filesystem remains in data/assets/pool/)
+      db.run(`CREATE TABLE IF NOT EXISTS assets (
+        id         TEXT PRIMARY KEY,
+        mime       TEXT NOT NULL,
+        ext        TEXT NOT NULL,
+        size       INTEGER NOT NULL,
+        width      INTEGER NOT NULL,
+        height     INTEGER NOT NULL,
+        path       TEXT NOT NULL,
+        created_at INTEGER NOT NULL
+      );`);
+
+      // 3. Semantic bindings (two-tier model; roles constrained)
+      db.run(`CREATE TABLE IF NOT EXISTS character_assets (
+        id           TEXT PRIMARY KEY,
+        character_id TEXT NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+        asset_id     TEXT NOT NULL REFERENCES assets(id) ON DELETE RESTRICT,
+        role         TEXT NOT NULL CHECK (role IN ('avatar','gallery','sprite','greeting','background')),
+        label        TEXT,
+        sort_order   INTEGER NOT NULL DEFAULT 0,
+        created_at   INTEGER NOT NULL
+      );`);
+      db.run(`CREATE INDEX IF NOT EXISTS idx_char_assets_role ON character_assets(character_id, role, label);`);
+
+      db.run(`CREATE TABLE IF NOT EXISTS message_assets (
+        message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+        asset_id   TEXT NOT NULL REFERENCES assets(id) ON DELETE RESTRICT,
+        PRIMARY KEY (message_id, asset_id)
+      ) WITHOUT ROWID;`);
+    }
   }
 ];
 

@@ -36,6 +36,7 @@ export interface CharacterRepository {
   chatCounts(id: string): { chats: number };
   popularTags(limit?: number): Array<{ tag: string; count: number }>;
   tags(): { tag: string; count: number }[];
+  findByProvenance(origin: string, originId: string): CharacterCard | null;
   upsert(card: CharacterCard): void;
   insertIfAbsent(card: CharacterCard): boolean;
   count(): number;
@@ -64,6 +65,11 @@ export interface ChatRow {
   createdAt: number;
   updatedAt: number;
   metadata: ChatMetadata;
+  origin?: string;
+  originId?: string | null;
+  originHash?: string | null;
+  activeGreetingIndex?: number;
+  personaSnapshot?: string | null;
 }
 
 export interface MessageRow {
@@ -81,6 +87,9 @@ export interface MessageRow {
   createdAt: number;
   metrics: MessageMetrics | null;
   metadata: MessageMetadata;
+  originId?: string | null;
+  sequenceIndex?: number | null;
+  missingAssets?: string | null;
 }
 
 export interface MessageWithTree extends MessageRow {
@@ -96,8 +105,14 @@ export interface ChatRepository {
     primaryCharacterId: string;
     activePersonaId: string;
     metadata?: ChatMetadata;
+    origin?: string;
+    originId?: string | null;
+    originHash?: string | null;
+    activeGreetingIndex?: number;
+    personaSnapshot?: string | null;
   }): ChatRow;
   get(id: string): ChatRow | null;
+  findByProvenance(origin: string, originId: string): ChatRow | null;
   list(opts?: { characterId?: string; limit?: number; cursor?: string }): Array<ChatRow & { messageCount: number; turnCount: number }>;
   update(
     id: string,
@@ -107,6 +122,8 @@ export interface ChatRepository {
       activeLeafId?: string | null;
       metadata?: ChatMetadata;
       updatedAt?: number;
+      activeGreetingIndex?: number;
+      personaSnapshot?: string | null;
     }
   ): ChatRow;
   setActiveLeaf(id: string, leafId: string | null): void;
@@ -131,11 +148,15 @@ export interface MessageInsertInput {
   metrics?: MessageMetrics | null;
   metadata?: MessageMetadata;
   createdAt?: number;
+  originId?: string | null;
+  sequenceIndex?: number | null;
+  missingAssets?: string | null;
 }
 
 export interface MessageRepository {
   insert(row: MessageInsertInput): MessageRow;
   get(id: string): MessageWithTree | null;
+  getMaxSequenceIndex(chatId: string): number;
   path(leafId: string): MessageRow[];
   children(id: string): MessageRow[];
   siblings(id: string): MessageRow[];
@@ -191,6 +212,43 @@ export interface ProviderConfigRepository {
   remove(id: string): boolean;
 }
 
+export interface AssetRecord {
+  id: string; // full 64-char lowercase sha256
+  mime: string; // image/png | image/jpeg | image/webp | image/gif
+  ext: string; // .png | .jpg | .webp | .gif
+  size: number;
+  width: number;
+  height: number;
+  path: string; // '/assets/pool/<id>.<ext>'
+  createdAt: number;
+}
+
+export type CharacterAssetRole = 'avatar' | 'gallery' | 'sprite' | 'greeting' | 'background';
+
+export interface CharacterAssetRecord {
+  id: string;
+  characterId: string;
+  assetId: string;
+  role: CharacterAssetRole;
+  label?: string | null;
+  sortOrder: number;
+  createdAt: number;
+}
+
+export interface AssetRepository {
+  get(id: string): AssetRecord | null;
+  has(id: string): boolean;
+  insert(asset: AssetRecord): void;
+  count(): number;
+  list(opts?: { limit?: number; offset?: number }): AssetRecord[];
+  delete(id: string): boolean;
+  bindCharacterAsset(binding: CharacterAssetRecord): void;
+  getCharacterAssets(characterId: string, role?: CharacterAssetRole): CharacterAssetRecord[];
+  deleteCharacterAssets(characterId: string, role?: CharacterAssetRole): void;
+  bindMessageAsset(messageId: string, assetId: string): void;
+  getMessageAssets(messageId: string): string[];
+}
+
 export interface Repositories {
   characters: CharacterRepository;
   personas: PersonaRepository;
@@ -198,6 +256,7 @@ export interface Repositories {
   messages: MessageRepository;
   settings: SettingsRepository;
   providerConfigs: ProviderConfigRepository;
+  assets: AssetRepository;
   schemaVersion(): number;
   transaction<T>(fn: () => T): T;
 }
