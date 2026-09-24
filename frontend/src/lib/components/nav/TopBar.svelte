@@ -59,15 +59,15 @@
     </a>
   </div>
 
-  <!-- Center: Character & Chat Info -->
+  <!-- Center: Character & Chat Info (absolutely centered; truncates instead of shifting) -->
   {#if character}
     {@const displayName = resolveCharacterName(character)}
-    <div class="flex items-center gap-2.5 overflow-hidden px-2 text-center">
+    <div class="pointer-events-none absolute left-1/2 top-1/2 flex max-w-[38vw] -translate-x-1/2 -translate-y-1/2 items-center gap-2 overflow-hidden px-2 text-center md:max-w-[30vw]">
       {#if character.avatar}
         <img
           src={character.avatar}
           alt={displayName}
-          class="h-7 w-7 rounded-lg object-cover ring-1 ring-neutral-700"
+          class="h-7 w-7 shrink-0 rounded-lg object-cover ring-1 ring-neutral-700"
         />
       {/if}
       <div class="flex min-w-0 flex-col items-start leading-tight">
