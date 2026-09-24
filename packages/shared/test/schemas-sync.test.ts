@@ -5,6 +5,7 @@ import {
   QuarantinedChatSchema,
   SyncRunResponseSchema,
   SyncRequestSchema,
+  ImportPreviewSchema,
   CharacterMetadataSchema,
   ChatMetadataSchema,
   ChatViewSchema
@@ -97,5 +98,34 @@ describe('Import/Export Schemas (Blueprint §3)', () => {
       messageCount: 10
     };
     expect(Value.Check(ChatViewSchema, chatView)).toBe(true);
+  });
+
+  it('validates character and chat import previews', () => {
+    expect(
+      Value.Check(ImportPreviewSchema, {
+        kind: 'character',
+        format: 'tavern-v2',
+        card: { name: 'Preview Hero' },
+        avatarDataUrl: 'data:image/png;base64,iVBOR',
+        warnings: []
+      })
+    ).toBe(true);
+    expect(
+      Value.Check(ImportPreviewSchema, {
+        kind: 'chat',
+        format: 'sillytavern-jsonl',
+        title: 'Trail Chat',
+        messageCount: 2,
+        warnings: []
+      })
+    ).toBe(true);
+    expect(
+      Value.Check(ImportPreviewSchema, {
+        kind: 'character',
+        format: 'nope',
+        card: {},
+        warnings: []
+      })
+    ).toBe(false);
   });
 });

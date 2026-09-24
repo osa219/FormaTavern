@@ -41,12 +41,17 @@ export interface TavernCardV2Payload {
   data?: TavernCardV2Data;
 }
 
-export async function importV2Card(
-  fileBytes: Uint8Array,
-  filename: string,
-  repos: Repositories,
-  assetStore?: AssetStore
-): Promise<CharacterCard> {
+export interface ParsedV2Card {
+  v2Data: TavernCardV2Data;
+  avatarBytes: Uint8Array | null;
+}
+
+/**
+ * Parses TavernCard V2 payloads (PNG tEXt carrier or raw JSON) without
+ * touching the database or asset store. Shared by direct import and
+ * parse-only preview flows.
+ */
+export function parseV2Card(fileBytes: Uint8Array): ParsedV2Card {
   let v2Data: TavernCardV2Data | null = null;
   let avatarBytes: Uint8Array | null = null;
 
@@ -83,6 +88,17 @@ export async function importV2Card(
   if (!v2Data || typeof v2Data !== 'object') {
     throw new ApiError('unsupported_format', 422, 'Invalid TavernCard V2 payload structure');
   }
+
+  return { v2Data, avatarBytes };
+}
+
+export async function importV2Card(
+  fileBytes: Uint8Array,
+  filename: string,
+  repos: Repositories,
+  assetStore?: AssetStore
+): Promise<CharacterCard> {
+  const { v2Data, avatarBytes } = parseV2Card(fileBytes);
 
   const name = (v2Data.name?.trim() || 'Unnamed Character').slice(0, 120);
   const description = v2Data.description ?? '';

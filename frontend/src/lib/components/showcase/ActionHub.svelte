@@ -1,8 +1,9 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import type { CharacterCard, Persona } from '@formatavern/shared';
+  import type { CharacterCard, ImportPreviewChat, Persona } from '@formatavern/shared';
   import { HOOKS } from '@formatavern/shared';
   import { api, toUiError } from '$lib/api';
+  import { authStore } from '$lib/auth/store.svelte';
   import { toasts } from '$lib/state/toasts.svelte';
   import Icon from '$lib/components/ui/Icon.svelte';
   import Spinner from '$lib/components/ui/Spinner.svelte';
@@ -23,6 +24,12 @@
   let confirmDeleteOpen = $state(false);
   let storiesCount = $state(0);
   let deleting = $state(false);
+  let chatFileInput = $state<HTMLInputElement | null>(null);
+  let chatParsing = $state(false);
+  let chatPreview = $state<ImportPreviewChat | null>(null);
+  let chatPreviewFile = $state<File | null>(null);
+  let chatImportConfirmOpen = $state(false);
+  let chatImporting = $state(false);
 
   function toggleMenu(e: MouseEvent) {
     e.stopPropagation();
@@ -98,6 +105,80 @@
       toasts.error(toUiError(err).message);
     } finally {
       deleting = false;
+    }
+  }
+
+  function openChatImport() {
+    menuOpen = false;
+    chatFileInput?.click();
+  }
+
+  async function handleChatFileChange(e: Event) {
+    const files = (e.target as HTMLInputElement).files;
+    if (chatFileInput) chatFileInput.value = '';
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    chatParsing = true;
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/import/preview', {
+        method: 'POST',
+        headers: authStore.authHeaders(),
+        body: formData
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error?.message || `Preview failed (HTTP ${res.status})`);
+      }
+      const preview = (await res.json()) as ImportPreviewChat;
+      if (preview.kind !== 'chat') {
+        toasts.error('This looks like a character card. Use the Foyer Import button to review it in Studio instead.');
+        return;
+      }
+      chatPreview = preview;
+      chatPreviewFile = file;
+      chatImportConfirmOpen = true;
+    } catch (err: any) {
+      toasts.error(err?.message || 'Could not parse this chat file.');
+    } finally {
+      chatParsing = false;
+    }
+  }
+
+  async function handleConfirmChatImport() {
+    if (!chatPreview || !chatPreviewFile || chatImporting) return;
+    chatImporting = true;
+    try {
+      const formData = new FormData();
+      formData.append('file', chatPreviewFile);
+      let endpoint = '/api/import/jsonl';
+      if (chatPreview.format === 'custom-engine-chat') {
+        endpoint = '/api/import/custom-engine/single';
+      } else {
+        formData.append('characterId', character.id);
+      }
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: authStore.authHeaders(),
+        body: formData
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error?.message || `Import failed (HTTP ${res.status})`);
+      }
+      const data = await res.json();
+      const chatId = data?.id ?? data?.report?.insertedChats;
+      toasts.success(`Imported "${chatPreview.title}" (${chatPreview.messageCount} messages)`);
+      chatImportConfirmOpen = false;
+      chatPreview = null;
+      chatPreviewFile = null;
+      if (typeof chatId === 'string') goto(`/chat/${chatId}`);
+      else goto('/chats');
+    } catch (err: any) {
+      toasts.error(err?.message || 'Could not import this chat file.');
+    } finally {
+      chatImporting = false;
     }
   }
 
@@ -185,6 +266,15 @@
 
         <button
           type="button"
+          onclick={openChatImport}
+          class="flex w-full items-center gap-2 px-3 py-2 text-xs text-neutral-200 hover:bg-neutral-800"
+        >
+          <Icon name="upload" size={13} />
+          <span>{chatParsing ? 'Parsing chat file…' : 'Import chat'}</span>
+        </button>
+
+        <button
+          type="button"
           onclick={promptDelete}
           class="flex w-full items-center gap-2 px-3 py-2 text-xs text-red-400 hover:bg-neutral-800"
         >
@@ -217,5 +307,31 @@
   onConfirm={handleConfirmDelete}
   onCancel={() => {
     confirmDeleteOpen = false;
+  }}
+/>
+
+<!-- Hidden chat transcript picker -->
+<input
+  type="file"
+  accept=".jsonl,.json"
+  class="hidden"
+  bind:this={chatFileInput}
+  onchange={handleChatFileChange}
+/>
+
+<!-- Confirm Chat Import Dialog -->
+<ConfirmDialog
+  open={chatImportConfirmOpen}
+  title="Import chat"
+  message={chatPreview
+    ? `Import "${chatPreview.title}" (${chatPreview.messageCount} ${chatPreview.messageCount === 1 ? 'message' : 'messages'}) into ${character.name}?`
+    : 'Import this chat transcript?'}
+  confirmLabel={chatImporting ? 'Importing…' : 'Import'}
+  danger={false}
+  onConfirm={handleConfirmChatImport}
+  onCancel={() => {
+    chatImportConfirmOpen = false;
+    chatPreview = null;
+    chatPreviewFile = null;
   }}
 />

@@ -339,6 +339,27 @@ Establish a secure, pure client-side render boundary for content-addressed media
 
 ---
 
+## Import UX: Foyer Dialog, Studio Handoff & Chat Menu
+
+### Decisions (agreed before implementation)
+- Foyer Import button is desktop-only (`hidden md:flex` header convention); Studio draft review-then-save (no junk cards); Foyer drag-and-drop; character-page ⋯ menu for chat transcripts; no bulk UI (CLI-only); V2-only card formats (plus `custom_engine` single-character/chat JSON, auto-sniffed).
+- Reviewed imports are adopted as native cards on Studio save (no import provenance); metadata extras are dropped by the draft by design.
+
+### Implementation Summary
+- **Parse-only preview backend** (`backend/src/import/preview.ts`, `POST /api/import/preview`): V2 PNG/JSON, `custom_engine` character/chat JSON, and JSONL summaries with zero database writes (asserted). V2 parse extracted to pure `parseV2Card` shared by direct import.
+- **Foyer slice** (`ImportDialog.svelte`, `importPreview.svelte.ts` store): desktop Import button, in-dialog picker + dropzone, page-level drop overlay opening the dialog, chat files redirected to character pages with guidance.
+- **Studio handoff** (`character/new/+page.svelte`): consumes the preview once (single-shot, no double-apply), fills draft fields, stages the avatar through the existing draft-asset scope, surfaces preview warnings as toasts.
+- **Character-page chat menu** (`ActionHub.svelte`): Import chat → preview summary → `ConfirmDialog` → JSONL via `/api/import/jsonl`, `custom_engine` chats via `/single`, then navigates to the new chat.
+- **Shared contract** (`ImportPreviewSchema` in `sync.ts`).
+
+### Verification
+- `backend/test/routes/importPreview.test.ts` (6/6): all five preview kinds, 422s, and DB-untouched proofs.
+- `frontend/unit/importPreview.test.ts` (2/2): single-shot store semantics.
+- `packages/shared/test/schemas-sync.test.ts`: preview contract validation.
+- `bun run typecheck` clean; backend 439/439, frontend 289/289, shared 266/266.
+
+---
+
 ## Queued Steps
 
 ### Step 7: Documentation, Production Static Proofs & PR Verification

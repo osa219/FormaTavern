@@ -15,6 +15,9 @@
   import TagFilter from '$lib/components/discovery/TagFilter.svelte';
   import SortSelect from '$lib/components/discovery/SortSelect.svelte';
   import CharacterGrid from '$lib/components/discovery/CharacterGrid.svelte';
+  import ImportDialog from '$lib/components/discovery/ImportDialog.svelte';
+  import { importPreviewStore } from '$lib/state/importPreview.svelte';
+  import type { ImportPreview } from '@formatavern/shared';
   import SettingsSheet from '$lib/components/settings/SettingsSheet.svelte';
   import ConfirmDialog from '$lib/components/dialogs/ConfirmDialog.svelte';
   import ShellSurface from '$lib/components/custom/ShellSurface.svelte';
@@ -26,6 +29,8 @@
   let settingsOpen = $state(false);
   let deleteChatId = $state<string | null>(null);
   let confirmDeleteOpen = $state(false);
+  let importOpen = $state(false);
+  let foyerDragDepth = $state(0);
 
   const isDev = import.meta.env.DEV;
 
@@ -109,6 +114,43 @@
         c.primaryCharacterId.toLowerCase().includes(qLower)
     );
   });
+
+  function handleImportPreview(preview: Extract<ImportPreview, { kind: 'character' }>) {
+    importPreviewStore.set(preview);
+    importOpen = false;
+    goto('/character/new');
+  }
+
+  function handleFoyerDragEnter(e: DragEvent) {
+    if (!e.dataTransfer?.types?.includes('Files')) return;
+    e.preventDefault();
+    foyerDragDepth += 1;
+  }
+
+  function handleFoyerDragOver(e: DragEvent) {
+    if (foyerDragDepth > 0) e.preventDefault();
+  }
+
+  function handleFoyerDragLeave(e?: DragEvent) {
+    // Leaving the window entirely (no related target) always clears the overlay.
+    if (!e || !(e as any).relatedTarget) {
+      foyerDragDepth = 0;
+      return;
+    }
+    foyerDragDepth = Math.max(0, foyerDragDepth - 1);
+  }
+
+  function handleFoyerDrop(e: DragEvent) {
+    e.preventDefault();
+    foyerDragDepth = 0;
+    const files = e.dataTransfer?.files;
+    if (!files || files.length === 0) return;
+    importOpen = true;
+    // Hand the dropped file to the dialog once mounted.
+    requestAnimationFrame(() => {
+      window.dispatchEvent(new CustomEvent('foyer-import-drop', { detail: { file: files[0] } }));
+    });
+  }
 </script>
 
 <svelte:head>
@@ -160,6 +202,18 @@
         <span class="hidden md:inline">New Card</span>
         <span class="md:hidden">New</span>
       </a>
+
+      <!-- Import Card (desktop only: file picking + drag-and-drop) -->
+      <button
+        type="button"
+        onclick={() => (importOpen = true)}
+        class="hidden md:inline-flex items-center gap-1.5 rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-1.5 text-xs text-(--chrome-text)/80 hover:border-accent/40 transition-colors shrink-0"
+        title="Import a TavernCard V2 or custom_engine character file for Studio review"
+        aria-label="Import card"
+      >
+        <Icon name="upload" size={13} />
+        <span>Import</span>
+      </button>
 
       {#if isDev}
         <a
@@ -339,4 +393,29 @@
       deleteChatId = null;
     }}
   />
+
+  <!-- Import Card Dialog -->
+  <ImportDialog
+    open={importOpen}
+    onClose={() => (importOpen = false)}
+    onPreviewCharacter={handleImportPreview}
+  />
+
+  <!-- Page-level drop overlay (desktop file drops open the import dialog).
+       Visual only: svelte:window handlers below receive the actual events. -->
+  {#if foyerDragDepth > 0}
+    <div class="pointer-events-none fixed inset-0 z-40" aria-hidden="true">
+      <div class="absolute inset-0 bg-black/60 backdrop-blur-[1px]"></div>
+      <div class="absolute inset-4 flex items-center justify-center rounded-2xl border-2 border-dashed border-accent/70 bg-(--chrome-surface)/80">
+        <p class="text-sm font-medium text-(--chrome-text)">Drop card file to import</p>
+      </div>
+    </div>
+  {/if}
 </ShellSurface>
+
+<svelte:window
+  ondragenter={handleFoyerDragEnter}
+  ondragover={handleFoyerDragOver}
+  ondragleave={handleFoyerDragLeave}
+  ondrop={handleFoyerDrop}
+/>

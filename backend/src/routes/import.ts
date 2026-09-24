@@ -11,6 +11,7 @@ import { validateImportPath, DEFAULT_KNOWN_IMPORT_ROOT } from '../import/pathAll
 import { isSyncLocked } from '../import/customEngine/guard';
 import { importV2Card } from '../import/v2/service';
 import { importJsonlChat } from '../import/jsonl/service';
+import { previewImportFile } from '../import/preview';
 import { exportRelationalPack } from '../import/charx/service';
 import { ApiError } from '../engine/errors';
 
@@ -127,6 +128,21 @@ export function createImportRouter({
         return createdCard;
       }
     )
+    .post('/preview', async ({ body }) => {
+      // Parse-only: no database writes. The client reviews the payload
+      // (Studio draft for characters, confirm dialog for chats) before
+      // committing through the real import endpoints.
+      const file = (body as any)?.file;
+      if (!file) {
+        throw new ApiError('validation_failed', 422, 'Missing required "file" in multipart body');
+      }
+
+      const filename = typeof file.name === 'string' ? file.name : 'upload';
+      const buffer = await file.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+
+      return previewImportFile(bytes, filename);
+    })
     .post(
       '/jsonl',
       async ({ body, query, set }) => {

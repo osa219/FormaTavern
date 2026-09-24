@@ -41,3 +41,29 @@ export const SyncRequestSchema = Type.Object({
   root: Type.String({ minLength: 1 })
 });
 export type SyncRequest = Static<typeof SyncRequestSchema>;
+
+/**
+ * Parse-only import preview (no database writes). The client reviews the
+ * payload in Studio (characters) or a confirm dialog (chats) before
+ * committing through the real import endpoints.
+ */
+export const ImportPreviewCharacterSchema = Type.Object({
+  kind: Type.Literal('character'),
+  format: Type.Union([Type.Literal('tavern-v2'), Type.Literal('custom-engine')]),
+  card: Type.Record(Type.String(), Type.Unknown()),
+  avatarDataUrl: Type.Optional(Type.String()),
+  warnings: Type.Array(Type.String())
+});
+export type ImportPreviewCharacter = Static<typeof ImportPreviewCharacterSchema>;
+
+export const ImportPreviewChatSchema = Type.Object({
+  kind: Type.Literal('chat'),
+  format: Type.Union([Type.Literal('sillytavern-jsonl'), Type.Literal('custom-engine-chat')]),
+  title: Type.String(),
+  messageCount: Type.Integer({ minimum: 0 }),
+  warnings: Type.Array(Type.String())
+});
+export type ImportPreviewChat = Static<typeof ImportPreviewChatSchema>;
+
+export const ImportPreviewSchema = Type.Union([ImportPreviewCharacterSchema, ImportPreviewChatSchema]);
+export type ImportPreview = Static<typeof ImportPreviewSchema>;
