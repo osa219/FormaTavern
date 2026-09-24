@@ -14,7 +14,7 @@ It is updated after the completion of each execution step.
 | **Step 2** | Backend Storage Foundation, Schema v11 & Provenance Tracking | X1, X3, X7, I3 | Backend: migration 11, asset repo, provenance columns, audits, pool GC | **Complete** | [`f1ca51c`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend) |
 | **Step 3** | Content-Addressed Media Pool Store & Serving | X3, X10, A-AS1 | Backend: `FsAssetStore.putPool`, static route nosniff, security guards | **Complete** | [`af4b245`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend) |
 | **Step 4** | CustomEngine ETL Pipeline Service & CLI Runner | X1, X2, X5, X6, X9 | Backend: Sniff/Plan/Copy/Upsert/Append/Rebuild service, CLI, 6 test suites | **Complete** | [`3fac6be`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend) |
-| **Step 5** | API Routes, Background Runner & Format Exporters | X8, N6, S2, I6 | API endpoints, progress polling, V2 PNG, JSONL, CharX, Relational Pack | **Complete** | Pending commit |
+| **Step 5** | API Routes, Background Runner & Format Exporters | X8, N6, S2, I6 | API endpoints, progress polling, V2 PNG, JSONL, CharX, Relational Pack | **Complete** | [`d61e976`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend) |
 | **Step 6** | Frontend Render Boundary, Media Rewrite & Snapshot Label | X4, X5, U2, U10 | Frontend: pure mediaRewrite, missing slate, You panel snapshot label | *Queued* | — |
 | **Step 7** | Documentation, Production Static Proofs & PR Verification | All | Docs update (v11 schema/arch), live dump full run artifacts, verification proofs | *Queued* | — |
 
