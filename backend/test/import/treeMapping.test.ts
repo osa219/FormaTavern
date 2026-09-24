@@ -54,7 +54,7 @@ describe('CustomEngine Tree Mapping (X6)', () => {
 
     expect(path[2].content).toBe('Msg 2');
     expect(path[2].parentId).toBe(path[1].id);
-    expect(path[2].id).toBe(dbChat!.activeLeafId);
+    expect(path[2].id).toBe(dbChat!.activeLeafId!);
   });
 
   it('maps alternate_swipes to sibling rows sharing parentId with metadata.imported_swipe', async () => {

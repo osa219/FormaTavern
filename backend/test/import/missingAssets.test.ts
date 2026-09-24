@@ -122,4 +122,62 @@ describe('CustomEngine Missing Assets & Healing (X9)', () => {
     const boundAssets = env.repos.assets.getMessageAssets(msgAfter!.id);
     expect(boundAssets).toContain(blobHash);
   });
+
+  it('successfully binds message and swipe media assets when blob is present on initial sync', async () => {
+    env = await createTestImportEnv();
+
+    const pngBytes = makePng(32, 32);
+    const blobHash = createHash('sha256').update(pngBytes).digest('hex').toLowerCase();
+    await env.writeMedia(blobHash, pngBytes, '.png');
+
+    const char = {
+      id: 'char-happy-media',
+      name: 'Media Artist',
+      description: 'Creates paintings',
+      personality: 'Visual',
+      scenario: 'Gallery',
+      first_message: 'Welcome to the gallery'
+    };
+
+    const chat = {
+      id: 'chat-happy-media',
+      character_id: 'char-happy-media',
+      title: 'Gallery Visit',
+      messages: [
+        {
+          id: 'msg_media_0',
+          chat_id: 'chat-happy-media',
+          sequence_index: 0,
+          role: 'assistant',
+          content: `Primary painting: media://${blobHash}`,
+          alternate_swipes: [`Swipe painting: media://${blobHash}`],
+          timestamp: 1000
+        }
+      ]
+    };
+
+    await env.writeCharacter(char);
+    await env.writeChat(chat);
+
+    const report = await env.service.sync(env.sourceDir);
+    expect(report.insertedChars).toBe(1);
+    expect(report.insertedChats).toBe(1);
+    expect(report.appendedMessages).toBe(2);
+    expect(report.missingAssets).not.toContain(blobHash);
+
+    const dbChat = env.repos.chats.findByProvenance('custom_engine', 'chat-happy-media');
+    expect(dbChat).not.toBeNull();
+
+    // The active leaf in tree mapping is the swipe (or main message depending on tree construction)
+    // Find all messages in the chat to check bindings for both main message and swipe
+    const allMsgs = env.repos.messages.listInChat(dbChat!.id);
+    expect(allMsgs.length).toBe(2); // 1 main msg + 1 swipe
+
+    for (const msg of allMsgs) {
+      expect(msg.missingAssets).toBeNull();
+      const boundAssets = env.repos.assets.getMessageAssets(msg.id);
+      expect(boundAssets).toContain(blobHash);
+    }
+  });
 });
+

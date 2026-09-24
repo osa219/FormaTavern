@@ -857,7 +857,7 @@ export class SqlitePersonaRepository implements PersonaRepository {
   constructor(private db: Database) {
     this.stmtList = db.query(`SELECT * FROM personas ORDER BY updated_at DESC;`);
     this.stmtGet = db.query(`SELECT * FROM personas WHERE id = ?;`);
-    this.stmtFindByName = db.query(`SELECT * FROM personas WHERE name = ? LIMIT 1;`);
+    this.stmtFindByName = db.query(`SELECT * FROM personas WHERE name = ? COLLATE NOCASE LIMIT 1;`);
     this.stmtGetDefault = db.query(`SELECT * FROM personas WHERE is_default = 1 LIMIT 1;`);
     this.stmtCount = db.query(`SELECT count(*) as count FROM personas;`);
     this.stmtRemove = db.query(`DELETE FROM personas WHERE id = ?;`);

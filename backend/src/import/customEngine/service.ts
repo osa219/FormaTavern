@@ -1,6 +1,7 @@
 import { join } from 'node:path';
 import type { Database } from 'bun:sqlite';
 import {
+  clampGreetingIndex,
   extractMediaHashes,
   normalizeTag,
   pruneAlternateGreetings,
@@ -287,8 +288,14 @@ export class CustomEngineImportService {
             } else if (pChar.action === 'update') {
               const charId = pChar.existingId!;
               const existingRow = this.db
-                .query('SELECT metadata FROM characters WHERE id = ?;')
-                .get(charId) as { metadata: string | null } | null;
+                .query('SELECT avatar, metadata FROM characters WHERE id = ?;')
+                .get(charId) as { avatar: string | null; metadata: string | null } | null;
+
+              // Preserve existing avatar if new avatar blob could not be resolved from source
+              let finalAvatarPath = avatarPath;
+              if (!finalAvatarPath && char.avatar_hash) {
+                finalAvatarPath = existingRow?.avatar ?? null;
+              }
 
               let metadataObj: Record<string, unknown> = {};
               if (existingRow?.metadata) {
@@ -335,7 +342,7 @@ export class CustomEngineImportService {
                 [
                   char.name,
                   char.chat_name?.trim() || null,
-                  avatarPath,
+                  finalAvatarPath,
                   char.card_title || null,
                   char.creator_name || null,
                   char.creator_url || null,
@@ -372,6 +379,8 @@ export class CustomEngineImportService {
                   sortOrder: 0,
                   createdAt: now
                 });
+              } else if (!char.avatar_hash) {
+                this.assetRepo.deleteCharacterAssets(charId, 'avatar');
               }
 
               stats.updatedChars++;
@@ -405,11 +414,16 @@ export class CustomEngineImportService {
               const charCard = this.charRepo.get(primaryCharacterId);
               const charName = charCard?.name ?? 'Character';
               const title = (chat.title && chat.title.trim()) || `Chat with ${charName}`;
-              const activeGreetingIndex = Number.isInteger(chat.active_greeting_index)
-                ? Number(chat.active_greeting_index)
-                : 0;
+              const greetingCount = 1 + (charCard?.alternateGreetings?.length ?? 0);
+              const activeGreetingIndex = clampGreetingIndex(chat.active_greeting_index, greetingCount);
               const personaSnapshot = chat.user_persona ? JSON.stringify(chat.user_persona) : null;
               const createdAt = chat.created_at ? Date.parse(chat.created_at) || now : now;
+              const maxMsgTime = (chat.messages ?? []).reduce((max, m) => Math.max(max, m.timestamp ?? 0), 0);
+              const updatedAt = chat.updated_at
+                ? Date.parse(chat.updated_at) || createdAt
+                : maxMsgTime > 0
+                  ? maxMsgTime
+                  : createdAt;
               const chatMetadata: Record<string, unknown> = {};
               if (chat.summary) chatMetadata.summary = chat.summary;
               if (chat.fork_source_chat_id) chatMetadata.forkSource = chat.fork_source_chat_id;
@@ -426,7 +440,7 @@ export class CustomEngineImportService {
                   primaryCharacterId,
                   activePersonaId,
                   createdAt,
-                  createdAt,
+                  updatedAt,
                   JSON.stringify(chatMetadata),
                   chat.id,
                   pChat.originHash,
@@ -513,9 +527,8 @@ export class CustomEngineImportService {
               const charCard = this.charRepo.get(primaryCharacterId);
               const charName = charCard?.name ?? 'Character';
               const title = (chat.title && chat.title.trim()) || `Chat with ${charName}`;
-              const activeGreetingIndex = Number.isInteger(chat.active_greeting_index)
-                ? Number(chat.active_greeting_index)
-                : 0;
+              const greetingCount = 1 + (charCard?.alternateGreetings?.length ?? 0);
+              const activeGreetingIndex = clampGreetingIndex(chat.active_greeting_index, greetingCount);
               const personaSnapshot = chat.user_persona ? JSON.stringify(chat.user_persona) : null;
 
               this.db.run(
@@ -636,6 +649,11 @@ export class CustomEngineImportService {
 
     try {
       const record = await this.assetStore.putPool(bytes);
+      if (record.id !== cleanHash) {
+        console.warn(`[import] Warning: hash mismatch for blob. Expected ${cleanHash}, computed ${record.id}`);
+        stats.missingAssets.add(cleanHash);
+        return null;
+      }
       this.assetRepo.insert(record);
       stats.copiedBlobs++;
 
@@ -703,13 +721,14 @@ export class CustomEngineImportService {
     now: number
   ): string {
     const name = userPersona?.name?.trim() || 'User';
-    if (personaCache.has(name)) {
-      return personaCache.get(name)!;
+    const cacheKey = name.toLowerCase();
+    if (personaCache.has(cacheKey)) {
+      return personaCache.get(cacheKey)!;
     }
 
     const existing = this.personaRepo.findByName(name);
     if (existing) {
-      personaCache.set(name, existing.id);
+      personaCache.set(cacheKey, existing.id);
       return existing.id;
     }
 
@@ -734,7 +753,7 @@ export class CustomEngineImportService {
       isDefault: false
     });
 
-    personaCache.set(name, persona.id);
+    personaCache.set(cacheKey, persona.id);
     return persona.id;
   }
 
@@ -760,9 +779,10 @@ export class CustomEngineImportService {
     const allHashes = Array.from(new Set([...inlineHashes, ...explicitHashes]));
 
     const missingForMsg: string[] = [];
+    const presentHashes: string[] = [];
     for (const h of allHashes) {
       if (this.assetRepo.has(h)) {
-        this.assetRepo.bindMessageAsset(msgId, h);
+        presentHashes.push(h);
       } else {
         missingForMsg.push(h);
       }
@@ -792,6 +812,10 @@ export class CustomEngineImportService {
         missingAssetsStr
       ]
     );
+
+    for (const h of presentHashes) {
+      this.assetRepo.bindMessageAsset(msgId, h);
+    }
   }
 
   private insertSwipeRow(
@@ -813,9 +837,10 @@ export class CustomEngineImportService {
 
     const inlineHashes = extractMediaHashes(swipeContent ?? '');
     const missingForMsg: string[] = [];
+    const presentHashes: string[] = [];
     for (const h of inlineHashes) {
       if (this.assetRepo.has(h)) {
-        this.assetRepo.bindMessageAsset(swipeId, h);
+        presentHashes.push(h);
       } else {
         missingForMsg.push(h);
       }
@@ -844,5 +869,9 @@ export class CustomEngineImportService {
         missingAssetsStr
       ]
     );
+
+    for (const h of presentHashes) {
+      this.assetRepo.bindMessageAsset(swipeId, h);
+    }
   }
 }

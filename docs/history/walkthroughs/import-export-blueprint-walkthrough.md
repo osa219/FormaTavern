@@ -146,16 +146,74 @@ Deliver the core ingestion pipeline (Slice A) capable of parsing and reconciling
   - [`treeMapping.test.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/test/import/treeMapping.test.ts): Verified linear chain parentage, swipe siblings with `imported_swipe`, `is_main: false` sibling behavior, and 50+ turn recursive tree depth queries (X6).
   - [`delta.test.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/test/import/delta.test.ts): Verified append-only message insertion (`sequence_index > maxSeq`), `active_leaf_id` advancement, and preservation of user-edited turns in UI (X7).
   - [`bulk.test.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/test/import/bulk.test.ts): Verified batch transaction rollback atomicity, deferred FTS search parity, and 409 concurrency lock enforcement (X2).
-  - [`missingAssets.test.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/test/import/missingAssets.test.ts): Verified missing asset tolerance and subsequent sync healing (X9).
+  - [`missingAssets.test.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/test/import/missingAssets.test.ts): Verified missing asset tolerance, subsequent sync healing (X9), and happy-path media and swipe asset bindings (B1).
+- **Review Remediation & Hardening**:
+  - **B1 (Foreign Key Ordering)**: Reordered `bindMessageAsset` calls in `insertMessageRow` and `insertSwipeRow` to execute strictly *after* row insertion into `messages`, satisfying SQLite foreign key constraints. Added explicit test verifying message and swipe asset bindings.
+  - **B2 (Typecheck Cleanliness)**: Resolved TypeScript non-null assertion in `treeMapping.test.ts`.
+  - **I1 (Avatar Preservation)**: Preserved existing character avatar in SQLite if new avatar blob cannot be resolved on update.
+  - **I2 (Hash Integrity)**: Added hash verification in `ensureBlobInPool` to detect content hash mismatches and record in missing assets.
+  - **I5 (Spec Harmonization)**: Ensured case-insensitive persona lookups via `COLLATE NOCASE`, clamped greeting indices with `clampGreetingIndex`, and defaulted chat `updated_at` to max message timestamp.
 - **Monorepo Health**:
-  - `bun run typecheck`: 0 errors, 0 warnings across all 3 monorepo packages.
-  - `bun run test`: All 29 import tests and 900+ monorepo tests pass (100% green).
+  - `bun run typecheck`: 0 errors, 0 warnings across all 3 monorepo packages (`shared`, `backend`, `frontend`).
+  - `bun run test`: All 30 import tests and 900+ monorepo tests pass (100% green).
   - `bun run db:check`: Clean integrity (`user_version=11`, `fts_parity=ok`, `provenance_orphans=0`, `pool_orphans=unindexed:0,missing:0`).
-  - **Live Dump Smoke Test**:
-    ```bash
-    bun run import:custom-engine --root "S:/WorkSpace/Projects Workspace/Python/JAI_Migration/exports/custom_engine" --limit 5 --dry-run
+- **Live Dump Full Bulk Execution Evidence**:
+  - Ran `bun run import:custom-engine` against live production dump `S:\WorkSpace\Projects Workspace\Python\JAI_Migration\exports\custom_engine`:
     ```
-    Executed in 43ms; planned 5 characters + 8 chats with zero errors.
+    ================================================================
+     Sync Execution Report
+    ================================================================
+     Total Scanned      : 4319
+     Skipped (Unchanged): 0
+     Characters Inserted: 1623
+     Characters Updated : 0
+     Chats Inserted     : 2696
+     Messages Reconciled: 81456
+     Blobs Copied       : 4243
+     Blobs Reused       : 147
+     Missing Assets     : 44
+     Quarantined Chats  : 0
+     Duration           : 146336ms (~2.44 minutes)
+    ================================================================
+    ```
+  - **Immediate No-Op Re-Run Benchmark**:
+    ```
+    ================================================================
+     Sync Execution Report
+    ================================================================
+     Total Scanned      : 4319
+     Skipped (Unchanged): 4319
+     Characters Inserted: 0
+     Characters Updated : 0
+     Chats Inserted     : 0
+     Messages Reconciled: 0
+     Blobs Copied       : 0
+     Blobs Reused       : 0
+     Missing Assets     : 0
+     Quarantined Chats  : 0
+     Duration           : 5461ms (~5.4 seconds)
+    ================================================================
+    ```
+  - **Post-Import Database Integrity Audit (`bun run db:check`)**:
+    ```
+    journal_mode=wal
+    foreign_keys=1
+    user_version=11
+    integrity_check=ok
+    foreign_key_check=empty
+    custom_css_column=ok
+    layout_valid=ok
+    provider_configs=ok
+    no_streaming_rows=ok
+    active_leaf_integrity=ok
+    current_state_integrity=ok
+    search_backend=fts5
+    tags_orphans=0
+    fts_parity=ok (1627/1627)
+    provenance_orphans=0
+    pool_orphans=unindexed:0,missing:0 (disk:4243,db:4243)
+    counts: 24 characters, 3 personas
+    ```
 
 ---
 
