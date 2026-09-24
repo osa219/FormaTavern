@@ -20,6 +20,10 @@
   const bottomIds = $derived(data.blocks.filter((b) => ['9a', '9b', '9c'].includes(b.id) && b.included));
   const reviewBlocks = $derived(visibleBlocks(data.blocks));
 
+  // Independent open state per collapsible: tapping one must never move the other.
+  let prefillOpen = $state(false);
+  let stopsOpen = $state(false);
+
   // Exact wire view: the literal message array in send order
   // (system prompt, fitted history, assistant prefill), as the model sees it.
   const wireMessages = $derived(buildWireMessages(data));
@@ -265,19 +269,40 @@
     </div>
   </details>
 
-  <div class="grid grid-cols-2 gap-1.5 text-xs">
-    <details class="rounded-xl border border-(--chrome-line) bg-(--chrome-bg)">
-      <summary class="cursor-pointer px-3 py-2 font-medium text-(--chrome-text) select-none">Prefill</summary>
-      <div class="border-t border-(--chrome-line)/60 px-3 py-2">
-        <pre class="font-mono text-[11px] whitespace-pre-wrap text-(--chrome-text)/90">{data.assistantPrefill ?? '(none)'}</pre>
-      </div>
-    </details>
-    <details class="rounded-xl border border-(--chrome-line) bg-(--chrome-bg)">
-      <summary class="cursor-pointer px-3 py-2 font-medium text-(--chrome-text) select-none">Stops ({data.stop.length})</summary>
-      <div class="border-t border-(--chrome-line)/60 px-3 py-2">
-        <pre class="font-mono text-[11px] whitespace-pre-wrap text-(--chrome-text)/90">{data.stop.length > 0 ? data.stop.join('\n') : '(none)'}</pre>
-      </div>
-    </details>
+  <!-- Independent collapsibles: items-start so a tall open neighbor can never stretch a closed box. -->
+  <div class="grid grid-cols-2 items-start gap-1.5 text-xs">
+    <div class="rounded-xl border border-(--chrome-line) bg-(--chrome-bg)">
+      <button
+        type="button"
+        onclick={() => (prefillOpen = !prefillOpen)}
+        aria-expanded={prefillOpen}
+        class="flex w-full cursor-pointer items-center gap-1 px-3 py-2 font-medium text-(--chrome-text) select-none"
+      >
+        <span class="font-mono text-[10px] text-(--chrome-text)/50">{prefillOpen ? '▾' : '▸'}</span>
+        <span>Prefill</span>
+      </button>
+      {#if prefillOpen}
+        <div class="border-t border-(--chrome-line)/60 px-3 py-2">
+          <pre class="font-mono text-[11px] whitespace-pre-wrap text-(--chrome-text)/90">{data.assistantPrefill ?? '(none)'}</pre>
+        </div>
+      {/if}
+    </div>
+    <div class="rounded-xl border border-(--chrome-line) bg-(--chrome-bg)">
+      <button
+        type="button"
+        onclick={() => (stopsOpen = !stopsOpen)}
+        aria-expanded={stopsOpen}
+        class="flex w-full cursor-pointer items-center gap-1 px-3 py-2 font-medium text-(--chrome-text) select-none"
+      >
+        <span class="font-mono text-[10px] text-(--chrome-text)/50">{stopsOpen ? '▾' : '▸'}</span>
+        <span>Stops ({data.stop.length})</span>
+      </button>
+      {#if stopsOpen}
+        <div class="border-t border-(--chrome-line)/60 px-3 py-2">
+          <pre class="font-mono text-[11px] whitespace-pre-wrap text-(--chrome-text)/90">{data.stop.length > 0 ? data.stop.join('\n') : '(none)'}</pre>
+        </div>
+      {/if}
+    </div>
   </div>
 
   {#if prefs.devMode}
