@@ -27,7 +27,7 @@ import SpeechBubble from '../src/lib/components/chat/SpeechBubble.svelte';
 import NarratorBlock from '../src/lib/components/chat/NarratorBlock.svelte';
 import Composer from '../src/lib/components/composer/Composer.svelte';
 import LoreDrawer from '../src/lib/components/chat/LoreDrawer.svelte';
-import SwipeCarousel from '../src/lib/components/chat/SwipeCarousel.svelte';
+import EdgePager from '../src/lib/components/chat/EdgePager.svelte';
 import TurnToolbar from '../src/lib/components/chat/TurnToolbar.svelte';
 import StreamCaret from '../src/lib/components/chat/StreamCaret.svelte';
 import JumpToLatest from '../src/lib/components/chat/JumpToLatest.svelte';
@@ -71,7 +71,7 @@ describe('Hook Contract & Manifest Invariants (Invariant C1)', () => {
 
     const uniqueHooks = new Set(allHooks);
     expect(uniqueHooks.size).toBe(allHooks.length);
-    expect(allHooks.length).toBe(45);
+    expect(allHooks.length).toBe(46);
   });
 
   it('prohibits hardcoded ft- class literal strings in frontend/src outside manifest', () => {
@@ -219,9 +219,9 @@ describe('Hook Contract & Manifest Invariants (Invariant C1)', () => {
       expect(html).toContain(HOOKS.chat.loreDrawer);
     });
 
-    it('renders SwipeCarousel with ft-swipe-carousel', () => {
-      const { html } = render(SwipeCarousel, { props: { messageId: 'm1', siblingIndex: 0, siblingCount: 2 } });
-      expect(html).toContain(HOOKS.chat.swipeCarousel);
+    it('renders EdgePager with ft-edge-pager', () => {
+      const { html } = render(EdgePager, { props: { index: 0, count: 2, onSelect: () => {} } });
+      expect(html).toContain(HOOKS.chat.edgePager);
     });
 
     it('renders TurnToolbar with ft-turn-toolbar', () => {
