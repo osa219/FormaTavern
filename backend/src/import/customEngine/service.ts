@@ -232,6 +232,9 @@ export class CustomEngineImportService {
               const createdAt = char.created_at ? Date.parse(char.created_at) || now : now;
               const updatedAt = char.updated_at ? Date.parse(char.updated_at) || createdAt : createdAt;
 
+              const charName = (char.name?.trim() || 'Character').slice(0, 120);
+              const charTagline = char.card_title?.trim() ? char.card_title.trim().slice(0, 140) : null;
+
               this.db.run(
                 `INSERT INTO characters (
                    id, name, character_name, avatar, tagline, creator, creator_url, character_url,
@@ -241,10 +244,10 @@ export class CustomEngineImportService {
                  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'custom_engine', ?, ?, ?, NULL, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
                 [
                   charId,
-                  char.name,
+                  charName,
                   char.chat_name?.trim() || null,
                   avatarPath,
-                  char.card_title || null,
+                  charTagline,
                   char.creator_name || null,
                   char.creator_url || null,
                   char.character_url || null,
@@ -263,12 +266,17 @@ export class CustomEngineImportService {
                 ]
               );
 
-              // Reconcile tags
+              // Reconcile tags (max 12 tags per schema)
               this.db.run('DELETE FROM character_tags WHERE character_id = ?;', [charId]);
               const tagInsert = this.db.query('INSERT OR IGNORE INTO character_tags (character_id, tag) VALUES (?, ?);');
+              let insertedTagCount = 0;
               for (const t of char.tags ?? []) {
+                if (insertedTagCount >= 12) break;
                 const norm = normalizeTag(t);
-                if (norm) tagInsert.run(charId, norm);
+                if (norm) {
+                  tagInsert.run(charId, norm);
+                  insertedTagCount++;
+                }
               }
 
               // Bind avatar
@@ -320,6 +328,9 @@ export class CustomEngineImportService {
               metadataObj.import = importMeta;
               if (char.mes_example) metadataObj.exampleDialogue = char.mes_example;
 
+              const charName = (char.name?.trim() || 'Character').slice(0, 120);
+              const charTagline = char.card_title?.trim() ? char.card_title.trim().slice(0, 140) : null;
+
               this.db.run(
                 `UPDATE characters SET
                    name = ?,
@@ -340,10 +351,10 @@ export class CustomEngineImportService {
                    updated_at = ?
                  WHERE id = ?;`,
                 [
-                  char.name,
+                  charName,
                   char.chat_name?.trim() || null,
                   finalAvatarPath,
-                  char.card_title || null,
+                  charTagline,
                   char.creator_name || null,
                   char.creator_url || null,
                   char.character_url || null,
@@ -360,12 +371,17 @@ export class CustomEngineImportService {
                 ]
               );
 
-              // Reconcile tags
+              // Reconcile tags (max 12 tags per schema)
               this.db.run('DELETE FROM character_tags WHERE character_id = ?;', [charId]);
               const tagInsert = this.db.query('INSERT OR IGNORE INTO character_tags (character_id, tag) VALUES (?, ?);');
+              let insertedTagCount = 0;
               for (const t of char.tags ?? []) {
+                if (insertedTagCount >= 12) break;
                 const norm = normalizeTag(t);
-                if (norm) tagInsert.run(charId, norm);
+                if (norm) {
+                  tagInsert.run(charId, norm);
+                  insertedTagCount++;
+                }
               }
 
               // Reconcile avatar

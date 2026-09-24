@@ -1,4 +1,5 @@
 import { resolve, join, extname, normalize } from 'node:path';
+import { existsSync } from 'node:fs';
 import {
   mkdir,
   writeFile,
@@ -369,5 +370,20 @@ export class FsAssetStore implements AssetStore {
     }
 
     return null;
+  }
+
+  getDiskPath(assetPath: string): string | null {
+    if (!assetPath || typeof assetPath !== 'string' || !assetPath.startsWith('/assets/')) {
+      return null;
+    }
+    const rel = assetPath.slice('/assets/'.length);
+    const full = resolve(this.rootDir, rel);
+    try {
+      const normalizedRoot = normalize(this.rootDir);
+      if (!full.startsWith(normalizedRoot)) return null;
+      return existsSync(full) ? full : null;
+    } catch {
+      return null;
+    }
   }
 }

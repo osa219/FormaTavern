@@ -25,4 +25,5 @@ export interface AssetStore {
   cleanStaleDrafts(maxAgeMs: number): Promise<number>;
   putPool(bytes: Uint8Array): Promise<AssetRecord>;
   resolvePool(hash: string): Promise<string | null>;
+  getDiskPath(assetPath: string): string | null;
 }

@@ -2,6 +2,7 @@ import { resolve } from 'node:path';
 import { existsSync } from 'node:fs';
 import { DB_PATH, ASSETS_DIR } from '../src/db/paths';
 import { openDatabase } from '../src/db/connection';
+import { runMigrations } from '../src/db/migrate';
 import { createRepositories } from '../src/db/repositories';
 import { FsAssetStore } from '../src/assets/store';
 import { CustomEngineImportService } from '../src/import/customEngine';
@@ -88,8 +89,9 @@ async function main() {
   let db;
   try {
     db = openDatabase(DB_PATH);
+    runMigrations(db);
   } catch (err: any) {
-    console.error('[import-custom-engine] Failed to open database:', err.message);
+    console.error('[import-custom-engine] Failed to open database or run migrations:', err.message);
     process.exit(1);
   }
 

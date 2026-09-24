@@ -39,6 +39,7 @@ import { runGeneration } from '../engine/generation';
 import { buildPrompt } from '../prompt/builder';
 import { PromptBudgetError, type BuiltPrompt } from '../prompt/types';
 import { sseResponse } from './sse';
+import { exportJsonlChat } from '../import/jsonl/service';
 
 function buildUserSegments(
   narrativeRole: string,
@@ -210,6 +211,17 @@ export function createChatsRouter(deps: {
         query: ChatHubQuerySchema
       }
     )
+    .get('/:id/export.jsonl', async ({ params, set }) => {
+      const res = await exportJsonlChat(params.id, repos);
+      set.headers['Content-Type'] = res.contentType;
+      set.headers['Content-Disposition'] = `attachment; filename="${res.filename}"`;
+      return new Response(res.data as any, {
+        headers: {
+          'Content-Type': res.contentType,
+          'Content-Disposition': `attachment; filename="${res.filename}"`
+        }
+      });
+    })
     .get('/:id', ({ params }): ChatView => {
       const chat = repos.chats.get(params.id);
       if (!chat) {

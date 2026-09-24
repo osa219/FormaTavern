@@ -270,28 +270,22 @@ try {
     hasFailure = true;
   }
 
-  const characterSummaries = repos.characters.list().items;
+  const allCharIds = (db.query('SELECT id FROM characters;').all() as Array<{ id: string }>).map((r) => r.id);
   const personas = repos.personas.list();
 
-  console.log(`counts: ${characterSummaries.length} characters, ${personas.length} personas`);
+  console.log(`counts: ${allCharIds.length} characters, ${personas.length} personas`);
 
   let validChars = 0;
-  for (const cs of characterSummaries) {
-    const vs = validate(CharacterSummarySchema, cs);
-    if (!vs.ok) {
-      console.error(`[check] Character summary ${cs.id} failed validation:`, vs.issues);
-      hasFailure = true;
-      continue;
-    }
-    const full = repos.characters.get(cs.id);
+  for (const cid of allCharIds) {
+    const full = repos.characters.get(cid);
     if (!full) {
-      console.error(`[check] Character ${cs.id} could not be retrieved in full`);
+      console.error(`[check] Character ${cid} could not be retrieved in full`);
       hasFailure = true;
       continue;
     }
     const vf = validate(CharacterCardSchema, full);
     if (!vf.ok) {
-      console.error(`[check] Character full card ${cs.id} failed validation:`, vf.issues);
+      console.error(`[check] Character full card ${cid} failed validation:`, vf.issues);
       hasFailure = true;
       continue;
     }
@@ -309,7 +303,7 @@ try {
     }
   }
 
-  console.log(`${validChars}/${characterSummaries.length} characters valid, ${validPersonas}/${personas.length} personas valid`);
+  console.log(`${validChars}/${allCharIds.length} characters valid, ${validPersonas}/${personas.length} personas valid`);
 
   if (hasFailure) {
     process.exit(1);

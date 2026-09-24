@@ -21,6 +21,8 @@ import { assembleContext } from '../engine/context';
 import { ApiError } from '../engine/errors';
 import { buildPrompt } from '../prompt/builder';
 import { PromptBudgetError, type BuiltPrompt, type CharacterPromptPreview } from '../prompt/types';
+import { exportV2Card } from '../import/v2/service';
+import { exportCharx } from '../import/charx/service';
 
 export interface CharactersRouterDeps {
   repos: Repositories;
@@ -45,6 +47,39 @@ export function createCharactersRouter({ repos, assets, providers }: CharactersR
         throw new ApiError('not_found', 404, `Character ${params.id} not found`);
       }
       return repos.characters.chatCounts(params.id);
+    })
+    .get(
+      '/:id/export.png',
+      async ({ params, query, set }) => {
+        const format = query?.format === 'json' ? 'json' : 'png';
+        const res = await exportV2Card(params.id, repos, assets, format);
+        set.headers['Content-Type'] = res.contentType;
+        set.headers['Content-Disposition'] = `attachment; filename="${res.filename}"`;
+        return new Response(res.data as any, {
+          headers: {
+            'Content-Type': res.contentType,
+            'Content-Disposition': `attachment; filename="${res.filename}"`
+          }
+        });
+      },
+      {
+        query: t.Optional(
+          t.Object({
+            format: t.Optional(t.Union([t.Literal('png'), t.Literal('json')]))
+          })
+        )
+      }
+    )
+    .get('/:id/export.charx', async ({ params, set }) => {
+      const res = await exportCharx(params.id, repos, assets);
+      set.headers['Content-Type'] = res.contentType;
+      set.headers['Content-Disposition'] = `attachment; filename="${res.filename}"`;
+      return new Response(res.data as any, {
+        headers: {
+          'Content-Type': res.contentType,
+          'Content-Disposition': `attachment; filename="${res.filename}"`
+        }
+      });
     })
     .get('/:id', ({ params }): CharacterCard => {
       const card = repos.characters.get(params.id);

@@ -13,6 +13,7 @@ import { recoverStaleGenerations } from './engine/recovery';
 import { GenerationHubImpl } from './engine/hub';
 import { ProviderRegistryImpl } from './engine/providers';
 import { FsAssetStore } from './assets/store';
+import { CustomEngineImportService } from './import/customEngine';
 import { loadServerConfig } from './config/loader';
 import { listLanCandidates, pickPrimary, detectTailscale, resolveBackendBind } from './config/network';
 import { formatBanner } from './config/banner';
@@ -187,6 +188,15 @@ process.on('SIGTERM', shutdown);
 
 // 8. Assemble Elysia app
 const assets = new FsAssetStore(assetsDir);
+const importService = new CustomEngineImportService(
+  db,
+  assets,
+  repos.assets,
+  repos.characters,
+  repos.chats,
+  repos.messages,
+  repos.personas
+);
 let server: Elysia;
 
 const authSecret = new Uint8Array(32);
@@ -205,6 +215,7 @@ const app = createApp({
   hub,
   providers,
   assets,
+  importService,
   options: {
     nodeEnv: process.env.NODE_ENV,
     auth: authOptions,

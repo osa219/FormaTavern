@@ -14,7 +14,7 @@ It is updated after the completion of each execution step.
 | **Step 2** | Backend Storage Foundation, Schema v11 & Provenance Tracking | X1, X3, X7, I3 | Backend: migration 11, asset repo, provenance columns, audits, pool GC | **Complete** | [`f1ca51c`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend) |
 | **Step 3** | Content-Addressed Media Pool Store & Serving | X3, X10, A-AS1 | Backend: `FsAssetStore.putPool`, static route nosniff, security guards | **Complete** | [`af4b245`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend) |
 | **Step 4** | CustomEngine ETL Pipeline Service & CLI Runner | X1, X2, X5, X6, X9 | Backend: Sniff/Plan/Copy/Upsert/Append/Rebuild service, CLI, 6 test suites | **Complete** | [`3fac6be`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend) |
-| **Step 5** | API Routes, Background Runner & Format Exporters | X8, N6, S2 | API endpoints, progress polling, V2 PNG, JSONL, CharX, Relational Pack | *Queued* | — |
+| **Step 5** | API Routes, Background Runner & Format Exporters | X8, N6, S2, I6 | API endpoints, progress polling, V2 PNG, JSONL, CharX, Relational Pack | **Complete** | Pending commit |
 | **Step 6** | Frontend Render Boundary, Media Rewrite & Snapshot Label | X4, X5, U2, U10 | Frontend: pure mediaRewrite, missing slate, You panel snapshot label | *Queued* | — |
 | **Step 7** | Documentation, Production Static Proofs & PR Verification | All | Docs update (v11 schema/arch), live dump full run artifacts, verification proofs | *Queued* | — |
 
@@ -217,19 +217,70 @@ Deliver the core ingestion pipeline (Slice A) capable of parsing and reconciling
 
 ---
 
-## Queued Steps
+## Step 5: API Routes, Background Runner & Format Exporters
 
-### Step 5: API Routes, Background Runner & Format Exporters
-- Implementation of API endpoints:
-  - `POST /api/import/custom-engine/sync` (with `?wait=true` or background run polling via `GET /api/import/runs/:runId`).
-  - `POST /api/import/custom-engine/single` (multipart single character or chat file).
-  - `POST /api/import/v2` (TavernCard V2 PNG `tEXt` / JSON card import).
-  - `POST /api/import/jsonl` (SillyTavern JSONL chat import).
-  - `GET /api/characters/:id/export.png` & `.json` (V2 card export from DB).
-  - `GET /api/chats/:id/export.jsonl` (SillyTavern compatible JSONL chat export).
-  - `GET /api/characters/:id/export.charx` (CharX pack export with asset bindings).
-  - `GET /api/export/relational-pack` (lossless CustomEngine format export).
-- Route integration tests and export round-trip verification.
+### Objective
+Expose the Universal Exchange Layer over HTTP with:
+1. Synchronous and asynchronous bulk/single import endpoints (`POST /api/import/custom-engine/*`).
+2. TavernCard V2 card import and export (PNG `tEXt` chunks and JSON).
+3. SillyTavern JSONL chat import and export with linear turn mapping, alternate swipe reconciliation, and Line-0 metadata round-tripping.
+4. Multi-asset packaging for CharX (`.charx`) and lossless CustomEngine relational packs (`.zip`).
+5. Strict adherence to monorepo purity boundaries (Invariant I6/N10) and asset immutability (Invariant X8).
+
+### Implementation Summary
+- **Import Service Interface & Background Execution** ([`backend/src/import/contracts.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/import/contracts.ts), [`runs.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/import/runs.ts)):
+  - Defined pure `ImportService` interface decoupling routes and `createApp` from concrete SQLite/Bun implementations.
+  - Implemented `ImportRunManager` managing in-memory tracking of asynchronous sync jobs with ULID run identifiers, tracking progress timestamps, durations, completed reports, and error payloads.
+- **Path Security & Traversal Guards** ([`backend/src/import/pathAllowlist.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/import/pathAllowlist.ts)):
+  - Enforced `validateImportPath` resolving realpaths and checking against allowlisted roots (`process.env.FORMATAVERN_IMPORT_DIR`, default CustomEngine export path, or extra configured roots).
+  - Throws HTTP 403 `forbidden` whenever candidate path or symlink target traverses outside allowlisted directories.
+- **Pure ZIP Stream Generator** ([`backend/src/import/zip/writer.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/import/zip/writer.ts)):
+  - Built a zero-dependency, pure ZIP archive builder using Node built-in `node:zlib` (`crc32`, `deflateRawSync`).
+  - Correctly encodes local file headers, compressed data chunks, central directory headers, and end-of-central-directory (EOCD) records.
+- **TavernCard V2 PNG Chunk Parser & Injector** ([`backend/src/import/v2/png.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/import/v2/png.ts)):
+  - Pure binary parser for PNG `tEXt` chunks decoding UTF-8 keyword/value pairs (`chara` and `ccv3`). Decodes base64-encoded JSON specifications.
+  - `injectPngTextChunk`: Pure binary injector inserting a `tEXt` chunk before `IEND` while updating CRC32 checksums.
+  - `generateCarrierPng`: Generates a minimal 1x1 neutral transparent PNG carrier for cards exported without an avatar.
+- **V2 Card Service** ([`backend/src/import/v2/service.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/import/v2/service.ts)):
+  - `importV2Card`: Ingests V2 card data (either direct JSON or extracted from PNG `tEXt` carrier). Ingests avatar into content-addressed pool via `putPool`, falls back cleanly to neutral defaults, and sets `creatorNotes` and `alternateGreetings`.
+  - `exportV2Card`: Generates V2 JSON or PNG binary embedding `chara` base64 metadata. Preserves pool asset immutability (**Invariant X8**).
+- **SillyTavern JSONL Chat Service** ([`backend/src/import/jsonl/service.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/import/jsonl/service.ts)):
+  - `importJsonlChat`: Parses SillyTavern JSONL chat files. Reconciles Line-0 metadata header (`user_name`, `character_name`, `create_date`, `chat_metadata`, `title`). Maps linear messages into the conversation tree, and stores swipe alternates with `metadata.imported_swipe = true`.
+  - `exportJsonlChat`: Traverses the active conversation branch, queries swipe siblings, exports Line-0 header with `title`, and serializes messages with `swipes` and `swipe_id`.
+- **CharX & Relational Pack Service** ([`backend/src/import/charx/service.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/import/charx/service.ts)):
+  - `exportCharx`: Generates standard `.charx` ZIP archive containing `card.json` and bound assets in `assets/<role>/<label>`.
+  - `exportRelationalPack`: Exports lossless CustomEngine relational package containing `manifest.json`, `characters/<slug>.json`, `chats/<id>.json`, and `media/<hash>.<ext>`.
+- **Elysia Route Declarations & Purity Boundary** ([`backend/src/routes/import.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/routes/import.ts), [`characters.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/routes/characters.ts), [`chats.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/routes/chats.ts), [`app.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/src/app.ts)):
+  - Mounted `/api/import/custom-engine/sync` (`?wait=true` synchronous 200 or 202 `{ runId }`).
+  - Mounted `/api/import/runs/:runId` (polling status).
+  - Mounted `/api/import/custom-engine/single` (multipart single card/chat file).
+  - Mounted `/api/import/v2` (multipart V2 PNG or JSON).
+  - Mounted `/api/import/jsonl` (multipart JSONL chat file).
+  - Mounted `/api/characters/:id/export.png` (`?format=png|json`).
+  - Mounted `/api/characters/:id/export.charx`.
+  - Mounted `/api/chats/:id/export.jsonl`.
+  - Mounted `/api/export/relational-pack` (`?characterId=`).
+  - Guaranteed `app.ts` remains 100% free of `Bun.*` or `Database` types (**Invariant I6/N10**).
+
+### Verification
+- **Route Integration Tests** ([`backend/test/routes/import.test.ts`](file:///s:/WorkSpace/Git%20Workspace/FormaTavern/backend/test/routes/import.test.ts)):
+  - Path traversal rejection: returns HTTP 403 `forbidden`.
+  - Concurrency locking: returns HTTP 409 `sync_in_progress` on overlapping runs.
+  - Background vs Synchronous sync: returns 200 `SyncReport` on `?wait=true` and 202 `{ runId }` on background sync with polling at `/runs/:runId`.
+  - Single file import, V2 card import, and JSONL chat import: all return HTTP 201 with created entities.
+  - Export endpoints: verified 200 responses with correct `Content-Type` and attachment headers across `.png`, `.json`, `.charx`, `.jsonl`, and `.zip`.
+- **Format Exporter Unit Tests**:
+  - `backend/test/import/exportV2.test.ts` (3/3 pass): JSON/PNG round-trip and Invariant X8 immutability proof.
+  - `backend/test/import/exportJsonl.test.ts` (2/2 pass): Line-0 metadata and swipe alternates round-trip.
+  - `backend/test/import/exportCharx.test.ts` (2/2 pass): CharX hierarchy and lossless relational pack integrity.
+- **Monorepo Health**:
+  - `bun run typecheck`: 0 errors, 0 warnings across `packages/shared`, `backend`, and `frontend`.
+  - `bun run test`: 100% green across all packages (Shared: all green, Backend: 423/423 green, Frontend: 257/257 green).
+  - `bun run db:check`: clean integrity at `user_version = 11`.
+
+---
+
+## Queued Steps
 
 ### Step 6: Frontend Render Boundary, Media Rewrite & Snapshot Label
 - Implementation of `lib/render/mediaRewrite.ts` in frontend.

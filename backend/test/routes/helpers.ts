@@ -9,12 +9,16 @@ import { MockLLMProvider } from '../../src/providers/mock';
 import { createApp, type App } from '../../src/app';
 import type { Repositories } from '../../src/db/contracts';
 
+import type { AssetStore } from '../../src/assets/contracts';
+import type { ImportService } from '../../src/import/contracts';
+
 export interface TestContext {
   db: Database;
   repos: Repositories;
   hub: GenerationHubImpl;
   providers: ProviderRegistryImpl;
   mockProvider: MockLLMProvider;
+  assets?: AssetStore;
   app: App;
 }
 
@@ -23,6 +27,10 @@ export function setupTestApp(options: {
   customFetch?: any;
   mockIntervalMs?: number;
   mockPrefill?: boolean;
+  assets?: AssetStore;
+  importService?: ImportService;
+  createImportService?: (db: Database, repos: Repositories) => ImportService;
+  allowedImportRoots?: string[];
 } = {}): TestContext {
   const db = openDatabase(':memory:');
   runMigrations(db);
@@ -41,12 +49,19 @@ export function setupTestApp(options: {
     customFetch: options.customFetch
   });
 
+  const importService =
+    options.importService ??
+    (options.createImportService ? options.createImportService(db, repos) : undefined);
+
   const app = createApp({
     repos,
     hub,
     providers,
+    assets: options.assets,
+    importService,
     options: {
-      nodeEnv: options.nodeEnv
+      nodeEnv: options.nodeEnv,
+      allowedImportRoots: options.allowedImportRoots
     }
   });
 

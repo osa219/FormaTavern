@@ -15,17 +15,21 @@ import { createProviderConfigsRouter } from './routes/providerConfigs';
 import { createChatsRouter } from './routes/chats';
 import { createMessagesRouter } from './routes/messages';
 import { createAssetsRouter } from './routes/assets';
+import { createImportRouter, createExportRouter } from './routes/import';
 import { createAuthRouter, isPublicAuthPath, InboundAuditor, type AuthDeps } from './routes/auth';
 import { effectiveClientIp, isLoopbackIp } from './routes/ip';
 import type { AssetStore } from './assets/contracts';
+import type { ImportService } from './import/contracts';
 
 export interface AppDeps {
   repos: Repositories;
   hub: GenerationHub;
   providers: ProviderRegistry;
   assets?: AssetStore;
+  importService?: ImportService;
   options?: {
     nodeEnv?: string;
+    allowedImportRoots?: string[];
     auth?: {
       enabled: boolean;
       verifyPin?: (candidate: string) => boolean;
@@ -40,7 +44,7 @@ export interface AppDeps {
   };
 }
 
-export function createApp({ repos, hub, providers, assets, options }: AppDeps) {
+export function createApp({ repos, hub, providers, assets, importService, options }: AppDeps) {
   const charactersRouter = createCharactersRouter({ repos, assets, providers });
   const tagsRouter = createTagsRouter(repos);
   const personasRouter = createPersonasRouter(repos);
@@ -49,6 +53,13 @@ export function createApp({ repos, hub, providers, assets, options }: AppDeps) {
   const chatsRouter = createChatsRouter({ repos, hub, providers });
   const messagesRouter = createMessagesRouter({ repos, hub, providers });
   const assetsRouter = createAssetsRouter(assets);
+  const importRouter = createImportRouter({
+    repos,
+    assets,
+    importService,
+    allowedRoots: options?.allowedImportRoots
+  });
+  const exportRouter = createExportRouter({ repos, assets });
 
   const authDeps: AuthDeps = {
     enabled: options?.auth?.enabled ?? false,
@@ -270,7 +281,9 @@ export function createApp({ repos, hub, providers, assets, options }: AppDeps) {
     .use(providerConfigsRouter)
     .use(chatsRouter)
     .use(messagesRouter)
-    .use(assetsRouter);
+    .use(assetsRouter)
+    .use(importRouter)
+    .use(exportRouter);
 }
 
 export type App = ReturnType<typeof createApp>;
