@@ -113,7 +113,8 @@ describe('Import & Export API Routes (Step 5)', () => {
 
     const charJson = JSON.stringify({
       id: 'c-single-route-test',
-      name: 'Single Route Hero',
+      card_title: 'Single Route Hero',
+      chat_name: 'Hero',
       description: 'Imported via multipart single',
       personality: 'Bold',
       scenario: 'Tavern',

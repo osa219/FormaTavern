@@ -18,7 +18,8 @@ describe('CustomEngine Missing Assets & Healing (X9)', () => {
 
     const char = {
       id: 'char-missing-asset',
-      name: 'Artisan',
+      card_title: 'Artisan',
+      chat_name: 'Artisan',
       description: 'Creates art',
       personality: 'Creative',
       scenario: 'Studio',
@@ -72,7 +73,8 @@ describe('CustomEngine Missing Assets & Healing (X9)', () => {
 
     const char = {
       id: 'char-heal-test',
-      name: 'Photographer',
+      card_title: 'Photographer',
+      chat_name: 'Photographer',
       description: 'Takes photos',
       personality: 'Attentive',
       scenario: 'Darkroom',
@@ -132,7 +134,8 @@ describe('CustomEngine Missing Assets & Healing (X9)', () => {
 
     const char = {
       id: 'char-happy-media',
-      name: 'Media Artist',
+      card_title: 'Media Artist',
+      chat_name: 'Artist',
       description: 'Creates paintings',
       personality: 'Visual',
       scenario: 'Gallery',

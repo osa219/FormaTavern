@@ -138,11 +138,12 @@ export async function exportRelationalPack(
     }
 
     const importMeta = (char.metadata as any)?.import ?? {};
+    // New spec shape: listing identity (card_title) + persona (chat_name).
+    // card.name already holds the imported card_title; characterName the chat_name.
     const charPayload: Record<string, unknown> = {
       id: charOriginId,
-      name: char.name,
+      card_title: char.name,
       chat_name: char.characterName ?? null,
-      card_title: char.tagline ?? null,
       creator_name: char.creator ?? null,
       creator_url: char.creatorUrl ?? null,
       character_url: char.characterUrl ?? null,

@@ -50,7 +50,8 @@ describe('CustomEngine Chat Import', () => {
 
     const char = {
       id: 'char-null-time',
-      name: 'Chronos',
+      card_title: 'Chronos',
+      chat_name: 'Chronos',
       description: 'Master of time',
       personality: 'Patient',
       scenario: 'Clock tower',
@@ -95,7 +96,8 @@ describe('CustomEngine Chat Import', () => {
 
     const char = {
       id: 'char-multi-greeting',
-      name: 'Guide',
+      card_title: 'Guide',
+      chat_name: 'Guide',
       description: 'Multiple paths',
       personality: 'Helpful',
       scenario: 'Crossroads',
@@ -136,7 +138,8 @@ describe('CustomEngine Chat Import', () => {
 
     const char = {
       id: 'char-persona-test',
-      name: 'Companion',
+      card_title: 'Companion',
+      chat_name: 'Companion',
       description: 'A loyal companion',
       personality: 'Devoted',
       scenario: 'Campfire',

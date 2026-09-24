@@ -16,7 +16,8 @@ describe('CustomEngine Character Import', () => {
 
     const char1 = {
       id: 'uuid-1',
-      name: 'Luna Star',
+      card_title: 'Luna Star',
+      chat_name: 'Luna',
       description: 'First Luna',
       personality: 'Kind',
       scenario: 'Space',
@@ -25,7 +26,8 @@ describe('CustomEngine Character Import', () => {
 
     const char2 = {
       id: 'uuid-2',
-      name: 'Luna Star',
+      card_title: 'Luna Star',
+      chat_name: 'Luna',
       description: 'Second Luna',
       personality: 'Fiery',
       scenario: 'Moon',
@@ -52,7 +54,8 @@ describe('CustomEngine Character Import', () => {
 
     const char = {
       id: 'uuid-emoji-tag',
-      name: 'Sarah',
+      card_title: 'Sarah',
+      chat_name: 'Sarah',
       description: 'A friendly girl',
       personality: 'Cheerful',
       scenario: 'Town',
@@ -84,7 +87,8 @@ describe('CustomEngine Character Import', () => {
 
     const char = {
       id: 'uuid-13-alt',
-      name: 'Greeting Master',
+      card_title: 'Greeting Master',
+      chat_name: 'Greeter',
       description: 'Many greetings',
       personality: 'Varied',
       scenario: 'Crossroads',
@@ -111,7 +115,8 @@ describe('CustomEngine Character Import', () => {
     // Avatar-less card
     const charNoAvatar = {
       id: 'uuid-no-avatar',
-      name: 'Faceless',
+      card_title: 'Faceless',
+      chat_name: 'Faceless',
       description: 'No face',
       personality: 'Mysterious',
       scenario: 'Void',
@@ -126,7 +131,8 @@ describe('CustomEngine Character Import', () => {
 
     const charWithAvatar = {
       id: 'uuid-with-avatar',
-      name: 'Faced',
+      card_title: 'Faced',
+      chat_name: 'Faced',
       description: 'Has a face',
       personality: 'Expressive',
       scenario: 'Portraits',
@@ -158,7 +164,8 @@ describe('CustomEngine Character Import', () => {
 
     const char = {
       id: 'uuid-skip-test',
-      name: 'Static Character',
+      card_title: 'Static Character',
+      chat_name: 'Static',
       description: 'Does not change',
       personality: 'Stable',
       scenario: 'Lab',
@@ -214,8 +221,8 @@ describe('CustomEngine Character Import', () => {
 
     const char = {
       id: 'uuid-showcase-route',
-      name: 'Shizuku',
       card_title: 'Shizuku - Your Neighbor',
+      chat_name: 'Shizuku',
       description: '<p style="text-align: center;">Your shy neighbor made you tea...</p>',
       personality: 'Shy and kind',
       scenario: 'Neighborhood',
@@ -230,6 +237,9 @@ describe('CustomEngine Character Import', () => {
 
     const card = env.repos.characters.findByProvenance('custom_engine', 'uuid-showcase-route');
     expect(card).not.toBeNull();
+    expect(card!.name).toBe('Shizuku - Your Neighbor');
+    expect(card!.characterName).toBe('Shizuku');
+    expect(card!.tagline).toBeFalsy();
     expect(card!.description).toBeFalsy();
     expect(card!.showcase).toContain('Your shy neighbor made you tea');
     expect(card!.showcase).toContain('Author notes');
@@ -243,7 +253,8 @@ describe('CustomEngine Character Import', () => {
 
     const char = {
       id: 'uuid-long-blurb',
-      name: 'Verbose',
+      card_title: 'Verbose',
+      chat_name: 'Verbose',
       description: 'x'.repeat(70_000),
       personality: 'Talkative',
       scenario: 'Library',
@@ -261,6 +272,33 @@ describe('CustomEngine Character Import', () => {
     expect(card!.description).toBeFalsy();
   });
 
+  it('maps listing identity: card name from card_title, persona from chat_name', async () => {
+    env = await createTestImportEnv();
+
+    const char = {
+      id: 'uuid-listing-identity',
+      card_title: 'A Bad Day Needs a Good Distraction',
+      chat_name: 'Mildred',
+      description: '<p>Hook blurb</p>',
+      personality: 'Warm',
+      scenario: 'Porch',
+      first_message: 'Hey.'
+    };
+
+    await env.writeCharacter(char);
+
+    const report = await env.service.sync(env.sourceDir);
+    expect(report.insertedChars).toBe(1);
+
+    const card = env.repos.characters.findByProvenance('custom_engine', 'uuid-listing-identity');
+    expect(card).not.toBeNull();
+    expect(card!.id).toBe('a-bad-day-needs-a-good-distraction');
+    expect(card!.name).toBe('A Bad Day Needs a Good Distraction');
+    expect(card!.characterName).toBe('Mildred');
+    expect(card!.tagline).toBeFalsy();
+    expect(card!.showcase).toContain('Hook blurb');
+    expect(card!.description).toBeFalsy();
+  });
   it('self-heals legacy rows: moves lore description to showcase on re-sync', async () => {
     env = await createTestImportEnv();
 
@@ -283,7 +321,8 @@ describe('CustomEngine Character Import', () => {
 
     const char = {
       id: 'uuid-legacy',
-      name: 'Shizuku',
+      card_title: 'Shizuku - Your Neighbor',
+      chat_name: 'Shizuku',
       description: '<p>Your shy neighbor made you tea...</p>',
       personality: 'Shy',
       scenario: 'Doorway',

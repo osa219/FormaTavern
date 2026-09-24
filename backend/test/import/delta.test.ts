@@ -15,7 +15,8 @@ describe('CustomEngine Delta Sync (X1, X7)', () => {
 
     const char = {
       id: 'char-delta',
-      name: 'Delta Bot',
+      card_title: 'Delta Bot',
+      chat_name: 'Delta',
       description: 'Initial description',
       personality: 'Helpful',
       scenario: 'Workspace',
@@ -87,7 +88,8 @@ describe('CustomEngine Delta Sync (X1, X7)', () => {
 
     const char = {
       id: 'char-user-edit',
-      name: 'Guard Bot',
+      card_title: 'Guard Bot',
+      chat_name: 'Guard',
       description: 'Guards against overwrites',
       personality: 'Strict',
       scenario: 'Fortress',

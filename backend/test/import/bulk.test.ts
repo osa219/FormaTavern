@@ -63,7 +63,8 @@ describe('CustomEngine Bulk Import & Atomicity (X2)', () => {
     for (let i = 1; i <= 5; i++) {
       await env.writeCharacter({
         id: `fts-char-${i}`,
-        name: `Wizard ${i}`,
+        card_title: `Wizard ${i}`,
+        chat_name: `Wizard`,
         description: `Specialized in elemental fire ${i}`,
         personality: 'Wise',
         scenario: 'Tower',
@@ -98,7 +99,8 @@ describe('CustomEngine Bulk Import & Atomicity (X2)', () => {
 
     await env.writeCharacter({
       id: 'concurrent-char',
-      name: 'Concurrent Character',
+      card_title: 'Concurrent Character',
+      chat_name: 'Concurrent',
       description: 'Testing concurrency guard',
       personality: 'Busy',
       scenario: 'Lock',

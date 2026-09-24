@@ -11,9 +11,10 @@ export interface CustomEngineTokenCounts {
 
 export interface CustomEngineCharacter {
   id: string; // UUID
-  name: string;
-  card_title?: string | null;
-  chat_name?: string | null;
+  // Distinct listing identity → FormaTavern card name (slug source).
+  card_title: string;
+  // Canonical in-universe persona name → FormaTavern character_name ({{char}}).
+  chat_name: string;
   avatar_hash?: string | null;
   description: string;
   personality: string;

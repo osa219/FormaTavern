@@ -24,8 +24,8 @@ export async function sniffCustomEngine(targetPath: string): Promise<SniffResult
     }
 
     if (raw && typeof raw === 'object') {
-      // Check if it's a character file
-      if (typeof raw.id === 'string' && typeof raw.name === 'string' && (raw.description !== undefined || raw.personality !== undefined || raw.card_title !== undefined)) {
+      // Check if it's a character file (listing identity + persona name)
+      if (typeof raw.id === 'string' && typeof raw.card_title === 'string' && typeof raw.chat_name === 'string') {
         return { kind: 'single_character', filePath: targetPath, raw };
       }
       // Check if it's a chat file

@@ -15,11 +15,15 @@ import type { SniffResult } from './sniff';
 /**
  * Source→DB field mapping version. Bump whenever the character mapping
  * changes so rows imported under an older mapping re-sync once (update)
- * instead of skipping forever (X1/X7). Current: v2 routes the source
- * `description` marketing blurb to the display-only showcase column and
- * keeps the lore description empty; v1 stored it as lore description.
+ * instead of skipping forever (X1/X7).
+ * - v1 stored the source blurb as lore description.
+ * - v2 routes the source blurb to the display-only showcase column and
+ *   keeps the lore description empty.
+ * - v3 maps listing identity (card_title → card name, chat_name → {{char}})
+ *   after the ambiguous source `name` field was removed; tagline stays
+ *   user-authored and is no longer overwritten on re-sync.
  */
-export const CUSTOM_ENGINE_MAPPING_VERSION = 2;
+export const CUSTOM_ENGINE_MAPPING_VERSION = 3;
 
 export function characterOriginHash(raw: CustomEngineCharacter): string {
   return hashCanonical(

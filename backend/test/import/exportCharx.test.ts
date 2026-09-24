@@ -1,8 +1,30 @@
 import { describe, it, expect, afterEach } from 'bun:test';
+import { inflateRawSync } from 'node:zlib';
 import { DEFAULT_CHARACTER_THEME } from '@formatavern/shared';
 import { createTestImportEnv, makePng, type TestImportEnv } from './testUtils';
 import { exportCharx, exportRelationalPack } from '../../src/import/charx/service';
 import { ulid } from 'ulid';
+
+function readZipFile(zipBytes: Uint8Array, targetName: string): Uint8Array | null {
+  const buf = Buffer.isBuffer(zipBytes) ? zipBytes : Buffer.from(zipBytes);
+  let offset = 0;
+  while (offset + 30 <= buf.length) {
+    const sig = buf.readUInt32LE(offset);
+    if (sig !== 0x04034b50) break;
+    const method = buf.readUInt16LE(offset + 8);
+    const compSize = buf.readUInt32LE(offset + 18);
+    const nameLen = buf.readUInt16LE(offset + 26);
+    const extraLen = buf.readUInt16LE(offset + 28);
+    const name = buf.subarray(offset + 30, offset + 30 + nameLen).toString('utf8');
+    const dataStart = offset + 30 + nameLen + extraLen;
+    const data = buf.subarray(dataStart, dataStart + compSize);
+    if (name === targetName) {
+      return new Uint8Array(method === 8 ? inflateRawSync(data) : data);
+    }
+    offset = dataStart + compSize;
+  }
+  return null;
+}
 
 function listZipFileNames(zipBytes: Uint8Array): string[] {
   const names: string[] = [];
@@ -141,6 +163,14 @@ describe('CharX & Relational Pack Export (Slice E)', () => {
     expect(files).toContain(`characters/${char.id}.json`);
     expect(files).toContain(`chats/${char.id}/${chat.id}.json`);
     expect(files).toContain(`media/${mediaRecord.id}.png`);
+
+    // New spec shape: listing identity as card_title/chat_name, no legacy name.
+    const charJson = readZipFile(pack.data, `characters/${char.id}.json`);
+    expect(charJson).not.toBeNull();
+    const charPayload = JSON.parse(Buffer.from(charJson!).toString('utf8'));
+    expect(charPayload.card_title).toBe('Captain Reynolds');
+    expect(charPayload.chat_name).toBeNull();
+    expect('name' in charPayload).toBe(false);
 
     // Sibling message swipe test (Fix S2)
     const swipeMsg = env.repos.messages.insert({

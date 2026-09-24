@@ -211,7 +211,10 @@ export class CustomEngineImportService {
             const prunedAlternates = pruneAlternateGreetings(char.alternate_greetings);
 
             if (pChar.action === 'insert') {
-              let baseSlug = slugify(char.name);
+              // Listing identity: card_title is the card name (slug source).
+              // chat_name is the in-world persona ({{char}}). Tagline stays
+              // empty: it is a user-authored subtitle with no source field.
+              let baseSlug = slugify(char.card_title);
               if (!baseSlug) baseSlug = 'c-' + newId().toLowerCase();
               let candidate = baseSlug;
               let counter = 2;
@@ -246,8 +249,8 @@ export class CustomEngineImportService {
               const createdAt = char.created_at ? Date.parse(char.created_at) || now : now;
               const updatedAt = char.updated_at ? Date.parse(char.updated_at) || createdAt : createdAt;
 
-              const charName = (char.name?.trim() || 'Character').slice(0, 120);
-              const charTagline = char.card_title?.trim() ? char.card_title.trim().slice(0, 140) : null;
+              const charName = (char.card_title?.trim() || 'Untitled').slice(0, 120);
+              const charPersona = char.chat_name?.trim() || null;
 
               this.db.run(
                 `INSERT INTO characters (
@@ -259,9 +262,9 @@ export class CustomEngineImportService {
                 [
                   charId,
                   charName,
-                  char.chat_name?.trim() || null,
+                  charPersona,
                   avatarPath,
-                  charTagline,
+                  null,
                   char.creator_name || null,
                   char.creator_url || null,
                   char.character_url || null,
@@ -344,15 +347,14 @@ export class CustomEngineImportService {
               metadataObj.import = importMeta;
               if (char.mes_example) metadataObj.exampleDialogue = char.mes_example;
 
-              const charName = (char.name?.trim() || 'Character').slice(0, 120);
-              const charTagline = char.card_title?.trim() ? char.card_title.trim().slice(0, 140) : null;
+              const charName = (char.card_title?.trim() || 'Untitled').slice(0, 120);
+              const charPersona = char.chat_name?.trim() || null;
 
               this.db.run(
                 `UPDATE characters SET
                    name = ?,
                    character_name = ?,
                    avatar = ?,
-                   tagline = ?,
                    creator = ?,
                    creator_url = ?,
                    character_url = ?,
@@ -368,9 +370,8 @@ export class CustomEngineImportService {
                  WHERE id = ?;`,
                 [
                   charName,
-                  char.chat_name?.trim() || null,
+                  charPersona,
                   finalAvatarPath,
-                  charTagline,
                   char.creator_name || null,
                   char.creator_url || null,
                   char.character_url || null,

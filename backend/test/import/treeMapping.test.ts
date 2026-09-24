@@ -15,7 +15,8 @@ describe('CustomEngine Tree Mapping (X6)', () => {
 
     const char = {
       id: 'char-linear',
-      name: 'Alice',
+      card_title: 'Alice',
+      chat_name: 'Alice',
       description: 'Test',
       personality: 'Test',
       scenario: 'Test',
@@ -62,7 +63,8 @@ describe('CustomEngine Tree Mapping (X6)', () => {
 
     const char = {
       id: 'char-swipes',
-      name: 'Bob',
+      card_title: 'Bob',
+      chat_name: 'Bob',
       description: 'Test',
       personality: 'Test',
       scenario: 'Test',
@@ -153,7 +155,8 @@ describe('CustomEngine Tree Mapping (X6)', () => {
 
     const char = {
       id: 'char-main-flag',
-      name: 'Charlie',
+      card_title: 'Charlie',
+      chat_name: 'Charlie',
       description: 'Test',
       personality: 'Test',
       scenario: 'Test',
@@ -193,7 +196,8 @@ describe('CustomEngine Tree Mapping (X6)', () => {
 
     const char = {
       id: 'char-deep',
-      name: 'Deep Talker',
+      card_title: 'Deep Talker',
+      chat_name: 'Deep',
       description: 'Long conversations',
       personality: 'Chatty',
       scenario: 'Marathon',
