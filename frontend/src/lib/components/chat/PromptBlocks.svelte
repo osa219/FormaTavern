@@ -1,8 +1,9 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { toasts } from '$lib/state/toasts.svelte';
   import { prefs } from '$lib/state/prefs.svelte';
   import Icon from '../ui/Icon.svelte';
-  import { blockLabel, visibleBlocks, type PreviewData } from '$lib/prompt/preview';
+  import { blockLabel, buildWireMessages, visibleBlocks, type PreviewData } from '$lib/prompt/preview';
   import { copyToClipboard } from '$lib/utils/clipboard';
 
   let { data }: { data: PreviewData } = $props();
@@ -18,6 +19,41 @@
 
   const bottomIds = $derived(data.blocks.filter((b) => ['9a', '9b', '9c'].includes(b.id) && b.included));
   const reviewBlocks = $derived(visibleBlocks(data.blocks));
+
+  // Exact wire view: the literal message array in send order
+  // (system prompt, fitted history, assistant prefill), as the model sees it.
+  const wireMessages = $derived(buildWireMessages(data));
+
+  let encodeFn = $state<((text: string) => number[]) | null>(null);
+
+  onMount(async () => {
+    try {
+      // Dynamic import to preserve bundle budget for chat routes
+      const tokenizer = await import('gpt-tokenizer');
+      if (typeof tokenizer.encode === 'function') {
+        encodeFn = tokenizer.encode;
+      }
+    } catch {
+      encodeFn = null;
+    }
+  });
+
+  function tokenCount(text: string): string {
+    if (!text) return '0t';
+    try {
+      if (encodeFn) return `${encodeFn(text).length.toLocaleString()}t`;
+    } catch {}
+    return `~${Math.ceil(text.length / 4).toLocaleString()}t`;
+  }
+
+  async function copyWireJson() {
+    const ok = await copyToClipboard(JSON.stringify(wireMessages, null, 2));
+    if (ok) {
+      toasts.success('Wire messages copied to clipboard');
+    } else {
+      toasts.error('Failed to copy wire messages');
+    }
+  }
   const lastHistory = $derived(data.history.length > 0 ? data.history[data.history.length - 1] : null);
   const bottomOnLastTurn = $derived(lastHistory?.role === 'user' && bottomIds.length > 0);
 
@@ -110,36 +146,102 @@
   </div>
 
   <!-- History as sent -->
-  <div>
-    <h4 class="mb-1.5 text-xs font-semibold uppercase tracking-wider text-(--chrome-text)/70">History as sent ({data.history.length})</h4>
-    {#if data.history.length === 0}
-      <p class="text-[11px] text-(--chrome-text)/50">No history yet — the next turn starts from the static prompt.</p>
-    {:else}
-      <div class="space-y-1.5">
-        {#each data.history as turn, i (i)}
-          <div class="rounded-xl border border-(--chrome-line) bg-(--chrome-bg) px-3 py-2">
-            <div class="mb-1 flex items-center gap-2">
-              <span
-                class="rounded px-1.5 py-0.5 font-mono text-[10px] {turn.role === 'user'
-                  ? 'bg-sky-950 text-sky-300'
-                  : turn.role === 'assistant'
-                    ? 'bg-violet-950 text-violet-300'
-                    : 'bg-(--chrome-line) text-(--chrome-text)/80'}"
-              >
-                {turn.role}
-              </span>
-              {#if bottomOnLastTurn && i === data.history.length - 1}
-                <span class="rounded bg-emerald-950 px-1.5 py-0.5 font-mono text-[10px] text-emerald-300" title="Bottom blocks 9a/9b/9c ride on this turn">
-                  +bottom {bottomIds.map((b) => b.id).join('/')}
+  <details class="rounded-xl border border-(--chrome-line) bg-(--chrome-bg) text-xs">
+    <summary class="flex cursor-pointer items-center gap-2 px-3 py-2 select-none">
+      <span class="flex-1 font-medium text-(--chrome-text)">History as sent ({data.history.length})</span>
+      <span class="font-mono text-[10px] text-(--chrome-text)/50">{data.tokens.history.toLocaleString()}t</span>
+    </summary>
+    <div class="border-t border-(--chrome-line)/60 px-3 py-2">
+      {#if data.history.length === 0}
+        <p class="text-[11px] text-(--chrome-text)/50">No history yet — the next turn starts from the static prompt.</p>
+      {:else}
+        <div class="space-y-1.5">
+          {#each data.history as turn, i (i)}
+            <div class="rounded-xl border border-(--chrome-line) bg-(--chrome-surface)/40 px-3 py-2">
+              <div class="mb-1 flex items-center gap-2">
+                <span
+                  class="rounded px-1.5 py-0.5 font-mono text-[10px] {turn.role === 'user'
+                    ? 'bg-sky-950 text-sky-300'
+                    : turn.role === 'assistant'
+                      ? 'bg-violet-950 text-violet-300'
+                      : 'bg-(--chrome-line) text-(--chrome-text)/80'}"
+                >
+                  {turn.role}
                 </span>
-              {/if}
+                {#if bottomOnLastTurn && i === data.history.length - 1}
+                  <span class="rounded bg-emerald-950 px-1.5 py-0.5 font-mono text-[10px] text-emerald-300" title="Bottom blocks 9a/9b/9c ride on this turn">
+                    +bottom {bottomIds.map((b) => b.id).join('/')}
+                  </span>
+                {/if}
+              </div>
+              <pre class="max-h-40 overflow-y-auto font-mono text-[11px] whitespace-pre-wrap text-(--chrome-text)/90">{turn.content}</pre>
             </div>
-            <pre class="max-h-40 overflow-y-auto font-mono text-[11px] whitespace-pre-wrap text-(--chrome-text)/90">{turn.content}</pre>
+          {/each}
+        </div>
+      {/if}
+    </div>
+  </details>
+
+  <!-- Exact messages as sent (wire view) -->
+  <details class="rounded-xl border border-(--chrome-line) bg-(--chrome-bg) text-xs">
+    <summary class="flex cursor-pointer items-center gap-2 px-3 py-2 select-none">
+      <span class="flex-1 font-medium text-(--chrome-text)">Exact messages as sent ({wireMessages.length})</span>
+      <button
+        type="button"
+        onclick={(e) => {
+          e.preventDefault();
+          void copyWireJson();
+        }}
+        class="rounded p-1 text-(--chrome-text)/50 hover:bg-(--chrome-line)/50 hover:text-(--chrome-text) transition-colors"
+        title="Copy wire messages as JSON"
+        aria-label="Copy wire messages as JSON"
+      >
+        <Icon name="copy" size={12} />
+      </button>
+    </summary>
+    <div class="border-t border-(--chrome-line)/60 px-3 py-2 space-y-1.5">
+      <p class="text-[11px] text-(--chrome-text)/50">
+        The literal message array in send order, roles included — what the model actually receives. Stops and sampling settings travel outside the messages.
+      </p>
+      {#each wireMessages as msg, i (i)}
+        <details class="rounded-lg border border-(--chrome-line)/60 bg-(--chrome-surface)/40" open>
+          <summary class="flex cursor-pointer items-center gap-2 px-2.5 py-1.5 select-none">
+            <span
+              class="rounded px-1.5 py-0.5 font-mono text-[10px] {msg.role === 'user'
+                ? 'bg-sky-950 text-sky-300'
+                : msg.role === 'assistant'
+                  ? 'bg-violet-950 text-violet-300'
+                  : 'bg-(--chrome-line) text-(--chrome-text)/80'}"
+            >
+              {msg.role}
+            </span>
+            {#if msg.tag}
+              <span class="rounded bg-emerald-950 px-1.5 py-0.5 font-mono text-[10px] text-emerald-300">
+                {msg.tag}
+              </span>
+            {/if}
+            <span class="flex-1"></span>
+            <span class="font-mono text-[10px] text-(--chrome-text)/50">{tokenCount(msg.content)}</span>
+            <button
+              type="button"
+              onclick={(e) => {
+                e.preventDefault();
+                void copyText(msg.content, `Message ${i + 1}`);
+              }}
+              class="rounded p-1 text-(--chrome-text)/50 hover:bg-(--chrome-line)/50 hover:text-(--chrome-text) transition-colors"
+              title="Copy message {i + 1}"
+              aria-label="Copy message {i + 1}"
+            >
+              <Icon name="copy" size={12} />
+            </button>
+          </summary>
+          <div class="border-t border-(--chrome-line)/60 px-2.5 py-2">
+            <pre class="max-h-40 overflow-y-auto font-mono text-[11px] whitespace-pre-wrap text-(--chrome-text)/90">{msg.content}</pre>
           </div>
-        {/each}
-      </div>
-    {/if}
-  </div>
+        </details>
+      {/each}
+    </div>
+  </details>
 
   <!-- System prompt, prefill, stops -->
   <details class="rounded-xl border border-(--chrome-line) bg-(--chrome-bg) text-xs">

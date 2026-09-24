@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'bun:test';
 import { render } from 'svelte/server';
-import { blockLabel, isPreviewData, visibleBlocks } from '../src/lib/prompt/preview';
+import { blockLabel, buildWireMessages, isPreviewData, visibleBlocks } from '../src/lib/prompt/preview';
 import PromptTab from '../src/lib/components/chat/PromptTab.svelte';
 import LoreDrawer from '../src/lib/components/chat/LoreDrawer.svelte';
 import Composer from '../src/lib/components/composer/Composer.svelte';
@@ -21,6 +21,26 @@ describe('§5 prompt preview UI', () => {
     const blocks = [{ id: '1' }, { id: '1b' }, { id: '9c' }];
     expect(visibleBlocks(blocks).map((b) => b.id)).toEqual(['1', '9c']);
     expect(visibleBlocks([])).toEqual([]);
+  });
+
+  it('builds the exact wire message array in send order', () => {
+    const msgs = buildWireMessages({
+      systemPrompt: 'sys',
+      history: [
+        { role: 'user', content: 'hi' },
+        { role: 'assistant', content: 'hello' }
+      ],
+      assistantPrefill: 'pref'
+    });
+    expect(msgs).toEqual([
+      { role: 'system', content: 'sys' },
+      { role: 'user', content: 'hi' },
+      { role: 'assistant', content: 'hello' },
+      { role: 'assistant', tag: 'prefill', content: 'pref' }
+    ]);
+    expect(buildWireMessages({ systemPrompt: 'sys', history: [] })).toEqual([
+      { role: 'system', content: 'sys' }
+    ]);
   });
 
   it('guards the Eden response boundary', () => {

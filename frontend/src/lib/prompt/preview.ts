@@ -91,3 +91,25 @@ export const RETIRED_BLOCK_IDS: readonly string[] = ['1b'];
 export function visibleBlocks<T extends { id: string }>(blocks: readonly T[]): T[] {
   return blocks.filter((b) => !RETIRED_BLOCK_IDS.includes(b.id));
 }
+
+export interface WireMessage {
+  role: string;
+  tag?: string;
+  content: string;
+}
+
+/** Exact wire view: the literal message array in send order, as the model sees it. */
+export function buildWireMessages(data: {
+  systemPrompt: string;
+  history: Array<{ role: string; content: string }>;
+  assistantPrefill?: string | null;
+}): WireMessage[] {
+  const msgs: WireMessage[] = [{ role: 'system', content: data.systemPrompt }];
+  for (const turn of data.history) {
+    msgs.push({ role: turn.role, content: turn.content });
+  }
+  if (data.assistantPrefill) {
+    msgs.push({ role: 'assistant', tag: 'prefill', content: data.assistantPrefill });
+  }
+  return msgs;
+}
