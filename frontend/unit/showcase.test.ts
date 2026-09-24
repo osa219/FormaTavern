@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'bun:test';
 import { renderShowcaseMarkdown } from '../src/lib/render/showcase';
+import { rewriteHtmlMediaUrls, clearMediaCache } from '../src/lib/render/mediaRewrite';
 
 describe('Showcase Renderer & Security Guard (renderShowcaseMarkdown)', () => {
   it('renders standard Markdown elements including headings, tables, lists, and quotes', () => {
@@ -96,6 +97,36 @@ Here is a paragraph with **bold** and *italic* text.
         const sanitized = renderShowcaseMarkdown(input);
         expect(sanitized.toLowerCase()).not.toContain(forbidden.toLowerCase());
       });
+    });
+  });
+
+  describe('media:// render boundary (A-P3)', () => {
+    const HASH = 'fe6b222a93d31ae61e776f944434645897dc9b8055ff43d7a5218fb0944ae9a8';
+    // Verbatim Janitor export shape: React-serialized img with extra attrs.
+    const JANITOR_IMG =
+      `<img alt="" src="media://${HASH}" class="chakra-image css-4g6a13" node="[object Object]" draggable="false" style="width: 100%; height: auto; cursor: pointer;">`;
+
+    it('keeps exact 64-hex media:// img src through sanitization', () => {
+      const html = renderShowcaseMarkdown(`<p>Hi</p>${JANITOR_IMG}`);
+      expect(html).toContain(`src="media://${HASH}"`);
+    });
+
+    it('rewrites surviving media:// src to the pool URL at the boundary', () => {
+      clearMediaCache();
+      const out = rewriteHtmlMediaUrls(renderShowcaseMarkdown(JANITOR_IMG));
+      expect(out).toContain(`src="/assets/pool/${HASH}.webp"`);
+      expect(out).not.toContain('media://');
+    });
+
+    it('resolves markdown image syntax with media:// href end to end', () => {
+      clearMediaCache();
+      const out = rewriteHtmlMediaUrls(renderShowcaseMarkdown(`![Sybil](media://${HASH})`));
+      expect(out).toContain(`/assets/pool/${HASH}.webp`);
+    });
+
+    it('strips non-hex media:// src values instead of resolving them', () => {
+      const html = renderShowcaseMarkdown('<img alt="x" src="media://short">');
+      expect(html).not.toContain('src="media://short"');
     });
   });
 });

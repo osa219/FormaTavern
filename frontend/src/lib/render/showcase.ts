@@ -75,10 +75,14 @@ function getShowcasePurifier(): any {
         }
       }
 
-      // 2. Strict image src check (P3)
+      // 2. Strict image src check (P3 + A-P3). Only exact 64-hex media://
+      // references survive; anything else must be same-origin /assets/ or
+      // data:image/. Non-conforming media URIs lose src (never the element).
       if (data.attrName === 'src' && node.nodeName?.toLowerCase() === 'img') {
         const src = data.attrValue ?? '';
-        if (!src.startsWith('/assets/') && !src.startsWith('data:image/') && !src.startsWith('media://')) {
+        const isLocal = src.startsWith('/assets/') || src.startsWith('data:image/');
+        const isMediaRef = /^media:\/\/[a-f0-9]{64}$/.test(src);
+        if (!isLocal && !isMediaRef) {
           data.keepAttr = false;
         }
       }
@@ -107,6 +111,12 @@ export function renderShowcaseMarkdown(text: string): string {
     ALLOWED_TAGS: SHOWCASE_ALLOWED_TAGS,
     ALLOWED_ATTR: SHOWCASE_ALLOWED_ATTR,
     FORBID_TAGS: SHOWCASE_FORBID_TAGS,
-    ALLOW_DATA_ATTR: false
+    ALLOW_DATA_ATTR: false,
+    // DOMPurify natively validates URI attributes (src/href) against
+    // ALLOWED_URI_REGEXP *in addition* to our hook. The default regexp does
+    // not know the media: scheme and would strip src="media://..." before
+    // the render boundary can resolve it. Admit media: here; the hook above
+    // still constrains values to exact 64-hex references.
+    ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|cid|xmpp|media):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i
   });
 }
