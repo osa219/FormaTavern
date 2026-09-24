@@ -4,6 +4,7 @@
   import Icon from '$lib/components/ui/Icon.svelte';
   import PromptBlocks from '$lib/components/chat/PromptBlocks.svelte';
   import type { CharacterDraft } from '$lib/studio/draft.svelte';
+import { normalizeCardBlanks } from '$lib/studio/draft.svelte';
   import { isStudioPreviewData, type StudioPreviewData } from '$lib/prompt/preview';
 
   let { draft }: { draft: CharacterDraft } = $props();
@@ -18,9 +19,12 @@
 
   // Live-resolve from the unsaved card: prompt-relevant fields only (style and
   // showcase never reach the prompt, so they must not refetch it).
+  // Blank optional strings are normalized away so preview validation
+  // matches save-time validation (empty ≠ invalid).
   const cardKey = $derived(
     JSON.stringify({
       name: draft.card.name,
+      characterName: draft.card.characterName,
       description: draft.card.description,
       personality: draft.card.personality,
       scenario: draft.card.scenario,
@@ -36,7 +40,7 @@
     errorMsg = '';
     try {
       const { data: res, error } = await (api.api.characters as any)['prompt-preview'].post({
-        card: draft.card
+        card: normalizeCardBlanks(draft.card)
       });
       if (error) {
         status = (error as any)?.status === 413 ? 'budget' : 'error';

@@ -249,9 +249,19 @@
 
       <div>
         <label for="char-tail" class="block text-[11px] font-mono text-(--chrome-text)/70 mb-1">Character Tail</label>
+        <!-- One-way value: a two-way bind would write the DOM selection back
+             into state on mount when charTail is undefined (older cards),
+             falsely marking the draft dirty. Undefined renders as 'left',
+             matching the paint default in themeToCssVars. -->
         <select
           id="char-tail"
-          bind:value={draft.card.style.bubble.charTail}
+          value={draft.card.style.bubble.charTail ?? 'left'}
+          onchange={(e) => {
+            const next = (e.target as HTMLSelectElement).value as 'left' | 'none';
+            if ((draft.card.style.bubble.charTail ?? 'left') !== next) {
+              draft.card.style.bubble.charTail = next;
+            }
+          }}
           class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-xs font-mono text-(--chrome-text) focus:border-accent focus:outline-none"
         >
           <option value="left">Left (standard)</option>

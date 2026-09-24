@@ -55,6 +55,33 @@ export function normalizeCardBlanks<T extends Record<string, any>>(card: T): T {
   return out as T;
 }
 
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
+
+/**
+ * Fills missing theme keys from the default theme without touching stored
+ * values. Older cards may lack keys newer panels bind to (e.g.
+ * bubble.charTail); Svelte select bindings write the DOM selection back
+ * into state on mount when the bound value is undefined, which falsely
+ * marks the draft dirty. Normalizing at load removes the whole class.
+ */
+export function withThemeDefaults<T>(style: T): T {
+  const base: Record<string, unknown> = JSON.parse(JSON.stringify(DEFAULT_CHARACTER_THEME));
+  const merge = (dst: Record<string, unknown>, src: Record<string, unknown>) => {
+    for (const [key, value] of Object.entries(src)) {
+      if (value === undefined) continue;
+      if (isPlainObject(value) && isPlainObject(dst[key])) {
+        merge(dst[key] as Record<string, unknown>, value);
+      } else {
+        dst[key] = value;
+      }
+    }
+  };
+  merge(base, (style ?? {}) as Record<string, unknown>);
+  return base as T;
+}
+
 export class CharacterDraft {
   readonly characterId: string | null = null;
   readonly routeKey: string;
@@ -132,7 +159,7 @@ export class CharacterDraft {
         showcase: initialCard.showcase ?? '',
         customCss: initialCard.customCss ?? '',
         tags: [...(initialCard.tags ?? [])],
-        style: JSON.parse(JSON.stringify(initialCard.style)),
+        style: withThemeDefaults(initialCard.style),
         layout: initialCard.layout ? JSON.parse(JSON.stringify(initialCard.layout)) : undefined,
         stateSchema: initialCard.stateSchema ? JSON.parse(JSON.stringify(initialCard.stateSchema)) : {},
         stateBindings: initialCard.stateBindings ? JSON.parse(JSON.stringify(initialCard.stateBindings)) : [],

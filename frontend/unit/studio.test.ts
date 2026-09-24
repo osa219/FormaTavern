@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, mock } from 'bun:test';
-import { CharacterDraft, createEmptyCard } from '../src/lib/studio/draft.svelte';
+import { CharacterDraft, createEmptyCard, normalizeCardBlanks, withThemeDefaults } from '../src/lib/studio/draft.svelte';
+import { DEFAULT_CHARACTER_THEME } from '@formatavern/shared';
 import type { CharacterCard } from '@formatavern/shared';
 
 describe('CharacterDraft & Studio State (Layer 7)', () => {
@@ -84,6 +85,44 @@ describe('CharacterDraft & Studio State (Layer 7)', () => {
     draft.discard();
     expect(draft.card.name).toBe('Eldrin the Mage');
     expect(draft.dirty).toBe(false);
+  });
+
+  it('backfills missing theme keys from defaults so panel bindings never write back on mount', () => {
+    // sampleCard.style lacks bubble.charTail/padding and background keys —
+    // exactly what made the Aesthetic tab falsely report unsaved changes.
+    const draft = new CharacterDraft(sampleCard);
+    expect(draft.card.style.bubble.charTail).toBe(DEFAULT_CHARACTER_THEME.bubble.charTail);
+    expect(draft.card.style.bubble.padding).toBe(DEFAULT_CHARACTER_THEME.bubble.padding);
+    // Stored values survive untouched.
+    expect(draft.card.style.bubble.radius).toBe('1rem');
+    expect(draft.card.style.colors.accent).toBe('#9333ea');
+    expect(draft.dirty).toBe(false);
+    expect(draft.validation.ok).toBe(true);
+  });
+
+  it('withThemeDefaults preserves stored values and arrays without mutating the input', () => {
+    const input: any = { colors: { accent: 'rgb(30, 41, 59)' }, decor: [{ image: 'x' }] };
+    const out: any = withThemeDefaults(input);
+    expect(out.colors.accent).toBe('rgb(30, 41, 59)');
+    expect(out.bubble.charTail).toBe(DEFAULT_CHARACTER_THEME.bubble.charTail);
+    expect(out.decor).toEqual([{ image: 'x' }]);
+    expect(input.bubble).toBeUndefined();
+  });
+
+  it('normalizeCardBlanks strips blank optionals so preview validation matches save', () => {
+    const cleaned: any = normalizeCardBlanks({
+      name: 'John',
+      characterName: '',
+      creatorUrl: '',
+      characterUrl: '   ',
+      origin: '',
+      version: 'v1.0'
+    });
+    expect(cleaned.characterName).toBeUndefined();
+    expect(cleaned.creatorUrl).toBeUndefined();
+    expect(cleaned.characterUrl).toBeUndefined();
+    expect(cleaned.origin).toBeUndefined();
+    expect(cleaned.version).toBe('v1.0');
   });
 
   it('reactively resolves preview theme with dynamic state bindings', () => {
