@@ -21,6 +21,7 @@
     "db:reindex": "bun scripts/reindex.ts",
     "assets:gc": "bun scripts/assets-gc.ts",
     "import:custom-engine": "bun scripts/import-custom-engine.ts",
+    "wipe:custom-engine": "bun scripts/wipe-custom-engine.ts",
     "smoke:openrouter": "bun scripts/smoke-openrouter.ts"
   },
   "dependencies": {
