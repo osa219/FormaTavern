@@ -30,23 +30,27 @@
     personasStore.load();
     chatsHubStore.load();
 
+    return () => {
+      if (searchTimer) clearTimeout(searchTimer);
+    };
+  });
+
+  // The sentinel only renders once the first page arrives, so it is absent
+  // during onMount. Observe it reactively whenever it (re)appears; each
+  // page render swaps the sentinel, hence the per-element cleanup.
+  $effect(() => {
+    const el = sentinelEl;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting) {
           chatsHubStore.loadMore();
         }
       },
-      { rootMargin: '200px' }
+      { rootMargin: '600px' }
     );
-
-    if (sentinelEl) {
-      observer.observe(sentinelEl);
-    }
-
-    return () => {
-      observer.disconnect();
-      if (searchTimer) clearTimeout(searchTimer);
-    };
+    observer.observe(el);
+    return () => observer.disconnect();
   });
 
   function handleSearchInput(e: Event) {
