@@ -572,6 +572,57 @@ describe('PromptBuilder', () => {
     expect(nameless.history[0].content).toContain(':::persona[Traveler]\nHi.\n:::');
   });
 
+  it('serializes classical persona turns as plain Name: headers without envelope tags', () => {
+    const built = buildPrompt(
+      makeContext({
+        chat: { narrativeMode: 'classic' },
+        history: [
+          {
+            id: '1',
+            role: 'user' as const,
+            narrativeRole: 'persona' as const,
+            senderName: 'Traveler',
+            parentId: 'p0',
+            content: 'right now? *he sends her back* I am busy',
+            status: 'complete' as const
+          }
+        ]
+      })
+    );
+    expect(built.dialect).toBe('classic');
+    const msg = built.history.find((m) => m.content.includes('I am busy'));
+    expect(msg).toBeDefined();
+    expect(msg!.role).toBe('user');
+    expect(msg!.content).toContain('Traveler: right now? *he sends her back* I am busy');
+    expect(msg!.content).not.toContain(':::persona');
+    expect(msg!.content).not.toContain(':::');
+  });
+
+  it('keeps the classical speaker prefix on everyday RP text without envelope validation', () => {
+    const built = buildPrompt(
+      makeContext({
+        chat: { narrativeMode: 'classic' },
+        history: [
+          {
+            id: '1',
+            role: 'user' as const,
+            narrativeRole: 'persona' as const,
+            senderName: 'Traveler',
+            parentId: 'p0',
+            content: '*sighs*\nPaul: are you coming?',
+            status: 'complete' as const
+          }
+        ]
+      })
+    );
+    const msg = built.history.find((m) => m.content.includes('are you coming?'));
+    expect(msg).toBeDefined();
+    // Asterisk lines and quoted Name: lines must not drop the speaker the
+    // way envelope delimiter validation would.
+    expect(msg!.content).toContain('Traveler: *sighs*\nPaul: are you coming?');
+    expect(msg!.content).not.toContain(':::');
+  });
+
   it('budget truncation drops oldest turns under pressure while retaining trigger turn', () => {
     // Very tight budget
     const tightCtx = makeContext({

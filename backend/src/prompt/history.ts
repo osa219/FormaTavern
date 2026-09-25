@@ -186,20 +186,32 @@ export function serializeHistory(ctx: PromptContext): HistoryResult {
         content: applyMacros(cleaned, vars)
       });
     } else if (turn.role === 'user') {
-      // Every user turn wears its dialect tags (persona included), so speaker
-      // identity travels in content while transport roles stay pure authorship.
-      // serializeSegments throws on delimiter collisions; fall back to raw.
+      // Speaker identity travels in content while transport roles stay pure
+      // authorship. Envelope chats wear dialect tags; classical chats use a
+      // plain `Name:` header. serializeSegments throws on delimiter
+      // collisions; fall back to raw.
       const cleanText = normalizeHtmlQuirks(turn.content);
       if (turn.narrativeRole === 'persona') {
         let body: string;
-        try {
-          body = serializeSegments(
-            [{ kind: 'persona', name: turn.senderName ?? ctx.persona.name, text: cleanText }],
-            null,
-            segDialect
-          );
-        } catch {
-          body = cleanText;
+        if (dialect === 'classic') {
+          // Industry-standard classical line: dumb `Name: text`
+          // concatenation, the same thing SillyTavern and other engines
+          // emit. No grammar engine, no validation, no throw paths — so
+          // envelope-grammar changes can never drift classical prompts,
+          // and everyday RP text (`*sighs*`, `Paul: ...` quotes) always
+          // keeps its speaker. Stored persona content is always raw user
+          // input, so the prefix can never double up.
+          body = `${turn.senderName ?? ctx.persona.name}: ${cleanText}`;
+        } else {
+          try {
+            body = serializeSegments(
+              [{ kind: 'persona', name: turn.senderName ?? ctx.persona.name, text: cleanText }],
+              null,
+              segDialect
+            );
+          } catch {
+            body = cleanText;
+          }
         }
         filtered.push({
           role: 'user',
