@@ -250,7 +250,12 @@ export class CustomEngineImportService {
               const updatedAt = char.updated_at ? Date.parse(char.updated_at) || createdAt : createdAt;
 
               const charName = (char.card_title?.trim() || 'Untitled').slice(0, 120);
-              const charPersona = char.chat_name?.trim() || null;
+              // character_name schema caps at 120: truncate over-long persona
+              // names (rare Janitor titles-as-names) at a word boundary.
+              const rawPersona = char.chat_name?.trim() || '';
+              const charPersona = rawPersona.length > 120
+                ? rawPersona.slice(0, 120).replace(/\s+\S*$/, '') || rawPersona.slice(0, 120)
+                : rawPersona || null;
 
               this.db.run(
                 `INSERT INTO characters (
@@ -348,7 +353,12 @@ export class CustomEngineImportService {
               if (char.mes_example) metadataObj.exampleDialogue = char.mes_example;
 
               const charName = (char.card_title?.trim() || 'Untitled').slice(0, 120);
-              const charPersona = char.chat_name?.trim() || null;
+              // character_name schema caps at 120: truncate over-long persona
+              // names (rare Janitor titles-as-names) at a word boundary.
+              const rawPersona = char.chat_name?.trim() || '';
+              const charPersona = rawPersona.length > 120
+                ? rawPersona.slice(0, 120).replace(/\s+\S*$/, '') || rawPersona.slice(0, 120)
+                : rawPersona || null;
 
               this.db.run(
                 `UPDATE characters SET

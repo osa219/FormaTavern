@@ -64,7 +64,7 @@ Measured against the live dump (`exports/custom_engine/`, manifest `version 1.0.
 | `alternate_greetings[]` | `characters.alternate_greetings` (JSON array, v9 column) | Order preserved; max observed 13, no cap imposed. |
 | `creator_name`, `creator_url`, `character_url`, `source_platform` | `characters.creator`, `creator_url`, `character_url`, `origin='custom_engine'` | `origin` column exists from v10; this phase adds `origin_id`/`origin_hash` (§3). |
 | `creator_notes` | appended to `showcase` after the source blurb under an "Author notes" disclosure | Display-only (P4). Never prompt-injected. |
-| `CUSTOM_ENGINE_MAPPING_VERSION` (= 3) | mixed into `origin_hash` (`plan.ts:characterOriginHash`) | Mapping changes re-sync old rows once instead of skipping forever (X1/X7). Bump on any future mapping change. |
+| `CUSTOM_ENGINE_MAPPING_VERSION` (= 4) | mixed into `origin_hash` (`plan.ts:characterOriginHash`) | Mapping changes re-sync old rows once instead of skipping forever (X1/X7). Bump on any future mapping change. |
 | Normative field spec | `docs/exchange-spec.md` | Living interchange contract (entities, media protocol, version history). |
 | `tags[]` | `character_tags` join + FTS (normalize via existing `normalizeTag`) | Emoji tags (e.g. `👩‍🦰 Female`) normalize to null → stored in `metadata.importedTagsRaw`, excluded from FTS, still displayed. |
 | `token_counts`, `stats`, `soundcloud_track_id`, `is_nsfw`, `is_image_nsfw` | `characters.metadata` extensions block | Stored verbatim under `metadata.import.{...}`; `is_nsfw` additionally drives the existing blur/visibility hint where the UI already supports it. No new filtering UI in this phase. |

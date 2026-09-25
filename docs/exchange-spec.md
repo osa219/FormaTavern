@@ -2,7 +2,7 @@
 
 **Status:** Living specification. This document is the normative contract for the bulk interchange format between the upstream fusion pipeline and FormaTavern's import pipeline. Code (`backend/src/import/customEngine/`) implements this document; on conflict, this document wins pending a fix on either side.
 **Format codename:** `custom_engine` (a FormaTavern-specific format name is pending; the rename will be recorded here when decided).
-**Mapping version:** v3 (see §6).
+**Mapping version:** v4 (see §7).
 
 ---
 
@@ -129,3 +129,4 @@ An ingester must probe the filesystem directly and treat missing `manifest.json`
 | v1 | Source blurb stored as lore `description`; card name from ambiguous `name`. |
 | v2 | Blurb → display-only `showcase`, lore `description` empty; `sourceDescription` preserved. |
 | v3 | Listing identity (`card_title` → card name, `chat_name` → {{char}}) after source `name` removal; `tagline` user-owned and update-exempt. |
+| v4 | Over-long `chat_name` persona labels truncated to the 120 schema limit at a word boundary. |

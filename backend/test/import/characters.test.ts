@@ -299,6 +299,29 @@ describe('CustomEngine Character Import', () => {
     expect(card!.showcase).toContain('Hook blurb');
     expect(card!.description).toBeFalsy();
   });
+  it('truncates over-long chat_name persona labels to the 120 schema limit', async () => {
+    env = await createTestImportEnv();
+
+    const char = {
+      id: 'uuid-long-persona',
+      card_title: 'A Very Long Hook Title That Keeps Going Past Reasonable Display Limits For Cards',
+      chat_name: 'Trapped Indoors With Your Friend And All Of Their Friends And Neighbors Plotting Something Elaborate Together Forever',
+      description: 'Blurb',
+      personality: 'Patient',
+      scenario: 'House',
+      first_message: 'Hi.'
+    };
+
+    await env.writeCharacter(char);
+
+    const report = await env.service.sync(env.sourceDir);
+    expect(report.insertedChars).toBe(1);
+
+    const card = env.repos.characters.findByProvenance('custom_engine', 'uuid-long-persona');
+    expect(card).not.toBeNull();
+    expect(card!.characterName!.length).toBeLessThanOrEqual(120);
+  });
+
   it('self-heals legacy rows: moves lore description to showcase on re-sync', async () => {
     env = await createTestImportEnv();
 

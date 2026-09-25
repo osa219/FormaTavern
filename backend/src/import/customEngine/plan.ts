@@ -22,8 +22,10 @@ import type { SniffResult } from './sniff';
  * - v3 maps listing identity (card_title → card name, chat_name → {{char}})
  *   after the ambiguous source `name` field was removed; tagline stays
  *   user-authored and is no longer overwritten on re-sync.
+ * - v4 truncates over-long chat_name persona labels to the 120 schema limit
+ *   at a word boundary (rare Janitor titles-as-names).
  */
-export const CUSTOM_ENGINE_MAPPING_VERSION = 3;
+export const CUSTOM_ENGINE_MAPPING_VERSION = 4;
 
 export function characterOriginHash(raw: CustomEngineCharacter): string {
   return hashCanonical(

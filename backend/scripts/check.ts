@@ -2,6 +2,7 @@ import { join } from 'node:path';
 import { readdirSync, existsSync } from 'node:fs';
 import { DB_PATH, ASSETS_POOL_DIR } from '../src/db/paths';
 import { openDatabase } from '../src/db/connection';
+import { migrations } from '../src/db/migrate';
 import { createRepositories } from '../src/db/repositories';
 import { nearestState } from '../src/engine/context';
 import { validate, CharacterCardSchema, CharacterSummarySchema, PersonaSchema, CharacterLayoutSchema } from '@formatavern/shared';
@@ -33,8 +34,8 @@ try {
     console.error(`[check] ERROR: foreign_keys is not 1`);
     hasFailure = true;
   }
-  if (user_version !== 11) {
-    console.error(`[check] ERROR: user_version is ${user_version}, expected 11`);
+  if (user_version !== migrations.length) {
+    console.error(`[check] ERROR: user_version is ${user_version}, expected ${migrations.length}`);
     hasFailure = true;
   }
 
