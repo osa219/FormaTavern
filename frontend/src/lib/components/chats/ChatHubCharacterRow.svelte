@@ -54,7 +54,7 @@
   >
     <div class="flex min-w-0 items-center gap-3.5">
       <!-- Avatar thumbnail -->
-      <div class="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-(--chrome-line) bg-(--chrome-bg)">
+      <div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-(--chrome-line) bg-(--chrome-bg) sm:h-24 sm:w-24">
         {#if character.avatar}
           <img
             src={character.avatar}
@@ -69,12 +69,12 @@
         {/if}
       </div>
 
-      <!-- Character Info & Tagline Snippet -->
-      <div class="min-w-0">
-        <div class="flex min-w-0 items-center gap-2">
-          <span class="min-w-0 truncate font-semibold text-(--chrome-text)">
-            {character.name}
-          </span>
+      <!-- Title block: name gets the full line, meta sits below -->
+      <div class="min-w-0 flex-1">
+        <div class="break-words leading-snug font-semibold text-(--chrome-text)">
+          {character.name}
+        </div>
+        <div class="mt-1 flex min-w-0 items-center gap-2 text-xs text-(--chrome-text)/60">
           {#if character.style?.colors?.accent}
             <span
               class="h-2 w-2 shrink-0 rounded-full"
@@ -82,30 +82,19 @@
               aria-hidden="true"
             ></span>
           {/if}
+          <span class="shrink-0 font-mono">
+            {group.chatCount} {group.chatCount === 1 ? 'chat' : 'chats'}
+          </span>
+          <span class="shrink-0" aria-hidden="true">·</span>
+          <span class="truncate">
+            {formatRelativeTime(group.lastChatAt)}
+          </span>
         </div>
-        {#if character.tagline}
-          <p class="truncate text-xs text-(--chrome-text)/60">
-            {character.tagline}
-          </p>
-        {/if}
       </div>
     </div>
 
-    <div class="flex shrink-0 items-center gap-3">
-      <!-- Chat Count Badge -->
-      <span class="rounded-lg border border-(--chrome-line) bg-(--chrome-bg) px-2.5 py-1 text-xs font-mono text-(--chrome-text)/80">
-        {group.chatCount} {group.chatCount === 1 ? 'chat' : 'chats'}
-      </span>
-
-      <!-- Latest Turn Timestamp -->
-      <span class="hidden text-xs text-(--chrome-text)/50 sm:inline">
-        {formatRelativeTime(group.lastChatAt)}
-      </span>
-
-      <!-- Expand Chevron -->
-      <div class="text-(--chrome-text)/60 transition-transform">
-        <Icon name={expanded ? 'chevron-up' : 'chevron-down'} size={18} />
-      </div>
+    <div class="shrink-0 text-(--chrome-text)/60 transition-transform">
+      <Icon name={expanded ? 'chevron-up' : 'chevron-down'} size={18} />
     </div>
   </button>
 
