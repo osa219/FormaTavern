@@ -112,6 +112,9 @@ export const CharacterSummarySchema = Type.Object({
   name: Type.String(),
   characterName: Type.Optional(Type.String()),
   tagline: Type.Optional(Type.String()),
+  // Raw showcase/description slice for card snippets. Rendered rich by the
+  // card (never stored); tagline still wins when present.
+  excerpt: Type.Optional(Type.String({ maxLength: 2000 })),
   avatar: Type.Optional(AssetPath),
   creator: Type.Optional(Type.String()),
   tags: Type.Array(TagSchema),

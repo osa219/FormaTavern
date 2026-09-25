@@ -13,9 +13,10 @@
     markdown: string;
     class?: string;
     mediaOptions?: MediaRewriteOptions;
+    stripImages?: boolean;
   }
 
-  let { markdown, class: className = '', mediaOptions }: Props = $props();
+  let { markdown, class: className = '', mediaOptions, stripImages = false }: Props = $props();
 
   let version = $state(getMediaCacheVersion());
 
@@ -35,7 +36,7 @@
 
   const html = $derived.by(() => {
     void version;
-    return rewriteHtmlMediaUrls(renderShowcaseMarkdown(markdown), mediaOptions);
+    return rewriteHtmlMediaUrls(renderShowcaseMarkdown(markdown, { stripImages }), mediaOptions);
   });
 </script>
 

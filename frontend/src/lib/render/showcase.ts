@@ -100,17 +100,41 @@ function getShowcasePurifier(): any {
   return showcasePurifierInstance;
 }
 
-export function renderShowcaseMarkdown(text: string): string {
+export interface ShowcaseRenderOptions {
+  // Card snippets reuse this pipeline but must not embed pictures:
+  // the avatar owns imagery, a picture would blow up the grid.
+  stripImages?: boolean;
+}
+
+// Deterministic source-level image strip (pure, environment-independent).
+// Markdown images keep their alt words; raw <img> HTML carries no words.
+// The purifier config below stays as the browser-side backstop.
+export function stripMarkdownImages(source: string): string {
+  return source
+    .replace(/<img\b[^>]*>/gi, '')
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/!\[([^\]]*)\]\[[^\]]*\]/g, '$1');
+}
+
+export function renderShowcaseMarkdown(text: string, opts?: ShowcaseRenderOptions): string {
   if (!text) return '';
-  const rawHtml = markedShowcase.parse(text, { async: false }) as string;
+  const stripImages = opts?.stripImages === true;
+  const input = stripImages ? stripMarkdownImages(text) : text;
+  const rawHtml = markedShowcase.parse(input, { async: false }) as string;
   const purifier = getShowcasePurifier();
   if (!purifier || typeof purifier.sanitize !== 'function') {
     return rawHtml;
   }
+  // img is additionally forbidden at the purifier level so any image markup
+  // reaching this stage (e.g. nested inside <picture>) is removed in browsers.
+  const allowedTags = stripImages
+    ? SHOWCASE_ALLOWED_TAGS.filter((t) => t !== 'img')
+    : SHOWCASE_ALLOWED_TAGS;
+  const forbidTags = stripImages ? [...SHOWCASE_FORBID_TAGS, 'img'] : SHOWCASE_FORBID_TAGS;
   return purifier.sanitize(rawHtml, {
-    ALLOWED_TAGS: SHOWCASE_ALLOWED_TAGS,
+    ALLOWED_TAGS: allowedTags,
     ALLOWED_ATTR: SHOWCASE_ALLOWED_ATTR,
-    FORBID_TAGS: SHOWCASE_FORBID_TAGS,
+    FORBID_TAGS: forbidTags,
     ALLOW_DATA_ATTR: false,
     // DOMPurify natively validates URI attributes (src/href) against
     // ALLOWED_URI_REGEXP *in addition* to our hook. The default regexp does

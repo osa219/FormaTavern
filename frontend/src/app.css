@@ -783,6 +783,33 @@ dialog:not([open]) {
   padding: 0;
 }
 
+/* Card snippet: clamped rich excerpt reusing .showcase-body.
+   Inherits card typography; headings collapse to snippet size. */
+.showcase-body.card-snippet {
+  color: inherit;
+  line-height: 1.6;
+}
+
+.showcase-body.card-snippet h1,
+.showcase-body.card-snippet h2,
+.showcase-body.card-snippet h3,
+.showcase-body.card-snippet h4,
+.showcase-body.card-snippet h5,
+.showcase-body.card-snippet h6 {
+  font-size: 0.75rem;
+  margin: 0 0 0.25rem;
+}
+
+.showcase-body.card-snippet p,
+.showcase-body.card-snippet ul,
+.showcase-body.card-snippet ol,
+.showcase-body.card-snippet blockquote,
+.showcase-body.card-snippet pre,
+.showcase-body.card-snippet table,
+.showcase-body.card-snippet hr {
+  margin: 0 0 0.25rem;
+}
+
 /* Motion Presets (Slice 5 — Invariant U2 & C13) */
 @keyframes ft-fx-breathe {
   0%, 100% {

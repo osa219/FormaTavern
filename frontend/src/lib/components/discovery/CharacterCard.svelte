@@ -3,6 +3,7 @@
   import type { CharacterSummary } from '@formatavern/shared';
   import { displayTag, HOOKS } from '@formatavern/shared';
   import Icon from '$lib/components/ui/Icon.svelte';
+  import ShowcaseBody from '$lib/components/showcase/ShowcaseBody.svelte';
 
   let {
     character,
@@ -30,7 +31,7 @@
       goto(`/character/${activeCharacter.id}`);
     }
   }}
-  class="group relative flex flex-col justify-between overflow-hidden border border-(--chrome-line) bg-(--chrome-surface) transition-colors hover:border-accent/40 cursor-pointer text-left shadow-lg hover:shadow-xl {HOOKS.chrome.card}"
+  class="group relative flex flex-row overflow-hidden border border-(--chrome-line) bg-(--chrome-surface) transition-colors hover:border-accent/40 cursor-pointer text-left shadow-lg hover:shadow-xl {HOOKS.chrome.card}"
 >
   <!-- Subtle accent glow -->
   <div
@@ -38,27 +39,30 @@
     style="background-color: {accent};"
   ></div>
 
-  <!-- Top: Avatar + Name + Swatch -->
-  <div class="relative flex items-start gap-4">
-    {#if activeCharacter.avatar}
+  <!-- Left: full-height image rail -->
+  {#if activeCharacter.avatar}
+    <div class="relative w-28 min-h-40 shrink-0 self-stretch border-r border-(--chrome-line) sm:w-32">
       <img
         src={activeCharacter.avatar}
         alt={activeCharacter.name}
-        class="h-14 w-14 rounded-2xl object-cover border border-(--chrome-line) select-none shrink-0 shadow-md"
+        class="absolute inset-0 h-full w-full object-cover select-none"
         loading="lazy"
         decoding="async"
       />
-    {:else}
-      <div
-        class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-(--chrome-bg) text-lg font-bold text-(--chrome-text) border border-(--chrome-line) select-none shadow-md"
-      >
-        {activeCharacter.name.slice(0, 1).toUpperCase()}
-      </div>
-    {/if}
+    </div>
+  {:else}
+    <div
+      class="relative flex w-28 min-h-40 shrink-0 items-center justify-center bg-(--chrome-bg) text-2xl font-bold text-(--chrome-text) border-r border-(--chrome-line) select-none sm:w-32"
+    >
+      {activeCharacter.name.slice(0, 1).toUpperCase()}
+    </div>
+  {/if}
 
-    <div class="min-w-0 flex-1">
+  <!-- Right: name, snippet, footer -->
+  <div class="relative flex min-w-0 flex-1 flex-col p-4">
+    <div class="min-w-0 pb-3">
       <div class="flex min-w-0 items-center gap-2">
-        <h3 class="min-w-0 truncate text-base font-semibold text-(--chrome-text) group-hover:text-accent">
+        <h3 class="min-w-0 line-clamp-2 break-words text-base font-semibold text-(--chrome-text) group-hover:text-accent">
           {activeCharacter.name}
         </h3>
         <!-- Swatch dot -->
@@ -79,12 +83,16 @@
         <p class="mt-1 line-clamp-2 text-xs text-(--chrome-text)/70 font-light leading-relaxed">
           {activeCharacter.tagline}
         </p>
+      {:else if activeCharacter.excerpt}
+        <!-- Rich fallback: author's own showcase formatting, pictures excluded -->
+        <div class="mt-1 line-clamp-4 text-xs text-(--chrome-text)/70 font-light leading-relaxed">
+          <ShowcaseBody markdown={activeCharacter.excerpt} stripImages class="card-snippet" />
+        </div>
       {/if}
     </div>
-  </div>
 
-  <!-- Tags & Story Count Footer -->
-  <div class="relative mt-5 pt-3 border-t border-(--chrome-line) flex items-center justify-between gap-2 text-xs">
+    <!-- Tags & Story Count Footer -->
+    <div class="relative mt-auto pt-3 border-t border-(--chrome-line) flex items-center justify-between gap-2 text-xs">
     <!-- Tag chips -->
     <div class="flex flex-wrap items-center gap-1 overflow-hidden">
       {#each visibleTags as tag (tag)}
@@ -133,4 +141,5 @@
       </div>
     </div>
   </div>
+</div>
 </div>

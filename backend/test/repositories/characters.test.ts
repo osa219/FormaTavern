@@ -301,6 +301,29 @@ describe('SqliteCharacterRepository (Phase 5)', () => {
     expect(refetched?.customCss).toBeUndefined();
   });
 
+  it('attaches a raw showcase excerpt to summaries for card snippets', () => {
+    inst = openTestDb(':memory:');
+    runMigrations(inst.db);
+    const repos = createRepositories(inst.db);
+
+    const longShowcase = `**Your girlfriend is not in the mood.** ${'A very long marketing blurb word '.repeat(30)}<img src="media://${'a'.repeat(64)}">`;
+    repos.characters.create({ ...makeCard('long-blurb', 'Long Blurb'), showcase: longShowcase });
+    repos.characters.create({ ...makeCard('short-blurb', 'Short Blurb'), showcase: '  Short and sweet.  ' });
+    repos.characters.create({ ...makeCard('lore-only', 'Lore Only'), description: 'Quiet lighthouse keeper.' });
+    repos.characters.create({ ...makeCard('bare', 'Bare'), description: '' });
+
+    const byId = new Map(repos.characters.list({ sort: 'name', limit: 10 }).items.map((i) => [i.id, i]));
+
+    const long = byId.get('long-blurb')!;
+    expect(long.excerpt).toBeDefined();
+    expect(long.excerpt!.length).toBeLessThanOrEqual(400);
+    expect(longShowcase.startsWith(long.excerpt!.replace(/\s+$/, ''))).toBe(true);
+
+    expect(byId.get('short-blurb')!.excerpt).toBe('Short and sweet.');
+    expect(byId.get('lore-only')!.excerpt).toBe('Quiet lighthouse keeper.');
+    expect(byId.get('bare')!.excerpt).toBeUndefined();
+  });
+
   it('round-trips character layout, duplicates layout, excludes from summary, and null-clears on patch', () => {
     inst = openTestDb(':memory:');
     runMigrations(inst.db);

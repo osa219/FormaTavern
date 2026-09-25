@@ -259,6 +259,7 @@ describe('Shared Schema Validation', () => {
         id: 'eldrin-the-mage',
         name: 'Eldrin the Mage',
         tagline: 'Ancient archmage',
+        excerpt: '**Ancient** archmage of the northern spire',
         tags: ['fantasy'],
         style: eldrinFixture.style,
         storyCount: 5,

@@ -77,6 +77,21 @@ function decodeCursor(cursor: string): [any, string] | null {
   return null;
 }
 
+// Raw slice of display text for card snippets. Formatting is preserved for
+// the card renderer; only the length is bounded (word-boundary cut).
+const EXCERPT_MAX_LENGTH = 400;
+
+function sliceExcerpt(...candidates: Array<string | null | undefined>): string | undefined {
+  for (const candidate of candidates) {
+    const text = candidate?.trim();
+    if (!text) continue;
+    if (text.length <= EXCERPT_MAX_LENGTH) return text;
+    const cut = text.lastIndexOf(' ', EXCERPT_MAX_LENGTH);
+    return (cut > EXCERPT_MAX_LENGTH / 2 ? text.slice(0, cut) : text.slice(0, EXCERPT_MAX_LENGTH)).trimEnd();
+  }
+  return undefined;
+}
+
 function cardToRow(card: CharacterCard, now: number) {
   const metadataObj: Record<string, unknown> = { ...(card.metadata ?? {}) };
   if (card.exampleDialogue !== undefined) metadataObj.exampleDialogue = card.exampleDialogue;
@@ -368,6 +383,7 @@ export class SqliteCharacterRepository implements CharacterRepository {
     let selectSql = `
       SELECT
         c.id, c.name, c.character_name, c.tagline, c.avatar, c.creator, c.style, c.created_at, c.updated_at,
+        c.showcase, c.description,
         COUNT(DISTINCT ch.id) AS story_count,
         MAX(ch.updated_at) AS last_story_at
       FROM characters c
@@ -478,6 +494,7 @@ export class SqliteCharacterRepository implements CharacterRepository {
       name: r.name,
       characterName: r.character_name ?? undefined,
       tagline: r.tagline ?? undefined,
+      excerpt: sliceExcerpt(r.showcase, r.description),
       avatar: r.avatar ?? undefined,
       creator: r.creator ?? undefined,
       tags: tagMap.get(r.id) ?? [],

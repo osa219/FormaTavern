@@ -129,4 +129,32 @@ Here is a paragraph with **bold** and *italic* text.
       expect(html).not.toContain('src="media://short"');
     });
   });
+
+  describe('stripImages (card snippets)', () => {
+    const HASH = 'a'.repeat(64);
+
+    it('removes markdown and raw images but keeps text formatting', () => {
+      const md = `**Bold hook** and *italic*.\n\n![Art](/assets/x.png)\n\n<img src="media://${HASH}" alt="">`;
+      const html = renderShowcaseMarkdown(md, { stripImages: true });
+      expect(html).not.toContain('<img');
+      expect(html).not.toContain('media://');
+      expect(html).not.toContain('/assets/x.png');
+      expect(html).toContain('<strong>Bold hook</strong>');
+      expect(html).toContain('<em>italic</em>');
+    });
+
+    it('keeps markdown alt words while dropping the picture', () => {
+      const html = renderShowcaseMarkdown('Before ![Sybil portrait](/assets/s.png) after', {
+        stripImages: true
+      });
+      expect(html).not.toContain('<img');
+      expect(html).toContain('Sybil portrait');
+    });
+
+    it('keeps images by default so existing surfaces are unchanged', () => {
+      const md = `![Art](/assets/x.png)\n\n<img src="media://${HASH}" alt="">`;
+      const html = renderShowcaseMarkdown(md);
+      expect(html).toContain('<img');
+    });
+  });
 });
