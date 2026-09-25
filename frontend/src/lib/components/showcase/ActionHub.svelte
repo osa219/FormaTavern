@@ -30,6 +30,7 @@
   let chatPreviewFile = $state<File | null>(null);
   let chatImportConfirmOpen = $state(false);
   let chatImporting = $state(false);
+  let exporting = $state<string | null>(null);
 
   function toggleMenu(e: MouseEvent) {
     e.stopPropagation();
@@ -111,6 +112,43 @@
   function openChatImport() {
     menuOpen = false;
     chatFileInput?.click();
+  }
+
+  async function handleExport(kind: 'png' | 'json' | 'charx') {
+    if (exporting) return;
+    menuOpen = false;
+    exporting = kind;
+    try {
+      const url =
+        kind === 'charx'
+          ? `/api/characters/${character.id}/export.charx`
+          : kind === 'json'
+            ? `/api/characters/${character.id}/export.png?format=json`
+            : `/api/characters/${character.id}/export.png`;
+      const res = await fetch(url, { headers: authStore.authHeaders() });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error?.message || `Export failed (HTTP ${res.status})`);
+      }
+      const blob = await res.blob();
+      const disposition = res.headers.get('Content-Disposition') ?? '';
+      const match = disposition.match(/filename="([^"]+)"/);
+      const fallbackExt = kind === 'charx' ? 'charx' : kind;
+      const filename = match?.[1] ?? `${character.id}.${fallbackExt}`;
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = objectUrl;
+      anchor.download = filename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
+      toasts.success(`Exported "${character.name}" (${kind.toUpperCase()})`);
+    } catch (err: any) {
+      toasts.error(err?.message || 'Could not export this card.');
+    } finally {
+      exporting = null;
+    }
   }
 
   async function handleChatFileChange(e: Event) {
@@ -271,6 +309,36 @@
         >
           <Icon name="upload" size={13} />
           <span>{chatParsing ? 'Parsing chat file…' : 'Import chat'}</span>
+        </button>
+
+        <button
+          type="button"
+          onclick={() => handleExport('png')}
+          disabled={exporting !== null}
+          class="flex w-full items-center gap-2 px-3 py-2 text-xs text-neutral-200 hover:bg-neutral-800 disabled:opacity-50"
+        >
+          <Icon name="arrow-down" size={13} />
+          <span>{exporting === 'png' ? 'Exporting PNG…' : 'Export PNG (TavernCard)'}</span>
+        </button>
+
+        <button
+          type="button"
+          onclick={() => handleExport('json')}
+          disabled={exporting !== null}
+          class="flex w-full items-center gap-2 px-3 py-2 text-xs text-neutral-200 hover:bg-neutral-800 disabled:opacity-50"
+        >
+          <Icon name="arrow-down" size={13} />
+          <span>{exporting === 'json' ? 'Exporting JSON…' : 'Export JSON (TavernCard)'}</span>
+        </button>
+
+        <button
+          type="button"
+          onclick={() => handleExport('charx')}
+          disabled={exporting !== null}
+          class="flex w-full items-center gap-2 px-3 py-2 text-xs text-neutral-200 hover:bg-neutral-800 disabled:opacity-50"
+        >
+          <Icon name="arrow-down" size={13} />
+          <span>{exporting === 'charx' ? 'Exporting CharX…' : 'Export CharX (.charx)'}</span>
         </button>
 
         <button
