@@ -140,6 +140,7 @@ export class CharacterDraft {
       this.card = {
         name: initialCard.name,
         characterName: initialCard.characterName ?? '',
+        avatar: initialCard.avatar,
         tagline: initialCard.tagline ?? '',
         creator: initialCard.creator ?? '',
         creatorUrl: initialCard.creatorUrl ?? '',

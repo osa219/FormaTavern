@@ -75,6 +75,17 @@ describe('CharacterDraft & Studio State (Layer 7)', () => {
     expect(draft.issues).toEqual([]);
   });
 
+  it('carries the stored avatar into the draft so Studio shows it', () => {
+    const draft = new CharacterDraft({ ...sampleCard, avatar: '/assets/pool/abc123.png' });
+
+    expect(draft.card.avatar).toBe('/assets/pool/abc123.png');
+    expect(draft.dirty).toBe(false);
+    expect(draft.validation.ok).toBe(true);
+
+    const bare = new CharacterDraft(sampleCard);
+    expect(bare.card.avatar).toBeUndefined();
+  });
+
   it('tracks dirty state and allows discarding edits back to snapshot', () => {
     const draft = new CharacterDraft(sampleCard);
     expect(draft.dirty).toBe(false);
