@@ -941,7 +941,26 @@ import { api } from '$lib/api';
             }}
             class="w-full rounded-xl border border-(--chrome-line) bg-(--chrome-surface) px-3 py-2 text-(--chrome-text) focus:border-accent focus:outline-none"
           />
+          <p class="mt-1 text-[11px] text-(--chrome-text)/60">
+            Your cap within the model's own window — the active model's smaller limit always wins.
+          </p>
         </div>
+
+        <!-- Pin Example Dialogue -->
+        <label class="flex items-center justify-between rounded-xl border border-(--chrome-line) bg-(--chrome-bg)/50 p-3 cursor-pointer hover:bg-(--chrome-line)/30">
+          <div>
+            <div class="font-medium text-(--chrome-text)">Protect example dialogue</div>
+            <div class="text-[11px] text-(--chrome-text)/60">When pinned, examples stay in every prompt and old history is dropped first. Off by default: history wins.</div>
+          </div>
+          <input
+            type="checkbox"
+            checked={s.generation.pinExamples ?? false}
+            onchange={(e) => {
+              queuePatch({ generation: { pinExamples: e.currentTarget.checked } });
+            }}
+            class="h-4 w-4 rounded border-(--chrome-line) bg-(--chrome-surface) accent-accent focus:ring-accent"
+          />
+        </label>
 
         <!-- Advanced settings -->
         <div class="border-t border-(--chrome-line) pt-3">

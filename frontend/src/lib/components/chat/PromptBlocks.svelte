@@ -64,11 +64,17 @@
   const budget = $derived.by(() => {
     const t = data.tokens;
     const pct = (n: number) => (t.available > 0 ? Math.min(100, (n / t.available) * 100) : 0);
+    const ratio = t.available > 0 ? t.total / t.available : 0;
+    const over = t.total > t.available;
     return {
       staticPct: pct(t.static),
       historyPct: pct(t.history),
       bottomPct: pct(t.bottom),
-      over: t.total > t.available
+      over,
+      // At the wall (98%+): the fit is saturated, old turns are gone.
+      at: !over && ratio >= 0.98,
+      // Quiet 80% indicator (not a modal): history is being eaten.
+      near: !over && ratio >= 0.8 && ratio < 0.98
     };
   });
 </script>
@@ -86,6 +92,17 @@
       <span><span class="text-violet-400">■</span> history {data.tokens.history}</span>
       <span><span class="text-emerald-400">■</span> bottom {data.tokens.bottom}</span>
       <span class={budget.over ? 'text-red-300' : ''}>total {data.tokens.total} / {data.tokens.available}</span>
+      {#if budget.at}
+        <span
+          class="text-red-300"
+          title="The prompt is at the budget wall — oldest turns are dropped first. Raise Context Length in Settings, trim static text, or start a fresh chat."
+        >at budget</span>
+      {:else if budget.near}
+        <span
+          class="text-amber-300/90"
+          title="Over 80% of the prompt budget is used — oldest turns are dropped first. Raise Context Length in Settings, trim static text, or start a fresh chat."
+        >near budget</span>
+      {/if}
       {#if data.tokens.droppedTurns > 0}
         <span class="text-amber-300">{data.tokens.droppedTurns} turns dropped</span>
       {/if}
