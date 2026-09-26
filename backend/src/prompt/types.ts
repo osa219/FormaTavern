@@ -40,9 +40,15 @@ export interface PromptContext {
     contextLength: number;
     reservedCompletion: number;
     safetyFactor?: number; // default 0.9
+    // True: example dialogue is sacred static (history shrinks first).
+    // False (default): history is fitted first, examples take the leftover.
+    pinExamples?: boolean;
   };
   provider: {
     prefill: boolean;
+    // Active model id for tokenizer selection. Optional: counting falls
+    // back to cl100k when absent.
+    model?: string;
   };
   continuation?: {
     partial: string;

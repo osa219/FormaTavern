@@ -7,40 +7,61 @@ import { countTokens, fitHistory } from './budget';
 
 export function buildPrompt(ctx: PromptContext): BuiltPrompt {
   const warnings: string[] = [];
+  const model = ctx.provider.model;
   const vars = { char: resolveCharacterName(ctx.character), user: ctx.persona.name };
   const dialect = getDialect(ctx);
 
   // 1. Generate Static System Blocks (1, 1b, 1c, 2, 3, 4, 5, 6, 6b, 7, 7b).
   // 1b always reports excluded (retired): the response-format spec rides the
   // closing block 9c at the end of the prompt (post-history, closest to generation).
+  // Block 5 (example dialogue) is budgeted, not sacred: pinned examples join
+  // the static pile (history shrinks first); unpinned examples take whatever
+  // the fitted history leaves over.
   const blockReportsMap = new Map<BlockId, BlockReport>();
-  const staticBlockIds: BlockId[] = ['1', '1b', '1c', '2', '3', '4', '5', '6', '6b', '7', '7b'];
-  const includedSystemBlocks: string[] = [];
+  const STATIC_ORDER: BlockId[] = ['1', '1b', '1c', '2', '3', '4', '5', '6', '6b', '7', '7b'];
+  const staticContents = new Map<BlockId, string>();
+  const staticTokenCounts = new Map<BlockId, number>();
 
-  for (const id of staticBlockIds) {
+  for (const id of STATIC_ORDER) {
     const content = generateBlock(id, ctx, warnings);
-    if (content !== null && content.trim().length > 0) {
-      const c = countTokens(content);
-      if (c.warning) warnings.push(c.warning);
+    if (content === null || content.trim().length === 0) {
+      if (id !== '5') {
+        blockReportsMap.set(id, {
+          id,
+          included: false,
+          tokens: 0,
+          reason: skipReason(id, ctx)
+        });
+      }
+      continue;
+    }
+    const c = countTokens(content, model);
+    if (c.warning) warnings.push(c.warning);
+    staticContents.set(id, content);
+    staticTokenCounts.set(id, c.tokens);
+    if (id !== '5') {
       blockReportsMap.set(id, {
         id,
         included: true,
         tokens: c.tokens,
         text: content
       });
-      includedSystemBlocks.push(content);
-    } else {
-      blockReportsMap.set(id, {
-        id,
-        included: false,
-        tokens: 0,
-        reason: skipReason(id, ctx)
-      });
     }
   }
 
-  const systemPrompt = includedSystemBlocks.join('\n\n');
-  const staticTokens = countTokens(systemPrompt).tokens;
+  const pinExamples = ctx.budget.pinExamples ?? false;
+  const exampleContent = staticContents.get('5');
+  const exampleTokens = exampleContent !== undefined ? (staticTokenCounts.get('5') ?? 0) : 0;
+  let examplesIncluded = exampleContent !== undefined && pinExamples;
+
+  const buildSystemPrompt = (): string =>
+    STATIC_ORDER.filter((id) => id !== '5' || examplesIncluded)
+      .map((id) => staticContents.get(id))
+      .filter((t): t is string => typeof t === 'string')
+      .join('\n\n');
+
+  let systemPrompt = buildSystemPrompt();
+  let staticTokens = countTokens(systemPrompt, model).tokens;
 
   // 2. Generate Bottom Blocks (9a, 9b, 9c)
   const bottomBlockIds: BlockId[] = ['9a', '9b', '9c'];
@@ -49,9 +70,9 @@ export function buildPrompt(ctx: PromptContext): BuiltPrompt {
   for (const id of bottomBlockIds) {
     const content = generateBlock(id, ctx, warnings);
     if (content !== null && content.trim().length > 0) {
-      const c = countTokens(content);
-      if (c.warning) warnings.push(c.warning);
-      blockReportsMap.set(id, {
+    const c = countTokens(content, model);
+    if (c.warning) warnings.push(c.warning);
+    blockReportsMap.set(id, {
         id,
         included: true,
         tokens: c.tokens,
@@ -69,7 +90,7 @@ export function buildPrompt(ctx: PromptContext): BuiltPrompt {
   }
 
   const bottomText = bottomParts.join('\n');
-  const bottomTokens = bottomText ? countTokens(bottomText).tokens : 0;
+  const bottomTokens = bottomText ? countTokens(bottomText, model).tokens : 0;
 
   // 3. Serialize History (Block 8). serializeHistory returns plain messages
   // with no bottom blocks attached; step 5 attaches them exactly once.
@@ -79,7 +100,7 @@ export function buildPrompt(ctx: PromptContext): BuiltPrompt {
   const rawHistoryMessages = historyRes.messages;
   let rawHistoryTokens = 0;
   for (const m of rawHistoryMessages) {
-    rawHistoryTokens += countTokens(m.content).tokens + 4;
+    rawHistoryTokens += countTokens(m.content, model).tokens + 4;
   }
   blockReportsMap.set('8', {
     id: '8',
@@ -94,9 +115,30 @@ export function buildPrompt(ctx: PromptContext): BuiltPrompt {
     bottomTokens,
     contextLength: ctx.budget.contextLength,
     reservedCompletion: ctx.budget.reservedCompletion,
-    safetyFactor: ctx.budget.safetyFactor
+    safetyFactor: ctx.budget.safetyFactor,
+    model: ctx.provider.model
   });
   warnings.push(...fitRes.warnings);
+
+  // 4b. Unpinned examples take the fitted history's leftover (if any).
+  if (exampleContent !== undefined && !pinExamples) {
+    const leftover = fitRes.availableTokens - staticTokens - fitRes.historyTokens - bottomTokens;
+    if (exampleTokens <= leftover) {
+      examplesIncluded = true;
+      systemPrompt = buildSystemPrompt();
+      staticTokens = countTokens(systemPrompt, model).tokens;
+    }
+  }
+  blockReportsMap.set('5', {
+    id: '5',
+    included: examplesIncluded,
+    tokens: examplesIncluded ? exampleTokens : 0,
+    reason: examplesIncluded
+      ? undefined
+      : exampleContent === undefined
+        ? skipReason('5', ctx)
+        : 'dropped over budget (examples unpinned)'
+  });
 
   // 5. Attach bottom blocks (9a, 9b, 9c) to the last user message of the fitted history.
   // This is the single attach point: serializeHistory returns plain messages.
@@ -137,7 +179,7 @@ export function buildPrompt(ctx: PromptContext): BuiltPrompt {
       static: staticTokens,
       history: fitRes.historyTokens,
       bottom: bottomTokens,
-      total: fitRes.totalTokens,
+      total: staticTokens + fitRes.historyTokens + bottomTokens,
       available: fitRes.availableTokens,
       droppedTurns: fitRes.droppedTurns + historyRes.skippedTurns
     },

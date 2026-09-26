@@ -10,6 +10,7 @@ import {
 } from '@formatavern/shared';
 import type { MessageRepository, MessageRow } from '../db/contracts';
 import type { HistoryTurn, PromptContext } from '../prompt/types';
+import { effectiveContextLength } from '../prompt/budget';
 
 export function normalizeNpcKey(name: string): string {
   return name.trim().toLowerCase().replace(/\s+/g, ' ');
@@ -52,6 +53,11 @@ export interface AssembleContextInput {
   continuation?: { partial: string };
   messages?: MessageRepository;
   pathRows?: MessageRow[];
+  // Active model id for tokenizer selection (optional).
+  model?: string;
+  // Provider-reported model window (null/undefined when unknown).
+  // Caps the manual setting; never raises it.
+  modelContextLength?: number | null;
 }
 
 export interface AssembledContext extends PromptContext {
@@ -102,7 +108,8 @@ export function assembleContext(input: AssembleContextInput): AssembledContext {
 
   const activeNpcs = activeNpcsMap.size > 0 ? Array.from(activeNpcsMap.values()) : undefined;
 
-  const contextLength = input.settings.generation?.contextLength ?? DEFAULT_SETTINGS.generation.contextLength;
+  const manualLength = input.settings.generation?.contextLength ?? DEFAULT_SETTINGS.generation.contextLength;
+  const contextLength = effectiveContextLength(manualLength, input.modelContextLength ?? undefined);
   const reservedCompletion = input.settings.generation?.maxTokens ?? DEFAULT_SETTINGS.generation.maxTokens;
 
   const personaVoicing =
@@ -124,10 +131,12 @@ export function assembleContext(input: AssembleContextInput): AssembledContext {
     personaVoicing,
     budget: {
       contextLength,
-      reservedCompletion
+      reservedCompletion,
+      pinExamples: input.settings.generation?.pinExamples ?? DEFAULT_SETTINGS.generation.pinExamples
     },
     provider: {
-      prefill: input.capabilities.prefill
+      prefill: input.capabilities.prefill,
+      model: input.model
     },
     continuation: input.continuation ? { partial: input.continuation.partial } : undefined
   };

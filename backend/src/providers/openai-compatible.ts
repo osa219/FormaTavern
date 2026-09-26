@@ -127,7 +127,7 @@ export class OpenAICompatibleProvider implements LLMProvider {
         .map((m: any) => ({
           id: m.id,
           name: m.name ?? m.id,
-          contextLength: m.context_length ?? m.contextLength ?? m.max_tokens ?? 8192
+          contextLength: m.context_length ?? m.contextLength ?? m.max_tokens ?? null
         }));
     } catch {
       return [];

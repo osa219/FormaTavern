@@ -650,6 +650,103 @@ describe('PromptBuilder', () => {
     expect(() => buildPrompt(impossibleCtx)).toThrow(PromptBudgetError);
   });
 
+  it('drops unpinned examples under pressure while keeping history', () => {
+    const bigExamples = `{{char}}: ${'lorem ipsum dolor sit amet '.repeat(60)}`;
+    const history: HistoryTurn[] = [];
+    for (let i = 0; i < 8; i++) {
+      history.push({
+        id: `u${i}`,
+        role: 'user' as const,
+        narrativeRole: 'persona' as const,
+        parentId: i === 0 ? null : `a${i - 1}`,
+        content: `User turn number ${i} with padding words to cost tokens.`,
+        status: 'complete' as const
+      });
+      history.push({
+        id: `a${i}`,
+        role: 'assistant' as const,
+        narrativeRole: 'character' as const,
+        senderName: 'Eldrin the Mage',
+        parentId: `u${i}`,
+        content: `Assistant turn number ${i} with padding words to cost tokens.`,
+        status: 'complete' as const
+      });
+    }
+    // Measure with a roomy budget, then size a tight one where everything
+    // fits except the examples (safety 1.0 keeps the arithmetic exact).
+    const roomy = buildPrompt(
+      makeContext({
+        character: { ...eldrinCard, exampleDialogue: bigExamples },
+        history,
+        budget: { contextLength: 8000, reservedCompletion: 200, safetyFactor: 1 }
+      })
+    );
+    const roomyBlock5 = roomy.blocks.find((b) => b.id === '5')!;
+    expect(roomyBlock5.included).toBe(true);
+    const exTokens = roomyBlock5.tokens;
+    expect(exTokens).toBeGreaterThan(0);
+
+    const staticNoEx = roomy.tokens.static - exTokens;
+    const target = staticNoEx + roomy.tokens.history + roomy.tokens.bottom + Math.floor(exTokens / 2);
+    const tightBudget = { contextLength: target + 200, reservedCompletion: 200, safetyFactor: 1 };
+
+    const built = buildPrompt(
+      makeContext({ character: { ...eldrinCard, exampleDialogue: bigExamples }, history, budget: tightBudget })
+    );
+    const block5 = built.blocks.find((b) => b.id === '5')!;
+    expect(block5.included).toBe(false);
+    expect(block5.reason).toContain('unpinned');
+    expect(built.systemPrompt).not.toContain('lorem ipsum');
+    // History untouched: fit-phase drops are zero.
+    expect(built.tokens.total).toBeLessThanOrEqual(built.tokens.available);
+  });
+
+  it('protects pinned examples under pressure by shrinking history instead', () => {
+    const bigExamples = `{{char}}: ${'lorem ipsum dolor sit amet '.repeat(60)}`;
+    const history: HistoryTurn[] = [];
+    for (let i = 0; i < 8; i++) {
+      history.push({
+        id: `u${i}`,
+        role: 'user' as const,
+        narrativeRole: 'persona' as const,
+        parentId: i === 0 ? null : `a${i - 1}`,
+        content: `User turn number ${i} with padding words to cost tokens.`,
+        status: 'complete' as const
+      });
+      history.push({
+        id: `a${i}`,
+        role: 'assistant' as const,
+        narrativeRole: 'character' as const,
+        senderName: 'Eldrin the Mage',
+        parentId: `u${i}`,
+        content: `Assistant turn number ${i} with padding words to cost tokens.`,
+        status: 'complete' as const
+      });
+    }
+    const roomy = buildPrompt(
+      makeContext({
+        character: { ...eldrinCard, exampleDialogue: bigExamples },
+        history,
+        budget: { contextLength: 8000, reservedCompletion: 200, safetyFactor: 1 }
+      })
+    );
+    const exTokens = roomy.blocks.find((b) => b.id === '5')!.tokens;
+    const staticNoEx = roomy.tokens.static - exTokens;
+    const target = staticNoEx + roomy.tokens.history + roomy.tokens.bottom + Math.floor(exTokens / 2);
+
+    const built = buildPrompt(
+      makeContext({
+        character: { ...eldrinCard, exampleDialogue: bigExamples },
+        history,
+        budget: { contextLength: target + 200, reservedCompletion: 200, safetyFactor: 1, pinExamples: true }
+      })
+    );
+    const block5 = built.blocks.find((b) => b.id === '5')!;
+    expect(block5.included).toBe(true);
+    expect(built.systemPrompt).toContain('lorem ipsum');
+    expect(built.tokens.total).toBeLessThanOrEqual(built.tokens.available);
+  });
+
   it('guarantees no macros survive in systemPrompt, history, or prefill', () => {
     const built = buildPrompt(makeContext());
     const macroRegex = /\{\{\s*(char|user)\s*\}\}|<BOT>|<USER>/i;

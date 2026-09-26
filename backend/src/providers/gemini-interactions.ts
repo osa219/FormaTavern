@@ -84,7 +84,7 @@ export class GeminiInteractionsProvider implements LLMProvider {
           return {
             id,
             name: m.displayName ?? id,
-            contextLength: m.inputTokenLimit ?? 8192
+            contextLength: m.inputTokenLimit ?? null
           };
         });
     } catch {

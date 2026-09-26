@@ -29,7 +29,10 @@ export interface LLMRequest {
 export interface ModelInfo {
   id: string;
   name: string;
-  contextLength: number;
+  // Provider-reported context window. Null when the provider does not
+  // report one: callers must fall back to the manual setting, never to a
+  // made-up number (a fake 8192 would wrongly clamp larger windows).
+  contextLength: number | null;
 }
 
 export interface AbortSignalLike {

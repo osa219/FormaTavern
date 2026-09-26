@@ -31,8 +31,9 @@ export const AppSettingsSchema = Type.Object({
       Type.Literal('low'),
       Type.Literal('medium'),
       Type.Literal('high')
-    ]))
-  }, { default: { temperature: 0.8, maxTokens: 1024, contextLength: 16_384 } }),
+    ])),
+    pinExamples: Type.Boolean({ default: false })
+  }, { default: { temperature: 0.8, maxTokens: 1024, contextLength: 16_384, pinExamples: false } }),
   narrative: Type.Object({
     defaultMode: Type.Union([Type.Literal('classic'), Type.Literal('narrative')], { default: 'narrative' }),
     defaultDialect: Type.Union([
@@ -89,7 +90,8 @@ export const SettingsViewSchema = Type.Object({
       Type.Literal('low'),
       Type.Literal('medium'),
       Type.Literal('high')
-    ]))
+    ])),
+    pinExamples: Type.Boolean()
   }),
   narrative: Type.Object({
     defaultMode: Type.Union([Type.Literal('classic'), Type.Literal('narrative')]),
@@ -143,7 +145,8 @@ export const SettingsPatchSchema = Type.Object({
       Type.Literal('medium'),
       Type.Literal('high'),
       Type.Null()
-    ]))
+    ])),
+    pinExamples: Type.Optional(Type.Boolean())
   }))),
   narrative: Type.Optional(Type.Partial(Type.Object({
     defaultMode: Type.Union([Type.Literal('classic'), Type.Literal('narrative')]),

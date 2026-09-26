@@ -19,6 +19,7 @@ import type { Repositories } from '../db/contracts';
 import { newId } from '../db/ids';
 import type { GenerationHub, GenerationJob, ProviderRegistry } from '../engine/contracts';
 import { assembleContext, nearestState } from '../engine/context';
+import { lookupModelContextLength } from '../engine/modelWindows';
 import { ApiError } from '../engine/errors';
 import { runGeneration } from '../engine/generation';
 import { buildPrompt } from '../prompt/builder';
@@ -67,7 +68,7 @@ export function createMessagesRouter(deps: {
 
       return { stopped: false, status: msg.status };
     })
-    .post('/:id/regenerate', ({ params }): Response => {
+    .post('/:id/regenerate', async ({ params }): Promise<Response> => {
       const target = repos.messages.get(params.id);
       if (!target) {
         throw new ApiError('not_found', 404, `Message ${params.id} not found`);
@@ -110,6 +111,13 @@ export function createMessagesRouter(deps: {
         : null;
       const resolution = providers.resolve(settings, activeConfig);
 
+      // The window lookup awaits: re-check the concurrency guard after it.
+      // Everything from here to hub registration is synchronous.
+      const modelContextLength = await lookupModelContextLength(resolution.provider, resolution.model);
+      if (hub.activeForChat(chat.id)) {
+        throw new ApiError('generation_in_progress', 409, 'Generation already in progress for this chat');
+      }
+
       // Assemble context with triggerId = target.parentId (user node)
       const ctx = assembleContext({
         chat,
@@ -119,6 +127,8 @@ export function createMessagesRouter(deps: {
         triggerId: target.parentId,
         capabilities: resolution.provider.capabilities,
         configPrompt: resolution.configPrompt,
+        model: resolution.model,
+        modelContextLength,
         messages: repos.messages
       });
 
@@ -191,7 +201,7 @@ export function createMessagesRouter(deps: {
 
       return response;
     })
-    .post('/:id/retry-response', ({ params }): Response => {
+    .post('/:id/retry-response', async ({ params }): Promise<Response> => {
       const target = repos.messages.get(params.id);
       if (!target) {
         throw new ApiError('not_found', 404, `Message ${params.id} not found`);
@@ -230,6 +240,13 @@ export function createMessagesRouter(deps: {
         : null;
       const resolution = providers.resolve(settings, activeConfig);
 
+      // The window lookup awaits: re-check the concurrency guard after it.
+      // Everything from here to hub registration is synchronous.
+      const modelContextLength = await lookupModelContextLength(resolution.provider, resolution.model);
+      if (hub.activeForChat(chat.id)) {
+        throw new ApiError('generation_in_progress', 409, 'Generation already in progress for this chat');
+      }
+
       // Assemble context with triggerId = the user node itself, so no new
       // user row is created and no retyping is needed.
       const ctx = assembleContext({
@@ -240,6 +257,8 @@ export function createMessagesRouter(deps: {
         triggerId: target.id,
         capabilities: resolution.provider.capabilities,
         configPrompt: resolution.configPrompt,
+        model: resolution.model,
+        modelContextLength,
         messages: repos.messages
       });
 
@@ -312,7 +331,7 @@ export function createMessagesRouter(deps: {
 
       return response;
     })
-    .post('/:id/continue', ({ params }): Response => {
+    .post('/:id/continue', async ({ params }): Promise<Response> => {
       const target = repos.messages.get(params.id);
       if (!target) {
         throw new ApiError('not_found', 404, `Message ${params.id} not found`);
@@ -355,6 +374,13 @@ export function createMessagesRouter(deps: {
         : null;
       const resolution = providers.resolve(settings, activeConfig);
 
+      // The window lookup awaits: re-check the concurrency guard after it.
+      // Everything from here to hub registration is synchronous.
+      const modelContextLength = await lookupModelContextLength(resolution.provider, resolution.model);
+      if (hub.activeForChat(chat.id)) {
+        throw new ApiError('generation_in_progress', 409, 'Generation already in progress for this chat');
+      }
+
       const stripped = stripOutOfBand(target.content);
       repos.messages.reopenForContinue(target.id, stripped);
 
@@ -376,6 +402,8 @@ export function createMessagesRouter(deps: {
         capabilities: resolution.provider.capabilities,
         continuation: { partial: stripped },
         configPrompt: resolution.configPrompt,
+        model: resolution.model,
+        modelContextLength,
         messages: repos.messages
       });
 

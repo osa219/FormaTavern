@@ -33,6 +33,7 @@ import type { ChatRow, MessageRow, Repositories } from '../db/contracts';
 import { newChatId, newId } from '../db/ids';
 import type { GenerationHub, GenerationJob, ProviderRegistry } from '../engine/contracts';
 import { assembleContext } from '../engine/context';
+import { lookupModelContextLength } from '../engine/modelWindows';
 import { ConvertError, planDialectConversion } from '../engine/convert';
 import { ApiError } from '../engine/errors';
 import { runGeneration } from '../engine/generation';
@@ -368,7 +369,7 @@ export function createChatsRouter(deps: {
     })
     .post(
       '/:id/prompt-preview',
-      ({ params, body }): BuiltPrompt => {
+      async ({ params, body }): Promise<BuiltPrompt> => {
         // Dry run: same assembleContext() + buildPrompt() path as send, no writes, no LLM call.
         const previewBody = body as PromptPreviewBody;
         const chat = repos.chats.get(params.id);
@@ -432,6 +433,8 @@ export function createChatsRouter(deps: {
           triggerId,
           capabilities: resolution.provider.capabilities,
           configPrompt: resolution.configPrompt,
+          model: resolution.model,
+          modelContextLength: await lookupModelContextLength(resolution.provider, resolution.model),
           pathRows
         });
 
@@ -536,7 +539,7 @@ export function createChatsRouter(deps: {
     )
     .post(
       '/:id/messages',
-      ({ params, body, set }): Response | { message: unknown } => {
+      async ({ params, body, set }): Promise<Response | { message: unknown }> => {
         const sendBody = body as SendMessageBody;
         const chat = repos.chats.get(params.id);
         if (!chat) {
@@ -610,6 +613,14 @@ export function createChatsRouter(deps: {
           : null;
         const resolution = providers.resolve(settings, activeConfig);
 
+        // The window lookup awaits: re-check the concurrency guard after
+        // it, since a rival send may have registered meanwhile. Everything
+        // from here to hub registration is synchronous, so the loser 409s.
+        const modelContextLength = await lookupModelContextLength(resolution.provider, resolution.model);
+        if (hub.activeForChat(chat.id)) {
+          throw new ApiError('generation_in_progress', 409, 'Generation already in progress for this chat');
+        }
+
         // Insert user row
         const userRow = repos.messages.insert({
           id: userRowId,
@@ -634,6 +645,8 @@ export function createChatsRouter(deps: {
           triggerId: userRow.id,
           capabilities: resolution.provider.capabilities,
           configPrompt: resolution.configPrompt,
+          model: resolution.model,
+          modelContextLength,
           messages: repos.messages
         });
 

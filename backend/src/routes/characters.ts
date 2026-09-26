@@ -18,6 +18,7 @@ import type { Repositories } from '../db/contracts';
 import type { AssetStore } from '../assets/contracts';
 import type { ProviderRegistry } from '../engine/contracts';
 import { assembleContext } from '../engine/context';
+import { lookupModelContextLength } from '../engine/modelWindows';
 import { ApiError } from '../engine/errors';
 import { buildPrompt } from '../prompt/builder';
 import { PromptBudgetError, type BuiltPrompt, type CharacterPromptPreview } from '../prompt/types';
@@ -112,7 +113,7 @@ export function createCharactersRouter({ repos, assets, providers }: CharactersR
     )
     .post(
       '/prompt-preview',
-      ({ body }): CharacterPromptPreview => {
+      async ({ body }): Promise<CharacterPromptPreview> => {
         // Dry run for an unsaved Studio draft card: static blocks only
         // (no history, no NPCs, no scene block), same builder as send.
         const input = body as CharacterPromptPreviewBody;
@@ -170,6 +171,8 @@ export function createCharactersRouter({ repos, assets, providers }: CharactersR
           triggerId: 'preview-root',
           capabilities: resolution.provider.capabilities,
           configPrompt: resolution.configPrompt,
+          model: resolution.model,
+          modelContextLength: await lookupModelContextLength(resolution.provider, resolution.model),
           pathRows: []
         });
 

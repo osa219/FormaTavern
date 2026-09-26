@@ -1,19 +1,47 @@
-import { encode } from 'gpt-tokenizer/encoding/cl100k_base';
+import { encode as encodeCl100k } from 'gpt-tokenizer/encoding/cl100k_base';
+import { encode as encodeO200k } from 'gpt-tokenizer/encoding/o200k_base';
+import { encode as encodeR50k } from 'gpt-tokenizer/encoding/r50k_base';
 import type { MessagePayload } from '@formatavern/shared';
 import { PromptBudgetError } from './types';
 import { SYNTHETIC_SCENE_BEGINS } from './templates';
 
-export function countTokens(text: string): { tokens: number; warning?: string } {
+export type TokenizerFamily = 'o200k' | 'cl100k' | 'r50k';
+
+/**
+ * Closest local encoding for a model id. OpenAI families map exactly;
+ * everything else (Claude, Gemini, Llama, Mistral, Qwen, custom, unknown)
+ * is counted with cl100k as a documented approximation — closer than
+ * character math, but never exact. Full native tokenizers for those
+ * families need model files and are tracked as future work.
+ */
+export function tokenizerFamilyForModel(model?: string | null): TokenizerFamily {
+  const m = (model ?? '').toLowerCase();
+  if (/(^|[^a-z0-9])(o1|o3|o4|gpt-4o|gpt-4\.1|gpt-5|codex)([^a-z0-9]|$)/.test(m)) {
+    return 'o200k';
+  }
+  if (/(davinci|curie|babbage|ada)/.test(m)) {
+    return 'r50k';
+  }
+  return 'cl100k';
+}
+
+function encodeWithFamily(text: string, family: TokenizerFamily): number[] {
+  if (family === 'o200k') return encodeO200k(text, { disallowedSpecial: new Set() } as any);
+  if (family === 'r50k') return encodeR50k(text, { disallowedSpecial: new Set() } as any);
+  return encodeCl100k(text, { disallowedSpecial: new Set() } as any);
+}
+
+export function countTokens(text: string, model?: string | null): { tokens: number; warning?: string } {
   if (!text) return { tokens: 0 };
 
   try {
-    const encoded = encode(text, { disallowedSpecial: new Set() } as any);
+    const encoded = encodeWithFamily(text, tokenizerFamilyForModel(model));
     return { tokens: encoded.length };
   } catch {
     const estimate = Math.ceil(text.length / 3.5);
     return {
       tokens: estimate,
-      warning: 'gpt-tokenizer encode failed; fell back to character length estimate'
+      warning: 'tokenizer encode failed; fell back to character length estimate'
     };
   }
 }
@@ -25,6 +53,7 @@ export interface FitHistoryOptions {
   contextLength: number;
   reservedCompletion: number;
   safetyFactor?: number;
+  model?: string | null;
 }
 
 export interface FitHistoryResult {
@@ -34,6 +63,19 @@ export interface FitHistoryResult {
   totalTokens: number;
   availableTokens: number;
   warnings: string[];
+}
+
+/**
+ * Effective context window for budgeting: the manual setting capped by the
+ * model's own window when known. The model is a ceiling, never a floor —
+ * a manual value below the model window stands unchanged, and an unknown
+ * model window leaves the manual value alone.
+ */
+export function effectiveContextLength(manual: number, modelWindow?: number | null): number {
+  if (typeof modelWindow === 'number' && Number.isFinite(modelWindow) && modelWindow > 0) {
+    return Math.min(manual, Math.floor(modelWindow));
+  }
+  return manual;
 }
 
 export function fitHistory(opts: FitHistoryOptions): FitHistoryResult {
@@ -58,7 +100,7 @@ export function fitHistory(opts: FitHistoryOptions): FitHistoryResult {
   // Precompute token counts for each message
   const msgCosts: number[] = [];
   for (const m of msgs) {
-    const c = countTokens(m.content);
+    const c = countTokens(m.content, opts.model);
     if (c.warning) warnings.push(c.warning);
     // +4 tokens per-message overhead
     msgCosts.push(c.tokens + 4);
@@ -101,14 +143,14 @@ export function fitHistory(opts: FitHistoryOptions): FitHistoryResult {
 
   // ensureUserFirst after truncation: if first turn is assistant, prepend [Scene begins.]
   if (fitted.length > 0 && fitted[0].role === 'assistant') {
-    const sceneBeginsCost = countTokens(SYNTHETIC_SCENE_BEGINS).tokens + 4;
+    const sceneBeginsCost = countTokens(SYNTHETIC_SCENE_BEGINS, opts.model).tokens + 4;
     // If adding [Scene begins.] would exceed budget and we have older turns before trigger:
     while (
       accumulatedHistoryTokens + sceneBeginsCost > availableForHistory &&
       fitted.length > 1
     ) {
       const removed = fitted.shift()!;
-      const removedCost = countTokens(removed.content).tokens + 4;
+      const removedCost = countTokens(removed.content, opts.model).tokens + 4;
       accumulatedHistoryTokens -= removedCost;
       droppedTurns++;
     }

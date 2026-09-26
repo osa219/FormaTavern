@@ -265,7 +265,7 @@ describe('OpenAICompatibleProvider', () => {
     ).toEqual([{ id: 'a/b', name: 'B', contextLength: 4096 }]);
     expect(
       await new OpenAICompatibleProvider({ baseUrl: 'http://h/v1', fetch: oaiFetch }).listModels()
-    ).toEqual([{ id: 'gpt-x', name: 'gpt-x', contextLength: 8192 }]);
+    ).toEqual([{ id: 'gpt-x', name: 'gpt-x', contextLength: null }]);
     expect(
       await new OpenAICompatibleProvider({ baseUrl: 'http://h/v1', fetch: badFetch }).listModels()
     ).toEqual([]);
